@@ -12,7 +12,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('company_id')->nullable(); // FK added after companies in 2026_06_28_143401
             $table->string('name');
-            $table->string('email')->unique();
+            $table->string('email')->length(191)->unique('users_email_unique');
             $table->string('phone')->nullable();
             $table->string('whatsapp_number')->nullable();
             $table->string('imap_host')->nullable();
