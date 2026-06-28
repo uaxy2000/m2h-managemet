@@ -12,9 +12,9 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name');
             $table->enum('trigger', ['new_lead', 'stage_changed', 'no_contact_hours']);
-            $table->json('trigger_params')->nullable();
-            $table->json('conditions');
-            $table->json('actions');
+            $table->text('trigger_params')->nullable();
+            $table->text('conditions');
+            $table->text('actions');
             $table->boolean('is_active')->default(true);
             $table->timestamp('created_at')->useCurrent();
         });

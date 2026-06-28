@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('sheet_id');
             $table->string('tab_name');
-            $table->json('column_mapping');
+            $table->text('column_mapping');
             $table->foreignUuid('pipeline_id')->constrained();
             $table->string('default_source')->nullable();
             $table->string('default_campaign')->nullable();

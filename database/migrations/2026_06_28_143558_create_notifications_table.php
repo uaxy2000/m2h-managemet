@@ -14,7 +14,7 @@ return new class extends Migration
             $table->string('type');
             $table->string('title');
             $table->text('body');
-            $table->json('data')->nullable();
+            $table->text('data')->nullable();
             $table->boolean('is_read')->default(false);
             $table->boolean('email_sent')->default(false);
             $table->timestamp('created_at')->useCurrent();

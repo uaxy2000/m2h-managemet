@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignUuid('rule_id')->constrained('automation_rules');
             $table->foreignUuid('lead_id')->constrained()->cascadeOnDelete();
             $table->timestamp('triggered_at')->useCurrent();
-            $table->json('actions_taken');
+            $table->text('actions_taken');
             $table->enum('status', ['success', 'partial', 'failed']);
             $table->text('error_message')->nullable();
         });

@@ -12,7 +12,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('label');
             $table->enum('field_type', ['text', 'select', 'multiselect', 'number', 'date', 'boolean']);
-            $table->json('options')->nullable();
+            $table->text('options')->nullable();
             $table->boolean('is_required')->default(false);
             $table->integer('sort_order')->default(0);
         });
