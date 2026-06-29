@@ -14,7 +14,6 @@
         </svg>
         Leads
     </a>
-
     <div class="flex items-center gap-2">
         <a href="{{ route('leads.edit', $lead) }}"
            class="inline-flex items-center gap-1.5 text-sm text-gray-600 px-3.5 py-2 rounded-lg
@@ -26,8 +25,7 @@
         </a>
         <form method="POST" action="{{ route('leads.destroy', $lead) }}"
               onsubmit="return confirm('Delete {{ addslashes($lead->fullName()) }}? This cannot be undone.')">
-            @csrf
-            @method('DELETE')
+            @csrf @method('DELETE')
             <button type="submit"
                     class="inline-flex items-center gap-1.5 text-sm text-red-600 px-3.5 py-2 rounded-lg
                            border border-red-200 hover:bg-red-50 transition-colors">
@@ -40,24 +38,27 @@
     </div>
 </div>
 
-@if(session('success'))
+{{-- Flash messages --}}
+@foreach(['success', 'note_success', 'task_success'] as $key)
+@if(session($key))
 <div class="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-2.5 text-sm mb-5">
-    {{ session('success') }}
+    {{ session($key) }}
 </div>
 @endif
+@endforeach
 @if(session('warning'))
 <div class="bg-amber-50 border border-amber-200 text-amber-700 rounded-lg px-4 py-2.5 text-sm mb-5">
     {{ session('warning') }}
 </div>
 @endif
 
-{{-- Lead name + duplicate flag --}}
+{{-- Lead header --}}
 <div class="flex items-center gap-3 mb-6">
     <div class="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
         {{ $lead->initials() }}
     </div>
     <div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
             <h2 class="text-xl font-bold text-gray-900">{{ $lead->fullName() }}</h2>
             @if($lead->is_duplicate_flag)
             <span class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
@@ -83,10 +84,10 @@
 
 <div class="grid grid-cols-3 gap-5">
 
-    {{-- Left: Contact + Deal --}}
+    {{-- Left: Contact, Deal, Notes/Tasks --}}
     <div class="col-span-2 space-y-5">
 
-        {{-- Contact info --}}
+        {{-- Contact --}}
         <div class="bg-white rounded-xl border border-gray-200 p-5">
             <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Contact</h3>
             <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
@@ -94,9 +95,7 @@
                 <div>
                     <dt class="text-xs text-gray-400">Email</dt>
                     <dd class="text-sm text-gray-800 mt-0.5">
-                        <a href="mailto:{{ $lead->email }}" class="hover:text-indigo-600 transition-colors">
-                            {{ $lead->email }}
-                        </a>
+                        <a href="mailto:{{ $lead->email }}" class="hover:text-indigo-600 transition-colors">{{ $lead->email }}</a>
                     </dd>
                 </div>
                 @endif
@@ -131,12 +130,12 @@
                 </div>
                 @endif
             </dl>
-            @if(!$lead->email && !$lead->phone && !$lead->whatsapp && !$lead->country_of_origin)
+            @if(!$lead->email && !$lead->phone && !$lead->whatsapp && !$lead->country_of_origin && !$lead->nationality && !$lead->language)
             <p class="text-sm text-gray-400">No contact details.</p>
             @endif
         </div>
 
-        {{-- Deal info --}}
+        {{-- Deal --}}
         @if($lead->potential_value || $lead->our_commission || $lead->expected_close_date)
         <div class="bg-white rounded-xl border border-gray-200 p-5">
             <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Deal</h3>
@@ -144,40 +143,226 @@
                 @if($lead->potential_value)
                 <div>
                     <dt class="text-xs text-gray-400">Potential Value</dt>
-                    <dd class="text-base font-semibold text-emerald-600 mt-0.5">
-                        ${{ number_format((float) $lead->potential_value) }}
-                    </dd>
+                    <dd class="text-base font-semibold text-emerald-600 mt-0.5">${{ number_format((float) $lead->potential_value) }}</dd>
                 </div>
                 @endif
                 @if($lead->our_commission)
                 <div>
                     <dt class="text-xs text-gray-400">Our Commission</dt>
-                    <dd class="text-base font-semibold text-indigo-600 mt-0.5">
-                        ${{ number_format((float) $lead->our_commission) }}
-                    </dd>
+                    <dd class="text-base font-semibold text-indigo-600 mt-0.5">${{ number_format((float) $lead->our_commission) }}</dd>
                 </div>
                 @endif
                 @if($lead->expected_close_date)
                 <div>
                     <dt class="text-xs text-gray-400">Expected Close</dt>
-                    <dd class="text-sm text-gray-800 mt-0.5">
-                        {{ $lead->expected_close_date->format('d M Y') }}
-                    </dd>
+                    <dd class="text-sm text-gray-800 mt-0.5">{{ $lead->expected_close_date->format('d M Y') }}</dd>
                 </div>
                 @endif
             </dl>
         </div>
         @endif
 
-        {{-- Placeholder: Notes --}}
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Notes</h3>
-            <p class="text-sm text-gray-400">Notes coming soon.</p>
-        </div>
+        {{-- Notes & Tasks tabs --}}
+        @php
+            $openTasks = $lead->tasks->where('is_done', false)->sortBy('due_at');
+            $doneTasks = $lead->tasks->where('is_done', true)->sortByDesc('due_at');
+            $allTasks  = $openTasks->merge($doneTasks);
+            $defaultTab = session('task_success') ? 'tasks' : 'notes';
+        @endphp
 
+        <div class="bg-white rounded-xl border border-gray-200"
+             x-data="{ tab: '{{ $defaultTab }}' }">
+
+            {{-- Tab headers --}}
+            <div class="flex border-b border-gray-200 px-5">
+                <button @click="tab = 'notes'"
+                        :class="tab === 'notes' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                        class="px-1 py-3.5 text-sm font-medium border-b-2 mr-6 transition-colors">
+                    Notes
+                    <span class="ml-1.5 text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">
+                        {{ $lead->notes->count() }}
+                    </span>
+                </button>
+                <button @click="tab = 'tasks'"
+                        :class="tab === 'tasks' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                        class="px-1 py-3.5 text-sm font-medium border-b-2 transition-colors">
+                    Tasks
+                    @if($openTasks->count() > 0)
+                    <span class="ml-1.5 text-xs bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full font-semibold">
+                        {{ $openTasks->count() }}
+                    </span>
+                    @else
+                    <span class="ml-1.5 text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">
+                        {{ $lead->tasks->count() }}
+                    </span>
+                    @endif
+                </button>
+            </div>
+
+            {{-- NOTES --}}
+            <div x-show="tab === 'notes'" id="notes" class="p-5">
+
+                {{-- Add note --}}
+                <form method="POST" action="{{ route('leads.notes.store', $lead) }}" class="mb-6">
+                    @csrf
+                    <textarea name="content" rows="3" required
+                              placeholder="Write a note…"
+                              class="block w-full rounded-lg border-gray-300 text-sm shadow-sm
+                                     focus:ring-indigo-500 focus:border-indigo-500 resize-none">{{ old('content') }}</textarea>
+                    <div class="flex items-center justify-between mt-2">
+                        <select name="visibility"
+                                class="text-xs rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-1.5">
+                            <option value="internal">Internal only</option>
+                            <option value="shared">Shared with client</option>
+                        </select>
+                        <button type="submit"
+                                class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5
+                                       rounded-lg transition-colors font-medium">
+                            Add Note
+                        </button>
+                    </div>
+                </form>
+
+                {{-- Notes list --}}
+                @forelse($lead->notes as $note)
+                <div class="pb-4 {{ !$loop->last ? 'border-b border-gray-100 mb-4' : '' }}">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <div class="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center
+                                        text-white text-xs font-semibold flex-shrink-0">
+                                {{ strtoupper(substr($note->createdBy->name, 0, 1)) }}
+                            </div>
+                            <span class="text-xs font-medium text-gray-700">{{ $note->createdBy->name }}</span>
+                            <span class="text-xs text-gray-400">{{ $note->created_at->diffForHumans() }}</span>
+                            @if($note->visibility === 'internal')
+                            <span class="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">Internal</span>
+                            @else
+                            <span class="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full">Shared</span>
+                            @endif
+                        </div>
+                        @if($note->created_by === auth()->id() || auth()->user()->isAdmin())
+                        <form method="POST" action="{{ route('leads.notes.destroy', [$lead, $note]) }}"
+                              onsubmit="return confirm('Delete this note?')">
+                            @csrf @method('DELETE')
+                            <button type="submit" title="Delete note"
+                                    class="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </form>
+                        @endif
+                    </div>
+                    <p class="text-sm text-gray-700 mt-2.5 whitespace-pre-wrap leading-relaxed">{{ $note->content }}</p>
+                </div>
+                @empty
+                <p class="text-sm text-gray-400 text-center py-8">No notes yet. Add one above.</p>
+                @endforelse
+            </div>
+
+            {{-- TASKS --}}
+            <div x-show="tab === 'tasks'" id="tasks" class="p-5">
+
+                {{-- Add task --}}
+                <form method="POST" action="{{ route('leads.tasks.store', $lead) }}" class="mb-6 space-y-2.5">
+                    @csrf
+                    <input type="text" name="title" value="{{ old('title') }}" required
+                           placeholder="Task title…"
+                           class="block w-full rounded-lg border-gray-300 text-sm shadow-sm
+                                  focus:ring-indigo-500 focus:border-indigo-500">
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <select name="assigned_to" required
+                                class="block w-full rounded-lg border-gray-300 text-sm shadow-sm
+                                       focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Assign to…</option>
+                            @foreach($users as $user)
+                            <option value="{{ $user->id }}"
+                                    {{ old('assigned_to', auth()->id()) === $user->id ? 'selected' : '' }}>
+                                {{ $user->name }}
+                            </option>
+                            @endforeach
+                        </select>
+                        <input type="datetime-local" name="due_at" value="{{ old('due_at') }}" required
+                               class="block w-full rounded-lg border-gray-300 text-sm shadow-sm
+                                      focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit"
+                                class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5
+                                       rounded-lg transition-colors font-medium">
+                            Add Task
+                        </button>
+                    </div>
+                </form>
+
+                {{-- Tasks list --}}
+                @forelse($allTasks as $task)
+                <div x-data="{
+                         done: {{ $task->is_done ? 'true' : 'false' }},
+                         async toggle() {
+                             const r = await fetch('{{ route('leads.tasks.toggle', [$lead, $task]) }}', {
+                                 method: 'PATCH',
+                                 headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content }
+                             });
+                             const d = await r.json();
+                             this.done = d.is_done;
+                         }
+                     }"
+                     class="flex items-start gap-3 py-3 {{ !$loop->last ? 'border-b border-gray-100' : '' }}">
+
+                    {{-- Checkbox --}}
+                    <button @click="toggle()" type="button" class="flex-shrink-0 mt-0.5">
+                        <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
+                             :class="done ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 hover:border-indigo-400'">
+                            <template x-if="done">
+                                <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
+                                </svg>
+                            </template>
+                        </div>
+                    </button>
+
+                    {{-- Content --}}
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm text-gray-800 transition-colors"
+                           :class="done ? 'line-through text-gray-400' : ''">
+                            {{ $task->title }}
+                        </p>
+                        <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                            <span class="text-xs text-gray-400">{{ $task->assignedTo->name }}</span>
+                            <span class="text-xs {{ $task->isOverdue() ? 'text-red-500 font-medium' : 'text-gray-400' }}"
+                                  :class="done ? 'text-gray-400 !font-normal line-through' : ''">
+                                {{ $task->due_at->format('d M Y, H:i') }}
+                                @if($task->isOverdue())
+                                <span x-show="!done" class="ml-1 text-red-500">· Overdue</span>
+                                @endif
+                            </span>
+                        </div>
+                    </div>
+
+                    {{-- Delete --}}
+                    @if($task->created_by === auth()->id() || auth()->user()->isAdmin())
+                    <form method="POST" action="{{ route('leads.tasks.destroy', [$lead, $task]) }}"
+                          onsubmit="return confirm('Delete this task?')">
+                        @csrf @method('DELETE')
+                        <button type="submit" title="Delete task"
+                                class="text-gray-300 hover:text-red-500 transition-colors mt-0.5">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </form>
+                    @endif
+                </div>
+                @empty
+                <p class="text-sm text-gray-400 text-center py-8">No tasks yet. Add one above.</p>
+                @endforelse
+            </div>
+
+        </div>{{-- end tabs --}}
     </div>
 
-    {{-- Right: Assignment + History --}}
+    {{-- Right: Assignment + Stage history --}}
     <div class="space-y-5">
 
         {{-- Assignment --}}

@@ -3,9 +3,11 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LeadController;
+use App\Http\Controllers\NoteController;
 use App\Http\Controllers\Settings\PipelineController;
 use App\Http\Controllers\Settings\StageController;
 use App\Http\Controllers\Settings\SubStageController;
+use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -21,6 +23,15 @@ Route::middleware('auth')->group(function () {
     // Leads
     Route::post('leads/{lead}/move', [LeadController::class, 'move'])->name('leads.move');
     Route::resource('leads', LeadController::class);
+
+    // Notes (nested under lead)
+    Route::post('leads/{lead}/notes', [NoteController::class, 'store'])->name('leads.notes.store');
+    Route::delete('leads/{lead}/notes/{note}', [NoteController::class, 'destroy'])->name('leads.notes.destroy');
+
+    // Tasks (nested under lead)
+    Route::post('leads/{lead}/tasks', [TaskController::class, 'store'])->name('leads.tasks.store');
+    Route::patch('leads/{lead}/tasks/{task}/toggle', [TaskController::class, 'toggle'])->name('leads.tasks.toggle');
+    Route::delete('leads/{lead}/tasks/{task}', [TaskController::class, 'destroy'])->name('leads.tasks.destroy');
 
     Route::middleware('role:super_admin,admin')
         ->prefix('settings')

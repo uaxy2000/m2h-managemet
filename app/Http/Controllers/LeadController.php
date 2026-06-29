@@ -112,9 +112,15 @@ class LeadController extends Controller
             'statusHistory.changedBy',
             'statusHistory.fromStage',
             'statusHistory.toStage',
+            'notes.createdBy',
+            'tasks.assignedTo',
         ]);
 
-        return view('leads.show', compact('lead'));
+        $users = User::whereIn('role', ['super_admin', 'admin', 'member'])
+            ->orderBy('name')
+            ->get();
+
+        return view('leads.show', compact('lead', 'users'));
     }
 
     public function edit(Lead $lead): View
