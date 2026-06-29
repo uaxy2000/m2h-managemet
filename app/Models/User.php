@@ -2,46 +2,86 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, HasUuids, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
+    public $timestamps = false;
+
     protected $fillable = [
+        'company_id',
         'name',
         'email',
+        'phone',
+        'whatsapp_number',
+        'imap_host',
+        'imap_user',
+        'imap_pass_enc',
+        'role',
         'password',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
+        'imap_pass_enc',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    public function hasRole(string|array $roles): bool
+    {
+        return in_array($this->role, (array) $roles);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole(['super_admin', 'admin']);
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'super_admin';
+    }
+
+    public function roleBadgeColor(): string
+    {
+        return match ($this->role) {
+            'super_admin'          => 'bg-purple-100 text-purple-700',
+            'admin'                => 'bg-blue-100 text-blue-700',
+            'member'               => 'bg-green-100 text-green-700',
+            'service_provider_user'=> 'bg-orange-100 text-orange-700',
+            'agent_user'           => 'bg-gray-100 text-gray-600',
+            default                => 'bg-gray-100 text-gray-600',
+        };
+    }
+
+    public function roleLabel(): string
+    {
+        return match ($this->role) {
+            'super_admin'          => 'Super Admin',
+            'admin'                => 'Admin',
+            'member'               => 'Member',
+            'service_provider_user'=> 'Service Provider',
+            'agent_user'           => 'Agent',
+            default                => $this->role,
+        };
     }
 }
