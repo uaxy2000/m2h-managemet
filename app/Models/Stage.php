@@ -32,4 +32,9 @@ class Stage extends Model
     {
         return $this->hasMany(SubStage::class)->orderBy('sort_order');
     }
+
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class);
+    }
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LeadController;
 use App\Http\Controllers\Settings\PipelineController;
 use App\Http\Controllers\Settings\StageController;
 use App\Http\Controllers\Settings\SubStageController;
@@ -16,6 +17,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/', fn () => redirect()->route('dashboard'));
+
+    // Leads
+    Route::post('leads/{lead}/move', [LeadController::class, 'move'])->name('leads.move');
+    Route::resource('leads', LeadController::class);
 
     Route::middleware('role:super_admin,admin')
         ->prefix('settings')
