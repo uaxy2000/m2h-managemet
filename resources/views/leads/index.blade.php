@@ -57,7 +57,7 @@
     @else
 
     {{-- Kanban board --}}
-    <div class="flex-1 overflow-x-auto overflow-y-hidden" id="kanban-board">
+    <div class="flex-1 overflow-x-auto overflow-y-hidden cursor-grab" id="kanban-board">
         <div class="flex gap-4 h-full px-6 py-5">
 
             @forelse($currentPipeline->stages as $stage)
@@ -198,11 +198,41 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Navigate to lead on card click (not after drag)
+    // Navigate to lead on card click (not after drag or pan)
     const board = document.getElementById('kanban-board');
     if (board) {
+        let panning    = false;
+        let panStartX  = 0;
+        let panScrollL = 0;
+        let lastPan    = 0;
+
+        board.addEventListener('mousedown', function (e) {
+            if (e.button !== 0) return;
+            if (e.target.closest('.lead-card, a, button, input, select')) return;
+
+            panning        = true;
+            panStartX      = e.clientX;
+            panScrollL     = board.scrollLeft;
+            board.style.cursor      = 'grabbing';
+            board.style.userSelect  = 'none';
+        });
+
+        document.addEventListener('mousemove', function (e) {
+            if (!panning) return;
+            board.scrollLeft = panScrollL - (e.clientX - panStartX);
+        });
+
+        document.addEventListener('mouseup', function () {
+            if (!panning) return;
+            panning             = false;
+            lastPan             = Date.now();
+            board.style.cursor     = '';
+            board.style.userSelect = '';
+        });
+
         board.addEventListener('click', function (e) {
             if (Date.now() - lastDrag < 300) return;
+            if (Date.now() - lastPan  < 300) return;
             const card = e.target.closest('.lead-card');
             if (card && card.dataset.href) window.location.href = card.dataset.href;
         });
