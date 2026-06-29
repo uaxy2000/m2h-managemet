@@ -29,8 +29,15 @@ class NoteController extends Controller
 
     public function destroy(Lead $lead, Note $note): RedirectResponse
     {
-        if ($note->created_by !== auth()->id() && !auth()->user()->isAdmin()) {
-            abort(403);
+        $user = auth()->user();
+
+        if (!$user->isAdmin()) {
+            if ($note->created_by !== $user->id) {
+                abort(403);
+            }
+            if ($note->created_at->diffInHours(now()) >= 12) {
+                return back()->with('note_error', 'Notes can only be deleted within 12 hours of creation.');
+            }
         }
 
         $note->delete();

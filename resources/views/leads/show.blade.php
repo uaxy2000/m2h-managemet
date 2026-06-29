@@ -46,6 +46,11 @@
 </div>
 @endif
 @endforeach
+@if(session('note_error'))
+<div class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2.5 text-sm mb-5">
+    {{ session('note_error') }}
+</div>
+@endif
 @if(session('warning'))
 <div class="bg-amber-50 border border-amber-200 text-amber-700 rounded-lg px-4 py-2.5 text-sm mb-5">
     {{ session('warning') }}
@@ -240,7 +245,11 @@
                             <span class="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full">Shared</span>
                             @endif
                         </div>
-                        @if($note->created_by === auth()->id() || auth()->user()->isAdmin())
+                        @php
+                            $canDelete = auth()->user()->isAdmin()
+                                || ($note->created_by === auth()->id() && $note->created_at->diffInHours(now()) < 12);
+                        @endphp
+                        @if($canDelete)
                         <form method="POST" action="{{ route('leads.notes.destroy', [$lead, $note]) }}"
                               onsubmit="return confirm('Delete this note?')">
                             @csrf @method('DELETE')
@@ -251,6 +260,12 @@
                                 </svg>
                             </button>
                         </form>
+                        @elseif($note->created_by === auth()->id())
+                        <span class="text-xs text-gray-300 flex-shrink-0" title="Can only delete within 12 hours">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>
+                            </svg>
+                        </span>
                         @endif
                     </div>
                     <p class="text-sm text-gray-700 mt-2.5 whitespace-pre-wrap leading-relaxed">{{ $note->content }}</p>
