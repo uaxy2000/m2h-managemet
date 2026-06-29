@@ -56,6 +56,12 @@ class Lead extends Model
         return $this->hasMany(LeadStatusHistory::class)->orderByDesc('changed_at');
     }
 
+    public function programs(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Program::class, 'lead_program')
+            ->withPivot('id', 'is_primary');
+    }
+
     public function notes(): HasMany
     {
         return $this->hasMany(Note::class)->orderByDesc('created_at');

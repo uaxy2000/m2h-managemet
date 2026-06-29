@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lead;
+use App\Models\LeadProgram;
 use App\Models\LeadStatusHistory;
 use App\Models\Pipeline;
+use App\Models\Program;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -27,7 +29,10 @@ class LeadController extends Controller
                     $q->orderBy('sort_order');
                 },
                 'stages.leads' => function ($q) {
-                    $q->with('assignedTo')->orderByDesc('created_at');
+                    $q->with([
+                        'assignedTo',
+                        'programs' => fn ($q) => $q->wherePivot('is_primary', true),
+                    ])->orderByDesc('created_at');
                 },
             ])->find($currentPipelineId)
             : null;
@@ -114,13 +119,21 @@ class LeadController extends Controller
             'statusHistory.toStage',
             'notes.createdBy',
             'tasks.assignedTo',
+            'programs',
         ]);
 
         $users = User::whereIn('role', ['super_admin', 'admin', 'member'])
             ->orderBy('name')
             ->get();
 
-        return view('leads.show', compact('lead', 'users'));
+        $attachedProgramIds = $lead->programs->pluck('id');
+        $availablePrograms  = Program::where('is_active', true)
+            ->whereNotIn('id', $attachedProgramIds)
+            ->orderBy('country')
+            ->orderBy('name')
+            ->get();
+
+        return view('leads.show', compact('lead', 'users', 'availablePrograms'));
     }
 
     public function edit(Lead $lead): View

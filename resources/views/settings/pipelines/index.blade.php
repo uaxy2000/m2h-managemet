@@ -4,6 +4,7 @@
 @section('heading', 'Pipeline Configuration')
 
 @section('content')
+@include('settings._nav')
 <div x-data>
 
     <div class="flex items-center justify-between mb-6">

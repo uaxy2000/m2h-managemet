@@ -3,8 +3,10 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LeadController;
+use App\Http\Controllers\LeadProgramController;
 use App\Http\Controllers\NoteController;
 use App\Http\Controllers\Settings\PipelineController;
+use App\Http\Controllers\Settings\ProgramController;
 use App\Http\Controllers\Settings\StageController;
 use App\Http\Controllers\Settings\SubStageController;
 use App\Http\Controllers\TaskController;
@@ -33,6 +35,11 @@ Route::middleware('auth')->group(function () {
     Route::patch('leads/{lead}/tasks/{task}/toggle', [TaskController::class, 'toggle'])->name('leads.tasks.toggle');
     Route::delete('leads/{lead}/tasks/{task}', [TaskController::class, 'destroy'])->name('leads.tasks.destroy');
 
+    // Programs (nested under lead)
+    Route::post('leads/{lead}/programs', [LeadProgramController::class, 'store'])->name('leads.programs.store');
+    Route::post('leads/{lead}/programs/{leadProgram}/primary', [LeadProgramController::class, 'setPrimary'])->name('leads.programs.primary');
+    Route::delete('leads/{lead}/programs/{leadProgram}', [LeadProgramController::class, 'destroy'])->name('leads.programs.destroy');
+
     Route::middleware('role:super_admin,admin')
         ->prefix('settings')
         ->name('settings.')
@@ -58,5 +65,13 @@ Route::middleware('auth')->group(function () {
             Route::post('stages/{stage}/sub-stages', [SubStageController::class, 'store'])->name('sub-stages.store');
             Route::put('stages/{stage}/sub-stages/{subStage}', [SubStageController::class, 'update'])->name('sub-stages.update');
             Route::delete('stages/{stage}/sub-stages/{subStage}', [SubStageController::class, 'destroy'])->name('sub-stages.destroy');
+
+            // Programs
+            Route::get('programs', [ProgramController::class, 'index'])->name('programs.index');
+            Route::get('programs/create', [ProgramController::class, 'create'])->name('programs.create');
+            Route::post('programs', [ProgramController::class, 'store'])->name('programs.store');
+            Route::get('programs/{program}/edit', [ProgramController::class, 'edit'])->name('programs.edit');
+            Route::put('programs/{program}', [ProgramController::class, 'update'])->name('programs.update');
+            Route::delete('programs/{program}', [ProgramController::class, 'destroy'])->name('programs.destroy');
         });
 });

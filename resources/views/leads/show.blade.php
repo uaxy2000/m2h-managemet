@@ -167,6 +167,93 @@
         </div>
         @endif
 
+        {{-- Programs --}}
+        @php $sortedPrograms = $lead->programs->sortByDesc('pivot.is_primary'); @endphp
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Programs</h3>
+
+            @forelse($sortedPrograms as $program)
+            <div class="flex items-center gap-3 py-2.5 {{ !$loop->last ? 'border-b border-gray-100' : '' }}">
+
+                {{-- Primary star --}}
+                @if($program->pivot->is_primary)
+                <span class="text-amber-400 flex-shrink-0" title="Primary program">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 0 0 .95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 0 0-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 0 0-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 0 0-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 0 0 .951-.69l1.07-3.292Z"/>
+                    </svg>
+                </span>
+                @else
+                <form method="POST" action="{{ route('leads.programs.primary', [$lead, $program->pivot->id]) }}">
+                    @csrf
+                    <button type="submit" title="Set as primary"
+                            class="text-gray-200 hover:text-amber-400 transition-colors flex-shrink-0">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 0 0 .95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 0 0-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 0 0-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 0 0-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 0 0 .951-.69l1.07-3.292Z"/>
+                        </svg>
+                    </button>
+                </form>
+                @endif
+
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-800">{{ $program->name }}</p>
+                    <p class="text-xs text-gray-400 mt-0.5">
+                        {{ $program->country }}
+                        <span class="mx-1 text-gray-200">·</span>
+                        {{ $program->typeLabel() }}
+                        @if($program->min_investment)
+                        <span class="mx-1 text-gray-200">·</span>
+                        Min. {{ $program->currency }} {{ number_format((float) $program->min_investment) }}
+                        @endif
+                    </p>
+                </div>
+
+                <form method="POST" action="{{ route('leads.programs.destroy', [$lead, $program->pivot->id]) }}"
+                      onsubmit="return confirm('Remove {{ addslashes($program->name) }} from this lead?')">
+                    @csrf @method('DELETE')
+                    <button type="submit" title="Remove program"
+                            class="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+            @empty
+            <p class="text-sm text-gray-400">No programs attached yet.</p>
+            @endforelse
+
+            @if($availablePrograms->isNotEmpty())
+            <form method="POST" action="{{ route('leads.programs.store', $lead) }}"
+                  class="flex gap-2 mt-4 {{ $sortedPrograms->isNotEmpty() ? 'pt-4 border-t border-gray-100' : '' }}">
+                @csrf
+                <select name="program_id" required
+                        class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">Add program…</option>
+                    @foreach($availablePrograms->groupBy('country') as $country => $progs)
+                    <optgroup label="{{ $country }}">
+                        @foreach($progs as $p)
+                        <option value="{{ $p->id }}">{{ $p->name }}</option>
+                        @endforeach
+                    </optgroup>
+                    @endforeach
+                </select>
+                <button type="submit"
+                        class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors font-medium">
+                    Add
+                </button>
+            </form>
+            @elseif(auth()->user()->isAdmin() && $availablePrograms->isEmpty() && $lead->programs->isEmpty())
+            <a href="{{ route('settings.programs.create') }}"
+               class="text-xs text-indigo-600 hover:text-indigo-800 mt-2 inline-block">
+                Create programs in Settings →
+            </a>
+            @endif
+
+            @if(session('program_error'))
+            <p class="text-red-500 text-xs mt-2">{{ session('program_error') }}</p>
+            @endif
+        </div>
+
         {{-- Notes & Tasks tabs --}}
         @php
             $openTasks = $lead->tasks->where('is_done', false)->sortBy('due_at');
