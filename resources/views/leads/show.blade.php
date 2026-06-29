@@ -167,6 +167,42 @@
         </div>
         @endif
 
+        {{-- Tags --}}
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Tags</h3>
+            @if($allTags->isEmpty())
+            <p class="text-sm text-gray-400">No tags yet.
+                @if(auth()->user()->isAdmin())
+                <a href="{{ route('settings.tags.create') }}" class="text-indigo-600 hover:text-indigo-800 ml-1">Create tags →</a>
+                @endif
+            </p>
+            @else
+            <div class="flex flex-wrap gap-2">
+                @foreach($allTags as $tag)
+                @php $isActive = $lead->tags->contains('id', $tag->id); @endphp
+                <button type="button"
+                        x-data="{
+                            active: {{ $isActive ? 'true' : 'false' }},
+                            async toggle() {
+                                const r = await fetch('{{ route('leads.tags.toggle', [$lead, $tag]) }}', {
+                                    method: 'POST',
+                                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content }
+                                });
+                                const d = await r.json();
+                                this.active = d.active;
+                            }
+                        }"
+                        @click="toggle()"
+                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all"
+                        :class="active ? 'text-white border-transparent' : 'text-gray-500 border-gray-200 bg-white hover:border-gray-400'"
+                        :style="active ? 'background-color: {{ $tag->color }}; border-color: {{ $tag->color }}' : ''">
+                    {{ $tag->name }}
+                </button>
+                @endforeach
+            </div>
+            @endif
+        </div>
+
         {{-- Programs --}}
         @php $sortedPrograms = $lead->programs->sortByDesc('pivot.is_primary'); @endphp
         <div class="bg-white rounded-xl border border-gray-200 p-5">

@@ -4,11 +4,13 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadProgramController;
+use App\Http\Controllers\LeadTagController;
 use App\Http\Controllers\NoteController;
 use App\Http\Controllers\Settings\PipelineController;
 use App\Http\Controllers\Settings\ProgramController;
 use App\Http\Controllers\Settings\StageController;
 use App\Http\Controllers\Settings\SubStageController;
+use App\Http\Controllers\Settings\TagController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +36,9 @@ Route::middleware('auth')->group(function () {
     Route::post('leads/{lead}/tasks', [TaskController::class, 'store'])->name('leads.tasks.store');
     Route::patch('leads/{lead}/tasks/{task}/toggle', [TaskController::class, 'toggle'])->name('leads.tasks.toggle');
     Route::delete('leads/{lead}/tasks/{task}', [TaskController::class, 'destroy'])->name('leads.tasks.destroy');
+
+    // Tags (nested under lead)
+    Route::post('leads/{lead}/tags/{tag}/toggle', [LeadTagController::class, 'toggle'])->name('leads.tags.toggle');
 
     // Programs (nested under lead)
     Route::post('leads/{lead}/programs', [LeadProgramController::class, 'store'])->name('leads.programs.store');
@@ -65,6 +70,14 @@ Route::middleware('auth')->group(function () {
             Route::post('stages/{stage}/sub-stages', [SubStageController::class, 'store'])->name('sub-stages.store');
             Route::put('stages/{stage}/sub-stages/{subStage}', [SubStageController::class, 'update'])->name('sub-stages.update');
             Route::delete('stages/{stage}/sub-stages/{subStage}', [SubStageController::class, 'destroy'])->name('sub-stages.destroy');
+
+            // Tags
+            Route::get('tags', [TagController::class, 'index'])->name('tags.index');
+            Route::get('tags/create', [TagController::class, 'create'])->name('tags.create');
+            Route::post('tags', [TagController::class, 'store'])->name('tags.store');
+            Route::get('tags/{tag}/edit', [TagController::class, 'edit'])->name('tags.edit');
+            Route::put('tags/{tag}', [TagController::class, 'update'])->name('tags.update');
+            Route::delete('tags/{tag}', [TagController::class, 'destroy'])->name('tags.destroy');
 
             // Programs
             Route::get('programs', [ProgramController::class, 'index'])->name('programs.index');

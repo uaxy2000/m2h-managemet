@@ -7,6 +7,7 @@ use App\Models\LeadProgram;
 use App\Models\LeadStatusHistory;
 use App\Models\Pipeline;
 use App\Models\Program;
+use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -28,16 +29,22 @@ class LeadController extends Controller
                 'stages' => function ($q) {
                     $q->orderBy('sort_order');
                 },
-                'stages.leads' => function ($q) {
-                    $q->with([
+                'stages.leads' => function ($q) use ($request) {
+                    $q->when($request->get('tag'), fn ($q, $tagId) =>
+                        $q->whereHas('tags', fn ($q) => $q->where('tags.id', $tagId))
+                    )->with([
                         'assignedTo',
+                        'tags',
                         'programs' => fn ($q) => $q->wherePivot('is_primary', true),
                     ])->orderByDesc('created_at');
                 },
             ])->find($currentPipelineId)
             : null;
 
-        return view('leads.index', compact('pipelines', 'currentPipeline'));
+        $tags        = Tag::orderBy('name')->get();
+        $activeTagId = $request->get('tag');
+
+        return view('leads.index', compact('pipelines', 'currentPipeline', 'tags', 'activeTagId'));
     }
 
     public function create(Request $request): View
@@ -120,11 +127,14 @@ class LeadController extends Controller
             'notes.createdBy',
             'tasks.assignedTo',
             'programs',
+            'tags',
         ]);
 
         $users = User::whereIn('role', ['super_admin', 'admin', 'member'])
             ->orderBy('name')
             ->get();
+
+        $allTags = Tag::orderBy('name')->get();
 
         $attachedProgramIds = $lead->programs->pluck('id');
         $availablePrograms  = Program::where('is_active', true)
@@ -133,7 +143,7 @@ class LeadController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('leads.show', compact('lead', 'users', 'availablePrograms'));
+        return view('leads.show', compact('lead', 'users', 'allTags', 'availablePrograms'));
     }
 
     public function edit(Lead $lead): View
