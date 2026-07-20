@@ -17,6 +17,7 @@ class Lead extends Model
         'country_of_origin', 'nationality', 'language',
         'potential_value', 'our_commission', 'expected_close_date',
         'service_provider_id', 'is_duplicate_flag',
+        'source', 'meta_lead_id', 'meta_form_id', 'meta_ad_name', 'meta_campaign_name', 'meta_platform',
     ];
 
     protected $casts = [

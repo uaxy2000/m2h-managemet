@@ -5,7 +5,9 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadProgramController;
 use App\Http\Controllers\LeadTagController;
+use App\Http\Controllers\MetaWebhookController;
 use App\Http\Controllers\NoteController;
+use App\Http\Controllers\Settings\MetaPageController;
 use App\Http\Controllers\Settings\PipelineController;
 use App\Http\Controllers\Settings\ProgramController;
 use App\Http\Controllers\Settings\StageController;
@@ -13,6 +15,10 @@ use App\Http\Controllers\Settings\SubStageController;
 use App\Http\Controllers\Settings\TagController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
+
+// Meta webhook (no auth — Meta calls this directly)
+Route::get('/webhook/meta', [MetaWebhookController::class, 'verify']);
+Route::post('/webhook/meta', [MetaWebhookController::class, 'receive']);
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -86,5 +92,13 @@ Route::middleware('auth')->group(function () {
             Route::get('programs/{program}/edit', [ProgramController::class, 'edit'])->name('programs.edit');
             Route::put('programs/{program}', [ProgramController::class, 'update'])->name('programs.update');
             Route::delete('programs/{program}', [ProgramController::class, 'destroy'])->name('programs.destroy');
+
+            // Meta Integration
+            Route::get('meta', [MetaPageController::class, 'index'])->name('meta.index');
+            Route::post('meta/pages', [MetaPageController::class, 'store'])->name('meta.pages.store');
+            Route::put('meta/pages/{metaPage}', [MetaPageController::class, 'update'])->name('meta.pages.update');
+            Route::delete('meta/pages/{metaPage}', [MetaPageController::class, 'destroy'])->name('meta.pages.destroy');
+            Route::post('meta/pages/{metaPage}/mappings', [MetaPageController::class, 'storeMapping'])->name('meta.mappings.store');
+            Route::delete('meta/pages/{metaPage}/mappings/{mapping}', [MetaPageController::class, 'destroyMapping'])->name('meta.mappings.destroy');
         });
 });
