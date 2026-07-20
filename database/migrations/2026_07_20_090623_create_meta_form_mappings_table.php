@@ -19,7 +19,7 @@ return new class extends Migration
             $table->boolean('is_default')->default(false);
             $table->foreignUuid('pipeline_id')->constrained('pipelines');
             $table->foreignUuid('stage_id')->constrained('stages');
-            $table->json('tag_ids')->nullable();
+            $table->text('tag_ids')->nullable();
             $table->timestamps();
         });
     }

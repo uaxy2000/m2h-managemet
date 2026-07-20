@@ -17,7 +17,7 @@ class MetaFormMapping extends Model
 
     protected $casts = [
         'is_default' => 'boolean',
-        'tag_ids'    => 'array',
+        'tag_ids'    => 'json',
     ];
 
     public function page(): BelongsTo
