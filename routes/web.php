@@ -14,6 +14,12 @@ use App\Http\Controllers\Settings\TagController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 
+// TEMPORARY — delete after use
+Route::get('/reset-burak-pw', function () {
+    \App\Models\User::where('email', 'burak@m2h.ge')->update(['password' => bcrypt('Admin1234!')]);
+    return 'Done. Delete this route now.';
+});
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
