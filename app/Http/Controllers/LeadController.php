@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Company;
 use App\Models\Lead;
-use App\Models\LeadProgram;
 use App\Models\LeadStatusHistory;
 use App\Models\Pipeline;
 use App\Models\Program;
@@ -54,9 +54,10 @@ class LeadController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        $users = User::whereIn('role', ['super_admin', 'admin', 'member'])
-            ->orderBy('name')
-            ->get();
+        $users = User::where(function ($q) {
+            $q->whereNull('company_id')
+              ->orWhereHas('company', fn ($q) => $q->where('type', 'internal'));
+        })->orderBy('name')->get();
 
         $defaultPipelineId = $request->get('pipeline', $pipelines->first()?->id);
         $defaultStageId    = $request->get('stage');
@@ -121,6 +122,7 @@ class LeadController extends Controller
     {
         $lead->load([
             'pipeline', 'stage', 'subStage', 'assignedTo',
+            'serviceProvider', 'agent',
             'statusHistory.changedBy',
             'statusHistory.fromStage',
             'statusHistory.toStage',
@@ -130,9 +132,13 @@ class LeadController extends Controller
             'tags',
         ]);
 
-        $users = User::whereIn('role', ['super_admin', 'admin', 'member'])
-            ->orderBy('name')
-            ->get();
+        $internalUsers = User::where(function ($q) {
+            $q->whereNull('company_id')
+              ->orWhereHas('company', fn ($q) => $q->where('type', 'internal'));
+        })->orderBy('name')->get();
+
+        $serviceProviders = Company::where('type', 'service_provider')->orderBy('name')->get();
+        $agents           = Company::where('type', 'agent')->orderBy('name')->get();
 
         $allTags = Tag::orderBy('name')->get();
 
@@ -143,7 +149,9 @@ class LeadController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('leads.show', compact('lead', 'users', 'allTags', 'availablePrograms'));
+        return view('leads.show', compact(
+            'lead', 'internalUsers', 'serviceProviders', 'agents', 'allTags', 'availablePrograms'
+        ));
     }
 
     public function edit(Lead $lead): View
@@ -153,9 +161,10 @@ class LeadController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        $users = User::whereIn('role', ['super_admin', 'admin', 'member'])
-            ->orderBy('name')
-            ->get();
+        $users = User::where(function ($q) {
+            $q->whereNull('company_id')
+              ->orWhereHas('company', fn ($q) => $q->where('type', 'internal'));
+        })->orderBy('name')->get();
 
         return view('leads.edit', compact('lead', 'pipelines', 'users'));
     }
@@ -198,6 +207,29 @@ class LeadController extends Controller
         }
 
         return redirect()->route('leads.show', $lead)->with('success', 'Lead updated.');
+    }
+
+    public function assignUser(Request $request, Lead $lead): RedirectResponse
+    {
+        $validated = $request->validate([
+            'assigned_to' => ['nullable', 'uuid', 'exists:users,id'],
+        ]);
+
+        $lead->update(['assigned_to' => $validated['assigned_to'] ?? null]);
+
+        return back()->with('success', 'Assignment updated.');
+    }
+
+    public function assignCompany(Request $request, Lead $lead): RedirectResponse
+    {
+        $validated = $request->validate([
+            'field'      => ['required', 'in:service_provider_id,agent_id'],
+            'company_id' => ['nullable', 'uuid', 'exists:companies,id'],
+        ]);
+
+        $lead->update([$validated['field'] => $validated['company_id'] ?: null]);
+
+        return back()->with('success', 'Lead updated.');
     }
 
     public function destroy(Lead $lead): RedirectResponse

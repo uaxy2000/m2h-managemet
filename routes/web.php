@@ -45,6 +45,10 @@ Route::middleware('auth')->group(function () {
     // Tags (nested under lead)
     Route::post('leads/{lead}/tags/{tag}/toggle', [LeadTagController::class, 'toggle'])->name('leads.tags.toggle');
 
+    // Lead assignment actions
+    Route::patch('leads/{lead}/assign-user', [LeadController::class, 'assignUser'])->name('leads.assign-user');
+    Route::patch('leads/{lead}/assign-company', [LeadController::class, 'assignCompany'])->name('leads.assign-company');
+
     // Programs (nested under lead)
     Route::post('leads/{lead}/programs', [LeadProgramController::class, 'store'])->name('leads.programs.store');
     Route::post('leads/{lead}/programs/{leadProgram}/primary', [LeadProgramController::class, 'setPrimary'])->name('leads.programs.primary');

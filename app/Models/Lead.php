@@ -16,7 +16,7 @@ class Lead extends Model
         'first_name', 'last_name', 'email', 'phone', 'whatsapp',
         'country_of_origin', 'nationality', 'language',
         'potential_value', 'our_commission', 'expected_close_date',
-        'service_provider_id', 'is_duplicate_flag',
+        'service_provider_id', 'agent_id', 'is_duplicate_flag',
         'source', 'meta_lead_id', 'meta_form_id', 'meta_ad_name', 'meta_campaign_name', 'meta_platform',
     ];
 
@@ -50,6 +50,16 @@ class Lead extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function serviceProvider(): BelongsTo
+    {
+        return $this->belongsTo(Company::class, 'service_provider_id');
+    }
+
+    public function agent(): BelongsTo
+    {
+        return $this->belongsTo(Company::class, 'agent_id');
     }
 
     public function statusHistory(): HasMany

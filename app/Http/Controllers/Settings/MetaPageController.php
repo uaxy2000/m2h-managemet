@@ -25,7 +25,10 @@ class MetaPageController extends Controller
             ->orderBy('sort_order')
             ->get();
         $tags  = Tag::orderBy('name')->get();
-        $users = User::whereIn('role', ['super_admin', 'admin', 'member'])->orderBy('name')->get();
+        $users = User::where(function ($q) {
+            $q->whereNull('company_id')
+              ->orWhereHas('company', fn ($q) => $q->where('type', 'internal'));
+        })->orderBy('name')->get();
 
         return view('settings.meta.index', compact('pages', 'pipelines', 'tags', 'users'));
     }
