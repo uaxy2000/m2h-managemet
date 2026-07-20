@@ -19,6 +19,13 @@ class UserController extends Controller
         return view('settings.users.index', compact('users', 'companies'));
     }
 
+    public function create(): View
+    {
+        $companies = Company::where('type', 'internal')->orderBy('name')->get();
+
+        return view('settings.users.create', compact('companies'));
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
