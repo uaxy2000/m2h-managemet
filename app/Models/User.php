@@ -78,7 +78,7 @@ class User extends Authenticatable
         return match ($this->role) {
             'super_admin'          => 'Super Admin',
             'admin'                => 'Admin',
-            'member'               => 'Member',
+            'member'               => 'User',
             'service_provider_user'=> 'Service Provider',
             'agent_user'           => 'Agent',
             default                => $this->role,

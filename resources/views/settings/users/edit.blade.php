@@ -38,7 +38,7 @@
                     class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="super_admin" {{ old('role', $user->role) === 'super_admin' ? 'selected' : '' }}>Super Admin</option>
                 <option value="admin"       {{ old('role', $user->role) === 'admin'       ? 'selected' : '' }}>Admin</option>
-                <option value="member"      {{ old('role', $user->role) === 'member'      ? 'selected' : '' }}>Member</option>
+                <option value="member"      {{ old('role', $user->role) === 'member'      ? 'selected' : '' }}>User</option>
             </select>
         </div>
 
