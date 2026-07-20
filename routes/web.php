@@ -16,11 +16,7 @@ use App\Http\Controllers\Settings\TagController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 
-// Meta webhook (no auth — Meta calls this directly)
-Route::withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)->group(function () {
-    Route::get('/webhook/meta', [MetaWebhookController::class, 'verify']);
-    Route::post('/webhook/meta', [MetaWebhookController::class, 'receive']);
-});
+// Meta webhook routes are registered in bootstrap/app.php with no middleware
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');

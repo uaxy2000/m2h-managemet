@@ -9,6 +9,12 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        then: function () {
+            \Illuminate\Support\Facades\Route::middleware([])->group(function () {
+                \Illuminate\Support\Facades\Route::get('/webhook/meta', [\App\Http\Controllers\MetaWebhookController::class, 'verify']);
+                \Illuminate\Support\Facades\Route::post('/webhook/meta', [\App\Http\Controllers\MetaWebhookController::class, 'receive']);
+            });
+        },
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
