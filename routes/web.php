@@ -18,8 +18,12 @@ use Illuminate\Support\Facades\Route;
 
 // TEMPORARY — delete after use
 Route::get('/run-migrate', function () {
-    \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-    return nl2br(\Illuminate\Support\Facades\Artisan::output());
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        return '<pre>' . \Illuminate\Support\Facades\Artisan::output() . '</pre>';
+    } catch (\Throwable $e) {
+        return '<pre>ERROR: ' . $e->getMessage() . "\n" . $e->getTraceAsString() . '</pre>';
+    }
 });
 
 // Meta webhook (no auth — Meta calls this directly)
