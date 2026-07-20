@@ -16,33 +16,6 @@ use App\Http\Controllers\Settings\TagController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 
-// TEMPORARY — delete after use
-Route::get('/setup-meta-env', function () {
-    try {
-        $envPath = base_path('.env');
-        if (!file_exists($envPath)) return 'ERROR: .env not found at ' . $envPath;
-        if (!is_writable($envPath)) return 'ERROR: .env is not writable';
-        $content = file_get_contents($envPath);
-        $vars = [
-            'META_APP_ID'       => '1044191421573372',
-            'META_APP_SECRET'   => 'caea82372ae1f469006424fe3c6835da',
-            'META_VERIFY_TOKEN' => 'm2h_meta_wh_8x2k9p',
-        ];
-        foreach ($vars as $key => $value) {
-            if (str_contains($content, $key . '=')) {
-                $content = preg_replace('/^' . $key . '=.*/m', $key . '=' . $value, $content);
-            } else {
-                $content .= "\n" . $key . '=' . $value;
-            }
-        }
-        file_put_contents($envPath, $content);
-        \Illuminate\Support\Facades\Artisan::call('config:clear');
-        return 'Done. META vars written. Delete this route now.';
-    } catch (\Throwable $e) {
-        return 'ERROR: ' . $e->getMessage();
-    }
-});
-
 // Meta webhook (no auth — Meta calls this directly)
 Route::get('/webhook/meta', [MetaWebhookController::class, 'verify']);
 Route::post('/webhook/meta', [MetaWebhookController::class, 'receive']);
