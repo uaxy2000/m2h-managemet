@@ -179,6 +179,18 @@
                 </div>
             </div>
             @endif
+            @if($users->isNotEmpty())
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Atanan Kullanıcı <span class="text-gray-400">(opsiyonel)</span></label>
+                <select name="assigned_to"
+                        class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">— Atanmadan bırak —</option>
+                    @foreach($users as $u)
+                    <option value="{{ $u->id }}">{{ $u->name }} ({{ $u->roleLabel() }})</option>
+                    @endforeach
+                </select>
+            </div>
+            @endif
             <div class="flex items-center justify-between pt-1">
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" name="is_default" value="1"
@@ -216,6 +228,12 @@
                     {{ $mapping->pipeline?->name }}
                     <span class="mx-1 text-gray-300">→</span>
                     {{ $mapping->stage?->name }}
+                    @if($mapping->assigned_to)
+                    @php $assignee = $users->firstWhere('id', $mapping->assigned_to); @endphp
+                    @if($assignee)
+                    <span class="ml-2 text-indigo-600">→ {{ $assignee->name }}</span>
+                    @endif
+                    @endif
                     @if(!empty($mapping->tag_ids))
                     <span class="ml-2">
                         @foreach($mapping->tag_ids as $tagId)
