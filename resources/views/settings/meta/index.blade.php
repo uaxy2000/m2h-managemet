@@ -69,6 +69,14 @@
             <p class="text-xs text-gray-400 font-mono">ID: {{ $page->page_id }}</p>
         </div>
         <span class="text-xs text-gray-400">{{ $page->form_mappings_count }} mapping</span>
+        <form method="POST" action="{{ route('settings.meta.pages.subscribe', $page) }}"
+              title="Re-subscribe this page to leadgen webhooks">
+            @csrf
+            <button type="submit"
+                    class="text-xs text-emerald-600 hover:text-emerald-800 px-3 py-1.5 rounded-lg border border-emerald-200 hover:bg-emerald-50 transition-colors">
+                Subscribe
+            </button>
+        </form>
         <button @click="mapOpen = !mapOpen"
                 class="text-xs text-indigo-600 hover:text-indigo-800 px-3 py-1.5 rounded-lg border border-indigo-200 hover:bg-indigo-50 transition-colors">
             + Add Mapping

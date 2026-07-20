@@ -117,6 +117,7 @@ Route::middleware('auth')->group(function () {
             Route::post('meta/pages', [MetaPageController::class, 'store'])->name('meta.pages.store');
             Route::put('meta/pages/{metaPage}', [MetaPageController::class, 'update'])->name('meta.pages.update');
             Route::delete('meta/pages/{metaPage}', [MetaPageController::class, 'destroy'])->name('meta.pages.destroy');
+            Route::post('meta/pages/{metaPage}/subscribe', [MetaPageController::class, 'subscribe'])->name('meta.pages.subscribe');
             Route::post('meta/pages/{metaPage}/mappings', [MetaPageController::class, 'storeMapping'])->name('meta.mappings.store');
             Route::delete('meta/pages/{metaPage}/mappings/{mapping}', [MetaPageController::class, 'destroyMapping'])->name('meta.mappings.destroy');
         });

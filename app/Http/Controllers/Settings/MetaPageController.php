@@ -10,6 +10,7 @@ use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\View\View;
 
 class MetaPageController extends Controller
@@ -64,6 +65,23 @@ class MetaPageController extends Controller
         $metaPage->delete();
 
         return redirect()->route('settings.meta.index')->with('success', 'Page removed.');
+    }
+
+    public function subscribe(MetaPage $metaPage): RedirectResponse
+    {
+        $response = Http::post("https://graph.facebook.com/v19.0/{$metaPage->page_id}/subscribed_apps", [
+            'subscribed_fields' => 'leadgen',
+            'access_token'      => $metaPage->access_token,
+        ]);
+
+        if ($response->json('success')) {
+            return redirect()->route('settings.meta.index')
+                ->with('success', ""{$metaPage->page_name}" subscribed to leadgen webhooks.");
+        }
+
+        $error = $response->json('error.message') ?? $response->body();
+        return redirect()->route('settings.meta.index')
+            ->with('error', "Subscription failed: {$error}");
     }
 
     // Form mappings
