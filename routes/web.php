@@ -16,6 +16,27 @@ use App\Http\Controllers\Settings\TagController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 
+// TEMPORARY — delete after use
+Route::get('/setup-meta-env', function () {
+    $envPath = base_path('.env');
+    $content = file_get_contents($envPath);
+    $vars = [
+        'META_APP_ID'       => '1044191421573372',
+        'META_APP_SECRET'   => 'caea82372ae1f469006424fe3c6835da',
+        'META_VERIFY_TOKEN' => 'm2h_meta_wh_8x2k9p',
+    ];
+    foreach ($vars as $key => $value) {
+        if (str_contains($content, $key . '=')) {
+            $content = preg_replace('/^' . $key . '=.*/m', $key . '=' . $value, $content);
+        } else {
+            $content .= "\n" . $key . '=' . $value;
+        }
+    }
+    file_put_contents($envPath, $content);
+    \Illuminate\Support\Facades\Artisan::call('config:clear');
+    return 'Done. Delete this route now.';
+});
+
 // Meta webhook (no auth — Meta calls this directly)
 Route::get('/webhook/meta', [MetaWebhookController::class, 'verify']);
 Route::post('/webhook/meta', [MetaWebhookController::class, 'receive']);
