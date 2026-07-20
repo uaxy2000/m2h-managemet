@@ -6,7 +6,6 @@ use App\Models\Lead;
 use App\Models\LeadStatusHistory;
 use App\Models\MetaFormMapping;
 use App\Models\MetaPage;
-use App\Models\Tag;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
@@ -118,6 +117,7 @@ class MetaWebhookController extends Controller
             'pipeline_id'      => $mapping->pipeline_id,
             'stage_id'         => $mapping->stage_id,
             'company_id'       => $mapping->pipeline->company_id ?? null,
+            'assigned_to'      => $mapping->assigned_to ?? null,
             'source'           => 'meta_ad',
             'meta_lead_id'     => $leadgenId,
             'meta_form_id'     => $formId,

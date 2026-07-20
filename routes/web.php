@@ -5,10 +5,10 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadProgramController;
 use App\Http\Controllers\LeadTagController;
-use App\Http\Controllers\MetaWebhookController;
 use App\Http\Controllers\NoteController;
 use App\Http\Controllers\Settings\MetaPageController;
 use App\Http\Controllers\Settings\PipelineController;
+use App\Http\Controllers\Settings\UserController;
 use App\Http\Controllers\Settings\ProgramController;
 use App\Http\Controllers\Settings\StageController;
 use App\Http\Controllers\Settings\SubStageController;
@@ -90,6 +90,14 @@ Route::middleware('auth')->group(function () {
             Route::get('programs/{program}/edit', [ProgramController::class, 'edit'])->name('programs.edit');
             Route::put('programs/{program}', [ProgramController::class, 'update'])->name('programs.update');
             Route::delete('programs/{program}', [ProgramController::class, 'destroy'])->name('programs.destroy');
+
+            // Users
+            Route::get('users', [UserController::class, 'index'])->name('users.index');
+            Route::get('users/create', [UserController::class, 'create'])->name('users.create');
+            Route::post('users', [UserController::class, 'store'])->name('users.store');
+            Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+            Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
+            Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
             // Meta Integration
             Route::get('meta', [MetaPageController::class, 'index'])->name('meta.index');

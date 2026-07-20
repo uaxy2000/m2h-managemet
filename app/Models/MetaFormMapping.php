@@ -12,7 +12,7 @@ class MetaFormMapping extends Model
 
     protected $fillable = [
         'meta_page_id', 'form_id', 'form_name', 'is_default',
-        'pipeline_id', 'stage_id', 'tag_ids',
+        'pipeline_id', 'stage_id', 'tag_ids', 'assigned_to',
     ];
 
     protected $casts = [

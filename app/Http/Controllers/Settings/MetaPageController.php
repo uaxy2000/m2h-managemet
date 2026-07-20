@@ -7,6 +7,7 @@ use App\Models\MetaFormMapping;
 use App\Models\MetaPage;
 use App\Models\Pipeline;
 use App\Models\Tag;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -23,9 +24,10 @@ class MetaPageController extends Controller
             ->with(['stages' => fn ($q) => $q->orderBy('sort_order')])
             ->orderBy('sort_order')
             ->get();
-        $tags = Tag::orderBy('name')->get();
+        $tags  = Tag::orderBy('name')->get();
+        $users = User::whereIn('role', ['super_admin', 'admin', 'member'])->orderBy('name')->get();
 
-        return view('settings.meta.index', compact('pages', 'pipelines', 'tags'));
+        return view('settings.meta.index', compact('pages', 'pipelines', 'tags', 'users'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -72,6 +74,7 @@ class MetaPageController extends Controller
             'stage_id'    => ['required', 'uuid', 'exists:stages,id'],
             'tag_ids'     => ['nullable', 'array'],
             'tag_ids.*'   => ['uuid', 'exists:tags,id'],
+            'assigned_to' => ['nullable', 'uuid', 'exists:users,id'],
         ]);
 
         if (!empty($validated['is_default'])) {
