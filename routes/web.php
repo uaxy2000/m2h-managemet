@@ -6,6 +6,7 @@ use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadProgramController;
 use App\Http\Controllers\LeadTagController;
 use App\Http\Controllers\NoteController;
+use App\Http\Controllers\Settings\CompanyController;
 use App\Http\Controllers\Settings\MetaPageController;
 use App\Http\Controllers\Settings\PipelineController;
 use App\Http\Controllers\Settings\UserController;
@@ -90,6 +91,14 @@ Route::middleware('auth')->group(function () {
             Route::get('programs/{program}/edit', [ProgramController::class, 'edit'])->name('programs.edit');
             Route::put('programs/{program}', [ProgramController::class, 'update'])->name('programs.update');
             Route::delete('programs/{program}', [ProgramController::class, 'destroy'])->name('programs.destroy');
+
+            // Companies
+            Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
+            Route::get('companies/create', [CompanyController::class, 'create'])->name('companies.create');
+            Route::post('companies', [CompanyController::class, 'store'])->name('companies.store');
+            Route::get('companies/{company}/edit', [CompanyController::class, 'edit'])->name('companies.edit');
+            Route::put('companies/{company}', [CompanyController::class, 'update'])->name('companies.update');
+            Route::delete('companies/{company}', [CompanyController::class, 'destroy'])->name('companies.destroy');
 
             // Users
             Route::get('users', [UserController::class, 'index'])->name('users.index');

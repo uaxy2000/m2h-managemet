@@ -14,14 +14,14 @@ class UserController extends Controller
     public function index(): View
     {
         $users     = User::with('company')->orderBy('name')->get();
-        $companies = Company::where('type', 'internal')->orderBy('name')->get();
+        $companies = Company::orderBy('type')->orderBy('name')->get();
 
         return view('settings.users.index', compact('users', 'companies'));
     }
 
     public function create(): View
     {
-        $companies = Company::where('type', 'internal')->orderBy('name')->get();
+        $companies = Company::orderBy('type')->orderBy('name')->get();
 
         return view('settings.users.create', compact('companies'));
     }
@@ -44,7 +44,7 @@ class UserController extends Controller
 
     public function edit(User $user): View
     {
-        $companies = Company::where('type', 'internal')->orderBy('name')->get();
+        $companies = Company::orderBy('type')->orderBy('name')->get();
 
         return view('settings.users.edit', compact('user', 'companies'));
     }
