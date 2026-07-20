@@ -16,16 +16,6 @@ use App\Http\Controllers\Settings\TagController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 
-// TEMPORARY — delete after use
-Route::get('/run-migrate', function () {
-    try {
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-        return '<pre>' . \Illuminate\Support\Facades\Artisan::output() . '</pre>';
-    } catch (\Throwable $e) {
-        return '<pre>ERROR: ' . $e->getMessage() . "\n" . $e->getTraceAsString() . '</pre>';
-    }
-});
-
 // Meta webhook (no auth — Meta calls this directly)
 Route::get('/webhook/meta', [MetaWebhookController::class, 'verify']);
 Route::post('/webhook/meta', [MetaWebhookController::class, 'receive']);
