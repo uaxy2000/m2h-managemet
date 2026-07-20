@@ -76,7 +76,7 @@ class MetaPageController extends Controller
 
         if ($response->json('success')) {
             return redirect()->route('settings.meta.index')
-                ->with('success', ""{$metaPage->page_name}" subscribed to leadgen webhooks.");
+                ->with('success', "\"{$metaPage->page_name}\" subscribed to leadgen webhooks.");
         }
 
         $error = $response->json('error.message') ?? $response->body();
