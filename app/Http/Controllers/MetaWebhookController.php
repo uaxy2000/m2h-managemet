@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Company;
 use App\Models\Lead;
 use App\Models\LeadStatusHistory;
 use App\Models\MetaFormMapping;
@@ -39,7 +40,13 @@ class MetaWebhookController extends Controller
 
         $payload = $request->json()->all();
 
+        Log::info('Meta webhook: payload received', [
+            'object'  => $payload['object'] ?? null,
+            'entries' => count($payload['entry'] ?? []),
+        ]);
+
         if (($payload['object'] ?? '') !== 'page') {
+            Log::warning('Meta webhook: unexpected object type', ['object' => $payload['object'] ?? null]);
             return response('OK', 200);
         }
 
@@ -48,11 +55,13 @@ class MetaWebhookController extends Controller
             $page   = MetaPage::where('page_id', $pageId)->where('is_active', true)->first();
 
             if (!$page) {
+                Log::warning('Meta webhook: page not found or inactive', ['page_id' => $pageId]);
                 continue;
             }
 
             foreach ($entry['changes'] ?? [] as $change) {
                 if (($change['field'] ?? '') !== 'leadgen') {
+                    Log::info('Meta webhook: skipping non-leadgen change', ['field' => $change['field'] ?? null]);
                     continue;
                 }
 
@@ -74,6 +83,7 @@ class MetaWebhookController extends Controller
 
         // Prevent duplicate imports
         if (Lead::where('meta_lead_id', $leadgenId)->exists()) {
+            Log::info('Meta webhook: duplicate lead skipped', ['leadgen_id' => $leadgenId]);
             return;
         }
 
@@ -108,6 +118,8 @@ class MetaWebhookController extends Controller
         $fullName  = $fields['full_name'] ?? trim(($fields['first_name'] ?? '') . ' ' . ($fields['last_name'] ?? ''));
         $nameParts = explode(' ', $fullName, 2);
 
+        $companyId = Company::where('type', 'internal')->orderBy('created_at')->value('id');
+
         $lead = Lead::create([
             'first_name'       => $nameParts[0] ?? 'Unknown',
             'last_name'        => $nameParts[1] ?? null,
@@ -116,7 +128,7 @@ class MetaWebhookController extends Controller
             'country_of_origin'=> $fields['country'] ?? null,
             'pipeline_id'      => $mapping->pipeline_id,
             'stage_id'         => $mapping->stage_id,
-            'company_id'       => $mapping->pipeline->company_id ?? null,
+            'company_id'       => $companyId,
             'assigned_to'      => $mapping->assigned_to ?? null,
             'source'           => 'meta_ad',
             'meta_lead_id'     => $leadgenId,
