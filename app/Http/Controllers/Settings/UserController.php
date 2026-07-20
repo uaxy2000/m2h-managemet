@@ -39,7 +39,7 @@ class UserController extends Controller
 
         User::create($validated);
 
-        return redirect()->route('settings.users.index')->with('success', 'Kullanıcı oluşturuldu.');
+        return redirect()->route('settings.users.index')->with('success', 'User created.');
     }
 
     public function edit(User $user): View
@@ -67,21 +67,21 @@ class UserController extends Controller
 
         $user->update($validated);
 
-        return redirect()->route('settings.users.index')->with('success', 'Kullanıcı güncellendi.');
+        return redirect()->route('settings.users.index')->with('success', 'User updated.');
     }
 
     public function destroy(User $user): RedirectResponse
     {
-        if ($user->id === auth()->id()) {
-            return back()->with('error', 'Kendi hesabınızı silemezsiniz.');
+        if ($user->id === auth()->user()?->id) {
+            return back()->with('error', 'You cannot delete your own account.');
         }
 
         try {
             $user->delete();
         } catch (\Throwable) {
-            return back()->with('error', 'Bu kullanıcı silinemez — ilişkili kayıtlar var.');
+            return back()->with('error', 'This user cannot be deleted — they have associated records.');
         }
 
-        return redirect()->route('settings.users.index')->with('success', 'Kullanıcı silindi.');
+        return redirect()->route('settings.users.index')->with('success', 'User deleted.');
     }
 }

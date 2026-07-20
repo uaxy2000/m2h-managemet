@@ -1,19 +1,19 @@
 @extends('layouts.app')
 
-@section('title', 'Kullanıcılar')
+@section('title', 'Users')
 @section('heading', 'Settings')
 
 @section('content')
 @include('settings._nav')
 
 <div class="flex items-center justify-between mb-6">
-    <p class="text-sm text-gray-500">Sisteme erişimi olan kullanıcılar.</p>
+    <p class="text-sm text-gray-500">Users with access to the system.</p>
     <a href="{{ route('settings.users.create') }}"
        class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
         </svg>
-        Yeni Kullanıcı
+        New User
     </a>
 </div>
 
@@ -26,9 +26,9 @@
 
 @if($users->isEmpty())
 <div class="bg-white rounded-xl border border-gray-200 px-6 py-16 text-center">
-    <p class="text-gray-400 text-sm">Henüz kullanıcı yok.</p>
+    <p class="text-gray-400 text-sm">No users yet.</p>
     <a href="{{ route('settings.users.create') }}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mt-2 inline-block">
-        İlk kullanıcıyı ekle →
+        Add your first user →
     </a>
 </div>
 @else
@@ -42,7 +42,7 @@
             <div class="flex items-center gap-2">
                 <span class="text-sm font-medium text-gray-800">{{ $user->name }}</span>
                 @if($user->id === auth()->id())
-                <span class="text-xs text-gray-400">(siz)</span>
+                <span class="text-xs text-gray-400">(you)</span>
                 @endif
             </div>
             <p class="text-xs text-gray-400">{{ $user->email }}{{ $user->company ? ' · ' . $user->company->name : '' }}</p>
@@ -53,11 +53,11 @@
         <div class="flex items-center gap-2">
             <a href="{{ route('settings.users.edit', $user) }}"
                class="text-sm text-gray-600 hover:text-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                Düzenle
+                Edit
             </a>
             @if($user->id !== auth()->id())
             <form method="POST" action="{{ route('settings.users.destroy', $user) }}"
-                  onsubmit="return confirm('{{ addslashes($user->name) }} kullanıcısı silinsin mi?')">
+                  onsubmit="return confirm('Delete user \'{{ addslashes($user->name) }}\'?')">
                 @csrf @method('DELETE')
                 <button type="submit" class="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

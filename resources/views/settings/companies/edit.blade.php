@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Şirket Düzenle')
+@section('title', 'Edit Company')
 @section('heading', 'Settings')
 
 @section('content')
@@ -27,47 +27,47 @@
         @csrf @method('PUT')
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Şirket Adı</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
             <input type="text" name="name" value="{{ old('name', $company->name) }}" required
                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Tür</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
             <select name="type" required
                     class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="internal"         {{ old('type', $company->type) === 'internal'         ? 'selected' : '' }}>İç Şirket</option>
-                <option value="service_provider" {{ old('type', $company->type) === 'service_provider' ? 'selected' : '' }}>Servis Sağlayıcı</option>
+                <option value="internal"         {{ old('type', $company->type) === 'internal'         ? 'selected' : '' }}>Internal</option>
+                <option value="service_provider" {{ old('type', $company->type) === 'service_provider' ? 'selected' : '' }}>Service Provider</option>
                 <option value="agent"            {{ old('type', $company->type) === 'agent'            ? 'selected' : '' }}>Agent</option>
             </select>
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Domain <span class="text-gray-400 font-normal">(opsiyonel)</span></label>
-            <input type="text" name="domain" value="{{ old('domain', $company->domain) }}" placeholder="ornek.com"
+            <label class="block text-sm font-medium text-gray-700 mb-1">Domain <span class="text-gray-400 font-normal">(optional)</span></label>
+            <input type="text" name="domain" value="{{ old('domain', $company->domain) }}" placeholder="example.com"
                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
 
         <div class="flex items-center gap-3 pt-2">
             <button type="submit"
                     class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-                Kaydet
+                Save
             </button>
             <a href="{{ route('settings.companies.index') }}"
-               class="text-sm text-gray-500 hover:text-gray-700">İptal</a>
+               class="text-sm text-gray-500 hover:text-gray-700">Cancel</a>
         </div>
     </form>
 
     {{-- Users of this company --}}
     <div>
         <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-semibold text-gray-700">Kullanıcılar ({{ $users->count() }})</h3>
+            <h3 class="text-sm font-semibold text-gray-700">Users ({{ $users->count() }})</h3>
             <a href="{{ route('settings.users.create') }}"
-               class="text-xs text-indigo-600 hover:text-indigo-800">+ Yeni kullanıcı ekle</a>
+               class="text-xs text-indigo-600 hover:text-indigo-800">+ Add user</a>
         </div>
         @if($users->isEmpty())
         <div class="bg-white rounded-xl border border-gray-200 px-5 py-8 text-center">
-            <p class="text-gray-400 text-sm">Bu şirkete bağlı kullanıcı yok.</p>
+            <p class="text-gray-400 text-sm">No users in this company.</p>
         </div>
         @else
         <div class="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
@@ -85,7 +85,7 @@
                 </span>
                 <a href="{{ route('settings.users.edit', $user) }}"
                    class="text-xs text-gray-500 hover:text-gray-700 px-2.5 py-1 rounded border border-gray-200 hover:bg-gray-50">
-                    Düzenle
+                    Edit
                 </a>
             </div>
             @endforeach

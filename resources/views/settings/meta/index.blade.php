@@ -12,7 +12,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/>
     </svg>
     <div>
-        <p class="text-sm font-semibold text-indigo-800 mb-1">Webhook URL — Meta'ya gireceğiniz adres</p>
+        <p class="text-sm font-semibold text-indigo-800 mb-1">Webhook URL — enter this address in Meta</p>
         <code class="text-xs text-indigo-700 bg-indigo-100 px-2 py-1 rounded font-mono select-all">
             {{ rtrim(config('app.url'), '/') }}/webhook/meta
         </code>
@@ -29,7 +29,7 @@
 
 {{-- Add page form --}}
 <div class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-    <h3 class="text-sm font-semibold text-gray-700 mb-4">Facebook Sayfası Bağla</h3>
+    <h3 class="text-sm font-semibold text-gray-700 mb-4">Connect Facebook Page</h3>
     <form method="POST" action="{{ route('settings.meta.pages.store') }}" class="grid grid-cols-3 gap-3 items-end">
         @csrf
         <div>
@@ -39,7 +39,7 @@
             @error('page_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
         </div>
         <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Sayfa Adı</label>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Page Name</label>
             <input type="text" name="page_name" value="{{ old('page_name') }}" required placeholder="M2H Turkey"
                    class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
         </div>
@@ -51,7 +51,7 @@
         <div class="col-span-3 flex justify-end">
             <button type="submit"
                     class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors font-medium">
-                Sayfayı Bağla
+                Connect Page
             </button>
         </div>
     </form>
@@ -71,14 +71,14 @@
         <span class="text-xs text-gray-400">{{ $page->form_mappings_count }} mapping</span>
         <button @click="mapOpen = !mapOpen"
                 class="text-xs text-indigo-600 hover:text-indigo-800 px-3 py-1.5 rounded-lg border border-indigo-200 hover:bg-indigo-50 transition-colors">
-            + Mapping Ekle
+            + Add Mapping
         </button>
         <button @click="editOpen = !editOpen"
                 class="text-xs text-gray-600 hover:text-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-            Düzenle
+            Edit
         </button>
         <form method="POST" action="{{ route('settings.meta.pages.destroy', $page) }}"
-              onsubmit="return confirm('Bu sayfayı kaldır?')">
+              onsubmit="return confirm('Remove this page?')">
             @csrf @method('DELETE')
             <button type="submit" class="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -93,14 +93,14 @@
         <form method="POST" action="{{ route('settings.meta.pages.update', $page) }}" class="grid grid-cols-2 gap-3 items-end">
             @csrf @method('PUT')
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Sayfa Adı</label>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Page Name</label>
                 <input type="text" name="page_name" value="{{ $page->page_name }}" required
                        class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
             </div>
             <div class="flex items-center gap-2 pt-5">
                 <input type="checkbox" name="is_active" id="active_{{ $page->id }}" value="1" {{ $page->is_active ? 'checked' : '' }}
                        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                <label for="active_{{ $page->id }}" class="text-sm text-gray-700">Aktif</label>
+                <label for="active_{{ $page->id }}" class="text-sm text-gray-700">Active</label>
             </div>
             <div class="col-span-2">
                 <label class="block text-xs font-medium text-gray-600 mb-1">Access Token</label>
@@ -109,27 +109,27 @@
             </div>
             <div class="col-span-2 flex justify-end gap-2">
                 <button type="button" @click="editOpen = false"
-                        class="text-sm text-gray-600 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50">İptal</button>
+                        class="text-sm text-gray-600 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50">Cancel</button>
                 <button type="submit"
-                        class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg transition-colors font-medium">Kaydet</button>
+                        class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg transition-colors font-medium">Save</button>
             </div>
         </form>
     </div>
 
     {{-- Add mapping form --}}
     <div x-show="mapOpen" x-cloak class="px-5 py-4 bg-blue-50 border-b border-blue-100">
-        <p class="text-xs font-semibold text-blue-800 mb-3">Yeni Form Mapping</p>
+        <p class="text-xs font-semibold text-blue-800 mb-3">New Form Mapping</p>
         <form method="POST" action="{{ route('settings.meta.mappings.store', $page) }}" class="space-y-3">
             @csrf
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Form ID <span class="text-gray-400">(boş = default)</span></label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Form ID <span class="text-gray-400">(blank = default)</span></label>
                     <input type="text" name="form_id" placeholder="123456789..."
                            class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500 font-mono">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Form Adı <span class="text-gray-400">(hatırlatıcı)</span></label>
-                    <input type="text" name="form_name" placeholder="Yaz 2025 Kampanyası"
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Form Name <span class="text-gray-400">(label)</span></label>
+                    <input type="text" name="form_name" placeholder="Summer 2025 Campaign"
                            class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
             </div>
@@ -147,7 +147,7 @@
                     <label class="block text-xs font-medium text-gray-600 mb-1">Pipeline <span class="text-red-500">*</span></label>
                     <select name="pipeline_id" required x-model="pipelineId" @change="updateStages()"
                             class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="">Seç…</option>
+                        <option value="">Select…</option>
                         @foreach($pipelines as $pipeline)
                         <option value="{{ $pipeline->id }}">{{ $pipeline->name }}</option>
                         @endforeach
@@ -157,7 +157,7 @@
                     <label class="block text-xs font-medium text-gray-600 mb-1">Stage <span class="text-red-500">*</span></label>
                     <select name="stage_id" required
                             class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="">Önce pipeline seç</option>
+                        <option value="">Select a pipeline first</option>
                         <template x-for="stage in stages" :key="stage.id">
                             <option :value="stage.id" x-text="stage.name"></option>
                         </template>
@@ -166,7 +166,7 @@
             </div>
             @if($tags->isNotEmpty())
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-2">Otomatik Eklenecek Tag'ler</label>
+                <label class="block text-xs font-medium text-gray-600 mb-2">Auto-assign Tags</label>
                 <div class="flex flex-wrap gap-2">
                     @foreach($tags as $tag)
                     <label class="flex items-center gap-1.5 cursor-pointer">
@@ -181,10 +181,10 @@
             @endif
             @if($users->isNotEmpty())
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Atanan Kullanıcı <span class="text-gray-400">(opsiyonel)</span></label>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Assign to User <span class="text-gray-400">(optional)</span></label>
                 <select name="assigned_to"
                         class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="">— Atanmadan bırak —</option>
+                    <option value="">— Don't assign —</option>
                     @foreach($users as $u)
                     <option value="{{ $u->id }}">{{ $u->name }} ({{ $u->roleLabel() }})</option>
                     @endforeach
@@ -195,13 +195,13 @@
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" name="is_default" value="1"
                            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                    <span class="text-xs text-gray-700">Bu sayfa için varsayılan mapping (form ID eşleşmezse kullanılır)</span>
+                    <span class="text-xs text-gray-700">Default mapping for this page (used when no form ID matches)</span>
                 </label>
                 <div class="flex gap-2">
                     <button type="button" @click="mapOpen = false"
-                            class="text-sm text-gray-600 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50">İptal</button>
+                            class="text-sm text-gray-600 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50">Cancel</button>
                     <button type="submit"
-                            class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg transition-colors font-medium">Kaydet</button>
+                            class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg transition-colors font-medium">Save</button>
                 </div>
             </div>
         </form>
@@ -215,7 +215,7 @@
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
                     @if($mapping->is_default)
-                    <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Varsayılan</span>
+                    <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Default</span>
                     @endif
                     @if($mapping->form_name)
                     <span class="text-xs font-medium text-gray-700">{{ $mapping->form_name }}</span>
@@ -247,7 +247,7 @@
                 </p>
             </div>
             <form method="POST" action="{{ route('settings.meta.mappings.destroy', [$page, $mapping]) }}"
-                  onsubmit="return confirm('Bu mapping\'i sil?')">
+                  onsubmit="return confirm('Delete this mapping?')">
                 @csrf @method('DELETE')
                 <button type="submit" class="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors">
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -259,14 +259,14 @@
         @endforeach
     </div>
     @else
-    <p class="text-xs text-gray-400 px-5 py-3">Henüz mapping yok.</p>
+    <p class="text-xs text-gray-400 px-5 py-3">No mappings yet.</p>
     @endif
 
 </div>
 @empty
 <div class="bg-white rounded-xl border border-gray-200 px-6 py-12 text-center">
-    <p class="text-gray-400 text-sm">Henüz bağlı Facebook sayfası yok.</p>
-    <p class="text-gray-400 text-xs mt-1">Yukarıdaki formu kullanarak bir sayfa ekleyin.</p>
+    <p class="text-gray-400 text-sm">No Facebook pages connected yet.</p>
+    <p class="text-gray-400 text-xs mt-1">Use the form above to add a page.</p>
 </div>
 @endforelse
 

@@ -1,19 +1,19 @@
 @extends('layouts.app')
 
-@section('title', 'Şirketler')
+@section('title', 'Companies')
 @section('heading', 'Settings')
 
 @section('content')
 @include('settings._nav')
 
 <div class="flex items-center justify-between mb-6">
-    <p class="text-sm text-gray-500">İç şirketler, servis sağlayıcılar ve agentlar.</p>
+    <p class="text-sm text-gray-500">Internal companies, service providers and agents.</p>
     <a href="{{ route('settings.companies.create') }}"
        class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
         </svg>
-        Yeni Şirket
+        New Company
     </a>
 </div>
 
@@ -25,7 +25,7 @@
 @endif
 
 @php
-$typeLabel = ['internal' => 'İç Şirket', 'service_provider' => 'Servis Sağlayıcı', 'agent' => 'Agent'];
+$typeLabel = ['internal' => 'Internal', 'service_provider' => 'Service Provider', 'agent' => 'Agent'];
 $typeBadge = [
     'internal'         => 'bg-indigo-100 text-indigo-700',
     'service_provider' => 'bg-orange-100 text-orange-700',
@@ -35,9 +35,9 @@ $typeBadge = [
 
 @if($companies->isEmpty())
 <div class="bg-white rounded-xl border border-gray-200 px-6 py-16 text-center">
-    <p class="text-gray-400 text-sm">Henüz şirket yok.</p>
+    <p class="text-gray-400 text-sm">No companies yet.</p>
     <a href="{{ route('settings.companies.create') }}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mt-2 inline-block">
-        İlk şirketi ekle →
+        Add your first company →
     </a>
 </div>
 @else
@@ -53,14 +53,14 @@ $typeBadge = [
         <span class="text-xs font-medium px-2.5 py-1 rounded-full {{ $typeBadge[$company->type] ?? 'bg-gray-100 text-gray-600' }}">
             {{ $typeLabel[$company->type] ?? $company->type }}
         </span>
-        <span class="text-xs text-gray-400">{{ $company->users_count }} kullanıcı</span>
+        <span class="text-xs text-gray-400">{{ $company->users_count }} {{ Str::plural('user', $company->users_count) }}</span>
         <div class="flex items-center gap-2">
             <a href="{{ route('settings.companies.edit', $company) }}"
                class="text-sm text-gray-600 hover:text-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                Düzenle
+                Edit
             </a>
             <form method="POST" action="{{ route('settings.companies.destroy', $company) }}"
-                  onsubmit="return confirm('{{ addslashes($company->name) }} silinsin mi?')">
+                  onsubmit="return confirm('Delete \'{{ addslashes($company->name) }}\'?')">
                 @csrf @method('DELETE')
                 <button type="submit" class="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Yeni Kullanıcı')
+@section('title', 'New User')
 @section('heading', 'Settings')
 
 @section('content')
 @include('settings._nav')
 
 <div class="max-w-lg">
-    <h2 class="text-base font-semibold text-gray-800 mb-5">Yeni Kullanıcı</h2>
+    <h2 class="text-base font-semibold text-gray-800 mb-5">New User</h2>
 
     @if($errors->any())
     <div class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-5 text-sm">
@@ -21,22 +21,22 @@
         @csrf
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Ad Soyad</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
             <input type="text" name="name" value="{{ old('name') }}" required
                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">E-posta</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input type="email" name="email" value="{{ old('email') }}" required
                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Rol</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
             <select name="role" required
                     class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="">Seçin...</option>
+                <option value="">Select...</option>
                 <option value="super_admin" {{ old('role') === 'super_admin' ? 'selected' : '' }}>Super Admin</option>
                 <option value="admin"       {{ old('role') === 'admin'       ? 'selected' : '' }}>Admin</option>
                 <option value="member"      {{ old('role') === 'member'      ? 'selected' : '' }}>User</option>
@@ -45,10 +45,10 @@
 
         @if($companies->isNotEmpty())
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Şirket</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Company</label>
             <select name="company_id"
                     class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="">— Seçin —</option>
+                <option value="">— None —</option>
                 @foreach($companies as $company)
                 <option value="{{ $company->id }}" {{ old('company_id') === $company->id ? 'selected' : '' }}>
                     {{ $company->name }}
@@ -59,13 +59,13 @@
         @endif
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Şifre</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
             <input type="password" name="password" required minlength="8"
                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Şifre (tekrar)</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
             <input type="password" name="password_confirmation" required
                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
@@ -73,10 +73,10 @@
         <div class="flex items-center gap-3 pt-2">
             <button type="submit"
                     class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-                Oluştur
+                Create
             </button>
             <a href="{{ route('settings.users.index') }}"
-               class="text-sm text-gray-500 hover:text-gray-700">İptal</a>
+               class="text-sm text-gray-500 hover:text-gray-700">Cancel</a>
         </div>
     </form>
 </div>

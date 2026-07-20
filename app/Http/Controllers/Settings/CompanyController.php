@@ -32,7 +32,7 @@ class CompanyController extends Controller
 
         Company::create($validated);
 
-        return redirect()->route('settings.companies.index')->with('success', 'Şirket oluşturuldu.');
+        return redirect()->route('settings.companies.index')->with('success', 'Company created.');
     }
 
     public function edit(Company $company): View
@@ -52,21 +52,21 @@ class CompanyController extends Controller
 
         $company->update($validated);
 
-        return redirect()->route('settings.companies.index')->with('success', 'Şirket güncellendi.');
+        return redirect()->route('settings.companies.index')->with('success', 'Company updated.');
     }
 
     public function destroy(Company $company): RedirectResponse
     {
         if ($company->users()->exists()) {
-            return back()->with('error', 'Bu şirkete bağlı kullanıcılar var, önce onları kaldırın.');
+            return back()->with('error', 'Remove all users from this company before deleting it.');
         }
 
         try {
             $company->delete();
         } catch (\Throwable) {
-            return back()->with('error', 'Şirket silinemedi — ilişkili kayıtlar var.');
+            return back()->with('error', 'Company could not be deleted — it has associated records.');
         }
 
-        return redirect()->route('settings.companies.index')->with('success', 'Şirket silindi.');
+        return redirect()->route('settings.companies.index')->with('success', 'Company deleted.');
     }
 }
