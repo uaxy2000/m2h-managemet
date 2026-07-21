@@ -18,6 +18,7 @@ class Lead extends Model
         'potential_value', 'our_commission', 'expected_close_date',
         'service_provider_id', 'agent_id', 'is_duplicate_flag',
         'source', 'meta_lead_id', 'meta_form_id', 'meta_ad_name', 'meta_campaign_name', 'meta_platform',
+        'meta_form_data',
     ];
 
     protected $casts = [
@@ -25,6 +26,7 @@ class Lead extends Model
         'our_commission'      => 'decimal:2',
         'expected_close_date' => 'date',
         'is_duplicate_flag'   => 'boolean',
+        'meta_form_data'      => 'array',
     ];
 
     public function pipeline(): BelongsTo

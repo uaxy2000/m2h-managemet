@@ -140,6 +140,21 @@
             @endif
         </div>
 
+        {{-- Meta Form Responses --}}
+        @if(!empty($lead->meta_form_data))
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Form Responses</h3>
+            <dl class="space-y-3">
+                @foreach($lead->meta_form_data as $key => $value)
+                <div>
+                    <dt class="text-xs text-gray-400">{{ ucwords(str_replace(['_', '-'], ' ', $key)) }}</dt>
+                    <dd class="text-sm text-gray-800 mt-0.5">{{ ucwords(str_replace('_', ' ', $value ?? '—')) }}</dd>
+                </div>
+                @endforeach
+            </dl>
+        </div>
+        @endif
+
         {{-- Deal --}}
         @if($lead->potential_value || $lead->our_commission || $lead->expected_close_date)
         <div class="bg-white rounded-xl border border-gray-200 p-5">

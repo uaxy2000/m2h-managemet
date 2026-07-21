@@ -99,7 +99,6 @@ class MetaWebhookController extends Controller
         }
 
         $data   = $response->json();
-        Log::info('Meta webhook: field_data raw', ['leadgen_id' => $leadgenId, 'field_data' => $data['field_data'] ?? []]);
         $fields = $this->parseFields($data['field_data'] ?? []);
 
         // Find mapping: form-specific first, then default
@@ -116,31 +115,47 @@ class MetaWebhookController extends Controller
         }
 
         // Parse name — support both English and Turkish field names
+        $standardKeys = [
+            'full_name', 'adı_soyadı', 'adi_soyadi',
+            'first_name', 'adı', 'adi',
+            'last_name', 'soyadı', 'soyadi',
+            'email', 'e-posta', 'eposta',
+            'phone_number', 'phone', 'telefon_numarası', 'telefon_numarasi', 'telefon',
+            'country', 'ülke', 'ulke',
+        ];
+
         $fullName = $fields['full_name']
             ?? $fields['adı_soyadı'] ?? $fields['adi_soyadi']
             ?? trim(($fields['first_name'] ?? $fields['adı'] ?? $fields['adi'] ?? '')
                  . ' ' . ($fields['last_name'] ?? $fields['soyadı'] ?? $fields['soyadi'] ?? ''));
         $nameParts = explode(' ', trim($fullName), 2);
 
+        $customFields = array_filter(
+            $fields,
+            fn ($key) => !in_array($key, $standardKeys, true),
+            ARRAY_FILTER_USE_KEY
+        );
+
         $companyId = Company::where('type', 'internal')->orderBy('created_at')->value('id');
 
         $lead = Lead::create([
-            'first_name'       => $nameParts[0] ?: 'Unknown',
-            'last_name'        => $nameParts[1] ?? null,
-            'email'            => $fields['email'] ?? $fields['e-posta'] ?? $fields['eposta'] ?? null,
-            'phone'            => $fields['phone_number'] ?? $fields['phone']
-                               ?? $fields['telefon_numarası'] ?? $fields['telefon_numarasi'] ?? $fields['telefon'] ?? null,
-            'country_of_origin'=> $fields['country'] ?? $fields['ülke'] ?? $fields['ulke'] ?? null,
-            'pipeline_id'      => $mapping->pipeline_id,
-            'stage_id'         => $mapping->stage_id,
-            'company_id'       => $companyId,
-            'assigned_to'      => $mapping->assigned_to ?? null,
-            'source'           => 'meta_ad',
-            'meta_lead_id'     => $leadgenId,
-            'meta_form_id'     => $formId,
-            'meta_ad_name'     => $data['ad_name'] ?? null,
-            'meta_campaign_name' => $data['campaign_name'] ?? null,
-            'meta_platform'    => $data['platform'] ?? null,
+            'first_name'        => $nameParts[0] ?: 'Unknown',
+            'last_name'         => $nameParts[1] ?? null,
+            'email'             => $fields['email'] ?? $fields['e-posta'] ?? $fields['eposta'] ?? null,
+            'phone'             => $fields['phone_number'] ?? $fields['phone']
+                                ?? $fields['telefon_numarası'] ?? $fields['telefon_numarasi'] ?? $fields['telefon'] ?? null,
+            'country_of_origin' => $fields['country'] ?? $fields['ülke'] ?? $fields['ulke'] ?? null,
+            'pipeline_id'       => $mapping->pipeline_id,
+            'stage_id'          => $mapping->stage_id,
+            'company_id'        => $companyId,
+            'assigned_to'       => $mapping->assigned_to ?? null,
+            'source'            => 'meta_ad',
+            'meta_lead_id'      => $leadgenId,
+            'meta_form_id'      => $formId,
+            'meta_ad_name'      => $data['ad_name'] ?? null,
+            'meta_campaign_name'=> $data['campaign_name'] ?? null,
+            'meta_platform'     => $data['platform'] ?? null,
+            'meta_form_data'    => !empty($customFields) ? $customFields : null,
         ]);
 
         LeadStatusHistory::create([
