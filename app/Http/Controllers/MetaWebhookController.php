@@ -115,18 +115,22 @@ class MetaWebhookController extends Controller
             return;
         }
 
-        // Parse name
-        $fullName  = $fields['full_name'] ?? trim(($fields['first_name'] ?? '') . ' ' . ($fields['last_name'] ?? ''));
-        $nameParts = explode(' ', $fullName, 2);
+        // Parse name — support both English and Turkish field names
+        $fullName = $fields['full_name']
+            ?? $fields['adı_soyadı'] ?? $fields['adi_soyadi']
+            ?? trim(($fields['first_name'] ?? $fields['adı'] ?? $fields['adi'] ?? '')
+                 . ' ' . ($fields['last_name'] ?? $fields['soyadı'] ?? $fields['soyadi'] ?? ''));
+        $nameParts = explode(' ', trim($fullName), 2);
 
         $companyId = Company::where('type', 'internal')->orderBy('created_at')->value('id');
 
         $lead = Lead::create([
-            'first_name'       => $nameParts[0] ?? 'Unknown',
+            'first_name'       => $nameParts[0] ?: 'Unknown',
             'last_name'        => $nameParts[1] ?? null,
-            'email'            => $fields['email'] ?? null,
-            'phone'            => $fields['phone_number'] ?? $fields['phone'] ?? null,
-            'country_of_origin'=> $fields['country'] ?? null,
+            'email'            => $fields['email'] ?? $fields['e-posta'] ?? $fields['eposta'] ?? null,
+            'phone'            => $fields['phone_number'] ?? $fields['phone']
+                               ?? $fields['telefon_numarası'] ?? $fields['telefon_numarasi'] ?? $fields['telefon'] ?? null,
+            'country_of_origin'=> $fields['country'] ?? $fields['ülke'] ?? $fields['ulke'] ?? null,
             'pipeline_id'      => $mapping->pipeline_id,
             'stage_id'         => $mapping->stage_id,
             'company_id'       => $companyId,
