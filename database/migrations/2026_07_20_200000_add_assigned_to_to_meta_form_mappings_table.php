@@ -9,8 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('meta_form_mappings', function (Blueprint $table) {
-            $table->foreignUuid('assigned_to')->nullable()->after('tag_ids')
-                ->constrained('users')->nullOnDelete();
+            if (!Schema::hasColumn('meta_form_mappings', 'assigned_to')) {
+                $table->foreignUuid('assigned_to')->nullable()->after('tag_ids')
+                    ->constrained('users')->nullOnDelete();
+            }
         });
     }
 
