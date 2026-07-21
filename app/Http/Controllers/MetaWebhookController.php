@@ -99,6 +99,7 @@ class MetaWebhookController extends Controller
         }
 
         $data   = $response->json();
+        Log::info('Meta webhook: field_data raw', ['leadgen_id' => $leadgenId, 'field_data' => $data['field_data'] ?? []]);
         $fields = $this->parseFields($data['field_data'] ?? []);
 
         // Find mapping: form-specific first, then default
