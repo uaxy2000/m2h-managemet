@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('leads', function (Blueprint $table) {
             if (!Schema::hasColumn('leads', 'meta_form_data')) {
-                $table->json('meta_form_data')->nullable()->after('meta_platform');
+                $table->longText('meta_form_data')->nullable()->after('meta_platform');
             }
         });
     }
