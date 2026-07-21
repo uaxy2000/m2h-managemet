@@ -192,29 +192,72 @@
                 @endif
             </p>
             @else
-            <div class="flex flex-wrap gap-2">
-                @foreach($allTags as $tag)
-                @php $isActive = $lead->tags->contains('id', $tag->id); @endphp
-                <button type="button"
-                        x-data="{
-                            active: {{ $isActive ? 'true' : 'false' }},
-                            async toggle() {
-                                const r = await fetch('{{ route('leads.tags.toggle', [$lead, $tag]) }}', {
-                                    method: 'POST',
-                                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content }
-                                });
-                                const d = await r.json();
-                                this.active = d.active;
-                            }
-                        }"
-                        @click="toggle()"
-                        class="px-3 py-1 rounded-full text-xs font-medium border transition-all"
-                        :class="active ? 'text-white border-transparent' : 'text-gray-500 border-gray-200 bg-white hover:border-gray-400'"
-                        :style="active ? 'background-color: {{ $tag->color }}; border-color: {{ $tag->color }}' : ''">
-                    {{ $tag->name }}
-                </button>
-                @endforeach
+            @php
+                $tagsByGroup = $allTags->groupBy(fn ($t) => $t->group?->name ?? '');
+                $grouped     = $tagsByGroup->except('')->sortKeys();
+                $ungrouped   = $tagsByGroup->get('', collect());
+            @endphp
+
+            @foreach($grouped as $groupName => $tags)
+            <div class="mb-4 last:mb-0">
+                <p class="text-xs text-gray-400 font-medium mb-2">{{ $groupName }}</p>
+                <div class="flex flex-wrap gap-2">
+                    @foreach($tags as $tag)
+                    @php $isActive = $lead->tags->contains('id', $tag->id); @endphp
+                    <button type="button"
+                            x-data="{
+                                active: {{ $isActive ? 'true' : 'false' }},
+                                async toggle() {
+                                    const r = await fetch('{{ route('leads.tags.toggle', [$lead, $tag]) }}', {
+                                        method: 'POST',
+                                        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content }
+                                    });
+                                    const d = await r.json();
+                                    this.active = d.active;
+                                }
+                            }"
+                            @click="toggle()"
+                            class="px-3 py-1 rounded-full text-xs font-medium border transition-all"
+                            :class="active ? 'text-white border-transparent' : 'text-gray-500 border-gray-200 bg-white hover:border-gray-400'"
+                            :style="active ? 'background-color: {{ $tag->color }}; border-color: {{ $tag->color }}' : ''">
+                        {{ $tag->name }}
+                    </button>
+                    @endforeach
+                </div>
             </div>
+            @endforeach
+
+            @if($ungrouped->isNotEmpty())
+            <div class="{{ $grouped->isNotEmpty() ? 'mt-4 pt-4 border-t border-gray-100' : '' }}">
+                @if($grouped->isNotEmpty())
+                <p class="text-xs text-gray-400 font-medium mb-2">Other</p>
+                @endif
+                <div class="flex flex-wrap gap-2">
+                    @foreach($ungrouped as $tag)
+                    @php $isActive = $lead->tags->contains('id', $tag->id); @endphp
+                    <button type="button"
+                            x-data="{
+                                active: {{ $isActive ? 'true' : 'false' }},
+                                async toggle() {
+                                    const r = await fetch('{{ route('leads.tags.toggle', [$lead, $tag]) }}', {
+                                        method: 'POST',
+                                        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content }
+                                    });
+                                    const d = await r.json();
+                                    this.active = d.active;
+                                }
+                            }"
+                            @click="toggle()"
+                            class="px-3 py-1 rounded-full text-xs font-medium border transition-all"
+                            :class="active ? 'text-white border-transparent' : 'text-gray-500 border-gray-200 bg-white hover:border-gray-400'"
+                            :style="active ? 'background-color: {{ $tag->color }}; border-color: {{ $tag->color }}' : ''">
+                        {{ $tag->name }}
+                    </button>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
             @endif
         </div>
 

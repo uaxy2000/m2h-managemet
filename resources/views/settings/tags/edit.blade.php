@@ -31,6 +31,21 @@
             @error('name')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
         </div>
 
+        @if($groups->isNotEmpty())
+        <div class="mb-5">
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">Group</label>
+            <select name="tag_group_id"
+                    class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="">— Ungrouped —</option>
+                @foreach($groups as $group)
+                <option value="{{ $group->id }}" {{ old('tag_group_id', $tag->tag_group_id) === $group->id ? 'selected' : '' }}>
+                    {{ $group->name }}
+                </option>
+                @endforeach
+            </select>
+        </div>
+        @endif
+
         <div class="mb-6">
             <label class="block text-sm font-medium text-gray-700 mb-2">Color</label>
             <input type="hidden" name="color" :value="color">

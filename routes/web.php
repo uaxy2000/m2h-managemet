@@ -14,6 +14,7 @@ use App\Http\Controllers\Settings\ProgramController;
 use App\Http\Controllers\Settings\StageController;
 use App\Http\Controllers\Settings\SubStageController;
 use App\Http\Controllers\Settings\TagController;
+use App\Http\Controllers\Settings\TagGroupController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 
@@ -87,6 +88,10 @@ Route::middleware('auth')->group(function () {
             Route::get('tags/{tag}/edit', [TagController::class, 'edit'])->name('tags.edit');
             Route::put('tags/{tag}', [TagController::class, 'update'])->name('tags.update');
             Route::delete('tags/{tag}', [TagController::class, 'destroy'])->name('tags.destroy');
+
+            // Tag Groups
+            Route::post('tag-groups', [TagGroupController::class, 'store'])->name('tag-groups.store');
+            Route::delete('tag-groups/{tagGroup}', [TagGroupController::class, 'destroy'])->name('tag-groups.destroy');
 
             // Programs
             Route::get('programs', [ProgramController::class, 'index'])->name('programs.index');

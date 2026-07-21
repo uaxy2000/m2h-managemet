@@ -140,7 +140,7 @@ class LeadController extends Controller
         $serviceProviders = Company::where('type', 'service_provider')->orderBy('name')->get();
         $agents           = Company::where('type', 'agent')->orderBy('name')->get();
 
-        $allTags = Tag::orderBy('name')->get();
+        $allTags = Tag::with('group')->orderBy('name')->get();
 
         $attachedProgramIds = $lead->programs->pluck('id');
         $availablePrograms  = Program::where('is_active', true)
