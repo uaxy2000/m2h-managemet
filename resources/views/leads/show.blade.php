@@ -337,17 +337,61 @@
                               placeholder="Write a note…"
                               class="block w-full rounded-lg border-gray-300 text-sm shadow-sm
                                      focus:ring-indigo-500 focus:border-indigo-500 resize-none">{{ old('content') }}</textarea>
-                    <div class="flex items-center justify-between mt-2">
-                        <select name="visibility"
-                                class="text-xs rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-1.5">
-                            <option value="internal">Internal only</option>
-                            <option value="shared">Shared with client</option>
-                        </select>
-                        <button type="submit"
-                                class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5
-                                       rounded-lg transition-colors font-medium">
-                            Add Note
-                        </button>
+                    <div class="mt-2"
+                         x-data="{
+                            sel: ['internal'],
+                            toggle(v) {
+                                this.sel = this.sel.filter(x => x !== 'internal');
+                                this.sel.includes(v)
+                                    ? (this.sel = this.sel.filter(x => x !== v))
+                                    : this.sel.push(v);
+                                if (this.sel.length === 0) this.sel = ['internal'];
+                            },
+                            has(v) { return this.sel.includes(v); },
+                            get val() { return this.sel.join(','); },
+                            get label() {
+                                if (this.has('internal')) return 'Internal only';
+                                const map = { service_provider: 'Service Provider', agent: 'Agent', client: 'Client' };
+                                return 'Shared with: ' + this.sel.map(v => map[v]).join(', ');
+                            }
+                         }">
+                        <input type="hidden" name="visibility" :value="val">
+
+                        {{-- Visibility label --}}
+                        <div class="flex items-center gap-1.5 mb-2">
+                            <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                            </svg>
+                            <span class="text-xs" :class="has('internal') ? 'text-gray-400' : 'text-emerald-600 font-medium'" x-text="label"></span>
+                        </div>
+
+                        {{-- Chips + submit --}}
+                        <div class="flex items-center justify-between gap-3 flex-wrap">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                @foreach([
+                                    ['key' => 'service_provider', 'label' => 'Service Provider'],
+                                    ['key' => 'agent',            'label' => 'Agent'],
+                                    ['key' => 'client',          'label' => 'Client'],
+                                ] as $opt)
+                                <button type="button" @click="toggle('{{ $opt['key'] }}')"
+                                        :class="has('{{ $opt['key'] }}')
+                                            ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-400'
+                                            : 'bg-gray-100 text-gray-400 hover:bg-gray-200'"
+                                        class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition-colors font-medium">
+                                    <svg x-show="has('{{ $opt['key'] }}')" class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd"/>
+                                    </svg>
+                                    {{ $opt['label'] }}
+                                </button>
+                                @endforeach
+                            </div>
+                            <button type="submit"
+                                    class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5
+                                           rounded-lg transition-colors font-medium">
+                                Add Note
+                            </button>
+                        </div>
                     </div>
                 </form>
 
@@ -362,11 +406,7 @@
                             </div>
                             <span class="text-xs font-medium text-gray-700">{{ $note->createdBy->name }}</span>
                             <span class="text-xs text-gray-400">{{ $note->created_at->diffForHumans() }}</span>
-                            @if($note->visibility === 'internal')
-                            <span class="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">Internal</span>
-                            @else
-                            <span class="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full">Shared</span>
-                            @endif
+                            @php $visParts = explode(',', $note->visibility ?? 'internal'); @endphp
                         </div>
                         @php
                             $canDelete = auth()->user()->isAdmin()
@@ -392,6 +432,28 @@
                         @endif
                     </div>
                     <p class="text-sm text-gray-700 mt-2.5 whitespace-pre-wrap leading-relaxed">{{ $note->content }}</p>
+                    {{-- Visibility indicator --}}
+                    <div class="flex items-center gap-1.5 mt-2">
+                        <svg class="w-3 h-3 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                        </svg>
+                        @if(in_array('internal', $visParts))
+                            <span class="text-xs text-gray-300">Internal only</span>
+                        @else
+                            <span class="text-xs text-emerald-600">
+                                Shared with:
+                                @php
+                                    $visLabels = array_filter([
+                                        in_array('service_provider', $visParts) ? 'Service Provider' : null,
+                                        in_array('agent', $visParts)            ? 'Agent'            : null,
+                                        in_array('client', $visParts)           ? 'Client'           : null,
+                                    ]);
+                                @endphp
+                                {{ implode(', ', $visLabels) }}
+                            </span>
+                        @endif
+                    </div>
                 </div>
                 @empty
                 <p class="text-sm text-gray-400 text-center py-8">No notes yet. Add one above.</p>

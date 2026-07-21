@@ -9,8 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('leads', function (Blueprint $table) {
-            $table->foreignUuid('agent_id')->nullable()->after('service_provider_id')
-                ->constrained('companies')->nullOnDelete();
+            if (!Schema::hasColumn('leads', 'agent_id')) {
+                $table->foreignUuid('agent_id')->nullable()->after('service_provider_id')
+                    ->constrained('companies')->nullOnDelete();
+            }
         });
     }
 

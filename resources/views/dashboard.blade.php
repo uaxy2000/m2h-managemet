@@ -54,48 +54,102 @@
 
 </div>
 
-{{-- Phase 1 progress --}}
+{{-- Build Progress --}}
 @php
 $done = 'w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0';
 $todo = 'w-5 h-5 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center flex-shrink-0';
 $checkIcon = '<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd"/></svg>';
 $clockIcon = '<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>';
-$items = [
-    ['label' => 'Database migrations',                   'complete' => true],
-    ['label' => 'Authentication & user roles',            'complete' => true],
-    ['label' => 'Pipeline, stage & sub-stage configuration', 'complete' => true],
-    ['label' => 'Lead CRUD + kanban board',               'complete' => true],
-    ['label' => 'Notes & tasks on leads',                 'complete' => true],
-    ['label' => 'Programs (settings + lead attachment)',  'complete' => true],
-    ['label' => 'Tags (lead categorization + filter)',    'complete' => true],
-    ['label' => 'WhatsApp integration',                   'complete' => false],
-    ['label' => 'Google Sheets sync',                     'complete' => false],
-    ['label' => 'Notifications (in-app + email)',         'complete' => false],
+$phases = [
+    [
+        'title' => 'Core CRM',
+        'items' => [
+            ['label' => 'Database schema & migrations',                          'complete' => true],
+            ['label' => 'Authentication (login / logout)',                        'complete' => true],
+            ['label' => 'User roles — super_admin, admin, user',                 'complete' => true],
+            ['label' => 'Company management (internal / service_provider / agent types)', 'complete' => true],
+            ['label' => 'User management & company assignment',                  'complete' => true],
+            ['label' => 'Pipeline configuration',                                'complete' => true],
+            ['label' => 'Stage & sub-stage configuration',                       'complete' => true],
+            ['label' => 'Lead CRUD (create, view, edit, delete)',                'complete' => true],
+            ['label' => 'Kanban board (drag & drop between stages)',             'complete' => true],
+            ['label' => 'Lead stage history tracking',                           'complete' => true],
+            ['label' => 'Duplicate lead detection (email + phone)',              'complete' => true],
+            ['label' => 'Notes on leads',                                        'complete' => true],
+            ['label' => 'Tasks on leads (with completion toggle)',               'complete' => true],
+            ['label' => 'Programs (settings + lead attachment + primary flag)',  'complete' => true],
+            ['label' => 'Tags (settings + lead categorization + kanban filter)', 'complete' => true],
+            ['label' => 'Lead assignment to internal users',                     'complete' => true],
+            ['label' => 'Service Provider & Agent linking per lead',             'complete' => true],
+            ['label' => 'Internal-only (private) notes',                        'complete' => false],
+        ],
+    ],
+    [
+        'title' => 'Integrations',
+        'items' => [
+            ['label' => 'Meta Lead Ads — Facebook page connection & token management', 'complete' => true],
+            ['label' => 'Meta Lead Ads — Form mapping (pipeline, stage, tags, assignee)', 'complete' => true],
+            ['label' => 'Meta Lead Ads — Webhook receiver (HMAC signature validation)', 'complete' => true],
+            ['label' => 'Meta Lead Ads — Auto lead import on form submission',   'complete' => true],
+            ['label' => 'Meta Lead Ads — Page webhook subscription management',  'complete' => true],
+            ['label' => 'Google Form → CRM (auto lead import)',                  'complete' => false],
+            ['label' => 'WhatsApp — message history per lead',                   'complete' => false],
+            ['label' => 'Google Sheets sync',                                    'complete' => false],
+            ['label' => 'Email integration (send & receive per lead)',           'complete' => false],
+        ],
+    ],
+    [
+        'title' => 'Access Control',
+        'items' => [
+            ['label' => 'Service provider login (read-only view of assigned leads)', 'complete' => false],
+            ['label' => 'Agent login (read-only view of assigned leads)',         'complete' => false],
+            ['label' => 'Role-based field visibility',                           'complete' => false],
+        ],
+    ],
+    [
+        'title' => 'Productivity & Reporting',
+        'items' => [
+            ['label' => 'In-app notifications',                                  'complete' => false],
+            ['label' => 'Email notifications (lead assigned, stage changed)',    'complete' => false],
+            ['label' => 'Lead bulk actions (assign, tag, move stage)',           'complete' => false],
+            ['label' => 'Reporting & analytics (leads by source, stage, period)', 'complete' => false],
+            ['label' => 'Dashboard stat cards (messages today, sheets synced)',  'complete' => false],
+        ],
+    ],
 ];
-$completedCount = collect($items)->where('complete', true)->count();
-$totalCount = count($items);
+$allItems = collect($phases)->flatMap(fn($p) => $p['items']);
+$completedCount = $allItems->where('complete', true)->count();
+$totalCount = $allItems->count();
 @endphp
 <div class="bg-white rounded-xl border border-gray-200 p-6">
     <div class="flex items-center justify-between mb-1">
-        <h3 class="text-sm font-semibold text-gray-700">Phase 1 — Build Progress</h3>
-        <span class="text-xs text-gray-500">{{ $completedCount }} / {{ $totalCount }}</span>
+        <h3 class="text-sm font-semibold text-gray-700">Build Progress</h3>
+        <span class="text-xs text-gray-500">{{ $completedCount }} / {{ $totalCount }} complete</span>
     </div>
-    <div class="w-full bg-gray-100 rounded-full h-1.5 mb-5">
+    <div class="w-full bg-gray-100 rounded-full h-1.5 mb-6">
         <div class="bg-indigo-500 h-1.5 rounded-full transition-all"
              style="width: {{ round($completedCount / $totalCount * 100) }}%"></div>
     </div>
-    <ul class="space-y-2.5">
-        @foreach($items as $item)
-        <li class="flex items-center gap-3 text-sm">
-            <span class="{{ $item['complete'] ? $done : $todo }}">
-                {!! $item['complete'] ? $checkIcon : $clockIcon !!}
-            </span>
-            <span class="{{ $item['complete'] ? 'text-gray-700' : 'text-gray-400' }}">
-                {{ $item['label'] }}
-            </span>
-        </li>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
+        @foreach($phases as $phase)
+        <div>
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">{{ $phase['title'] }}</p>
+            <ul class="space-y-2">
+                @foreach($phase['items'] as $item)
+                <li class="flex items-center gap-2.5 text-sm">
+                    <span class="{{ $item['complete'] ? $done : $todo }}">
+                        {!! $item['complete'] ? $checkIcon : $clockIcon !!}
+                    </span>
+                    <span class="{{ $item['complete'] ? 'text-gray-700' : 'text-gray-400' }}">
+                        {{ $item['label'] }}
+                    </span>
+                </li>
+                @endforeach
+            </ul>
+        </div>
         @endforeach
-    </ul>
+    </div>
 </div>
 
 @endsection

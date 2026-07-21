@@ -13,7 +13,15 @@ class NoteController extends Controller
     {
         $validated = $request->validate([
             'content'    => ['required', 'string', 'max:5000'],
-            'visibility' => ['required', 'in:internal,shared'],
+            'visibility' => ['required', 'string', function ($attr, $value, $fail) {
+                $valid = ['internal', 'service_provider', 'agent', 'client'];
+                $parts = array_filter(array_map('trim', explode(',', $value)));
+                if (empty($parts)) { $fail('Visibility is required.'); return; }
+                if (in_array('internal', $parts) && count($parts) > 1) { $fail('Internal cannot be combined with other options.'); return; }
+                foreach ($parts as $part) {
+                    if (!in_array($part, $valid)) { $fail("Invalid visibility: {$part}"); return; }
+                }
+            }],
         ]);
 
         Note::create([
