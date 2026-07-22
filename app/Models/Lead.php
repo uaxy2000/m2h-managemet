@@ -90,6 +90,11 @@ class Lead extends Model
         return $this->hasMany(Task::class)->orderBy('is_done')->orderBy('due_at');
     }
 
+    public function customValues(): HasMany
+    {
+        return $this->hasMany(LeadCustomValue::class);
+    }
+
     public function fullName(): string
     {
         return trim("{$this->first_name} {$this->last_name}");

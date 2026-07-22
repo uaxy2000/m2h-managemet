@@ -13,6 +13,7 @@ use App\Http\Controllers\Settings\UserController;
 use App\Http\Controllers\Settings\ProgramController;
 use App\Http\Controllers\Settings\StageController;
 use App\Http\Controllers\Settings\SubStageController;
+use App\Http\Controllers\Settings\CustomFieldController;
 use App\Http\Controllers\Settings\TagController;
 use App\Http\Controllers\Settings\TagGroupController;
 use App\Http\Controllers\TaskController;
@@ -49,6 +50,9 @@ Route::middleware('auth')->group(function () {
     // Lead assignment actions
     Route::patch('leads/{lead}/assign-user', [LeadController::class, 'assignUser'])->name('leads.assign-user');
     Route::patch('leads/{lead}/assign-company', [LeadController::class, 'assignCompany'])->name('leads.assign-company');
+
+    // Lead custom field values
+    Route::patch('leads/{lead}/custom-values', [LeadController::class, 'updateCustomValues'])->name('leads.custom-values.update');
 
     // Programs (nested under lead)
     Route::post('leads/{lead}/programs', [LeadProgramController::class, 'store'])->name('leads.programs.store');
@@ -117,6 +121,17 @@ Route::middleware('auth')->group(function () {
             Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
             Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
             Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+            // Custom Fields
+            Route::get('custom-fields', [CustomFieldController::class, 'index'])->name('custom-fields.index');
+            Route::post('custom-fields', [CustomFieldController::class, 'store'])->name('custom-fields.store');
+            Route::put('custom-fields/{customField}', [CustomFieldController::class, 'update'])->name('custom-fields.update');
+            Route::delete('custom-fields/{customField}', [CustomFieldController::class, 'destroy'])->name('custom-fields.destroy');
+            Route::post('custom-fields/{customField}/options', [CustomFieldController::class, 'storeOption'])->name('custom-fields.options.store');
+            Route::put('custom-fields/{customField}/options/{option}', [CustomFieldController::class, 'updateOption'])->name('custom-fields.options.update');
+            Route::delete('custom-fields/{customField}/options/{option}', [CustomFieldController::class, 'destroyOption'])->name('custom-fields.options.destroy');
+            Route::post('custom-fields/{customField}/mappings', [CustomFieldController::class, 'storeMapping'])->name('custom-fields.mappings.store');
+            Route::delete('custom-fields/mappings/{mapping}', [CustomFieldController::class, 'destroyMapping'])->name('custom-fields.mappings.destroy');
 
             // Meta Integration
             Route::get('meta', [MetaPageController::class, 'index'])->name('meta.index');

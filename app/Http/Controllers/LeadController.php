@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
+use App\Models\CustomField;
 use App\Models\Lead;
+use App\Models\LeadCustomValue;
 use App\Models\LeadStatusHistory;
 use App\Models\Pipeline;
 use App\Models\Program;
@@ -171,6 +173,41 @@ class LeadController extends Controller
             ->with($isDuplicate ? 'warning' : 'success', $message);
     }
 
+    public function updateCustomValues(Request $request, Lead $lead): \Illuminate\Http\RedirectResponse
+    {
+        $fields = CustomField::where('is_active', true)->get()->keyBy('key');
+
+        foreach ($fields as $key => $field) {
+            $raw = $request->input("custom.{$key}");
+
+            if ($field->type === 'multi_select') {
+                $values = array_values(array_filter((array) ($raw ?? [])));
+                $value  = empty($values) ? null : json_encode($values);
+            } elseif ($field->type === 'date') {
+                $value = $raw ? trim($raw) : null;
+                // Accept YYYY, YYYY-MM, or YYYY-MM-DD
+                if ($value && !preg_match('/^\d{4}(-\d{2}(-\d{2})?)?$/', $value)) {
+                    $value = null;
+                }
+            } else {
+                $value = $raw ? trim($raw) : null;
+            }
+
+            if ($value === null) {
+                LeadCustomValue::where('lead_id', $lead->id)
+                    ->where('custom_field_id', $field->id)
+                    ->delete();
+            } else {
+                LeadCustomValue::updateOrCreate(
+                    ['lead_id' => $lead->id, 'custom_field_id' => $field->id],
+                    ['value' => $value]
+                );
+            }
+        }
+
+        return back()->with('success', 'Custom fields saved.');
+    }
+
     public function show(Lead $lead): View
     {
         $lead->load([
@@ -183,6 +220,7 @@ class LeadController extends Controller
             'tasks.assignedTo',
             'programs',
             'tags',
+            'customValues.field.options',
         ]);
 
         $internalUsers = User::where(function ($q) {
@@ -202,8 +240,12 @@ class LeadController extends Controller
             ->orderBy('name')
             ->get();
 
+        $customFields     = CustomField::where('is_active', true)->with('options')->orderBy('sort_order')->get();
+        $customValuesByKey = $lead->customValues->keyBy(fn ($cv) => $cv->field?->key);
+
         return view('leads.show', compact(
-            'lead', 'internalUsers', 'serviceProviders', 'agents', 'allTags', 'availablePrograms'
+            'lead', 'internalUsers', 'serviceProviders', 'agents', 'allTags', 'availablePrograms',
+            'customFields', 'customValuesByKey'
         ));
     }
 

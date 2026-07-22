@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
+use App\Models\CustomFieldOption;
 use App\Models\Lead;
+use App\Models\LeadCustomValue;
 use App\Models\LeadStatusHistory;
 use App\Models\MetaFormMapping;
 use App\Models\MetaPage;
+use App\Models\MetaQuestionMapping;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
@@ -171,7 +174,71 @@ class MetaWebhookController extends Controller
             $lead->tags()->attach($mapping->tag_ids);
         }
 
+        // Auto-populate custom fields from Meta form answers
+        $this->populateCustomFields($lead, $customFields);
+
         Log::info('Meta webhook: lead created', ['lead_id' => $lead->id, 'name' => $lead->fullName()]);
+    }
+
+    private function populateCustomFields(Lead $lead, array $customFields): void
+    {
+        if (empty($customFields)) {
+            return;
+        }
+
+        // Load all meta_question_mappings keyed by their normalized question key
+        $questionMappings = MetaQuestionMapping::with('field.options')->get()
+            ->keyBy('meta_question_key');
+
+        foreach ($customFields as $rawKey => $rawValue) {
+            if ($rawValue === null || $rawValue === '') {
+                continue;
+            }
+
+            $normalizedKey = mb_strtolower(str_replace(['İ', 'I'], 'i', $rawKey), 'UTF-8');
+            $questionMap   = $questionMappings[$normalizedKey] ?? null;
+
+            if (!$questionMap || !$questionMap->field) {
+                continue;
+            }
+
+            $field = $questionMap->field;
+
+            // For select/multi_select: match raw value against option meta_aliases
+            if (in_array($field->type, ['select', 'multi_select'], true)) {
+                $normalizedRaw  = mb_strtolower(str_replace(['İ', 'I'], 'i', $rawValue), 'UTF-8');
+                $matchedOption  = null;
+
+                foreach ($field->options as $opt) {
+                    $aliases = $opt->meta_aliases ?? [];
+                    foreach ($aliases as $alias) {
+                        if (mb_strtolower(str_replace(['İ', 'I'], 'i', $alias), 'UTF-8') === $normalizedRaw) {
+                            $matchedOption = $opt;
+                            break 2;
+                        }
+                    }
+                }
+
+                if (!$matchedOption) {
+                    Log::info('Meta webhook: no option alias match', [
+                        'field' => $field->key, 'raw_value' => $rawValue,
+                    ]);
+                    continue;
+                }
+
+                $storedValue = $field->type === 'multi_select'
+                    ? json_encode([$matchedOption->value])
+                    : $matchedOption->value;
+            } else {
+                // date / text: store raw value directly
+                $storedValue = $rawValue;
+            }
+
+            LeadCustomValue::updateOrCreate(
+                ['lead_id' => $lead->id, 'custom_field_id' => $field->id],
+                ['value' => $storedValue]
+            );
+        }
     }
 
     private function parseFields(array $fieldData): array

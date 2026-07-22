@@ -163,6 +163,124 @@
         </div>
         @endif
 
+        {{-- Custom Fields --}}
+        @if($customFields->isNotEmpty())
+        @php
+            $hasAnyValue = $customValuesByKey->isNotEmpty();
+        @endphp
+        <div class="bg-white rounded-xl border border-gray-200 p-5"
+             x-data="customFieldsEditor({{ json_encode(
+                $customFields->map(function ($f) use ($customValuesByKey) {
+                    $cv = $customValuesByKey[$f->key] ?? null;
+                    return [
+                        'key'     => $f->key,
+                        'type'    => $f->type,
+                        'value'   => $f->type === 'multi_select'
+                            ? (json_decode($cv?->value ?? '[]', true) ?? [])
+                            : ($cv?->value ?? ''),
+                        'exclusive_values' => $f->options->where('is_exclusive', true)->pluck('value')->values()->toArray(),
+                    ];
+                })->keyBy('key')->toJson()
+             ) }})">
+
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Custom Fields</h3>
+                <button type="button" x-show="!editing" @click="editing = true"
+                        class="text-xs text-indigo-600 hover:text-indigo-800 font-medium transition-colors">
+                    Edit
+                </button>
+            </div>
+
+            {{-- Read mode --}}
+            <dl class="space-y-3" x-show="!editing">
+                @foreach($customFields as $field)
+                @php
+                    $cv        = $customValuesByKey[$field->key] ?? null;
+                    $rawValue  = $cv?->value;
+                    if ($field->type === 'multi_select') {
+                        $vals    = json_decode($rawValue ?? '[]', true) ?? [];
+                        $display = $field->options->whereIn('value', $vals)->pluck('label')->join(', ');
+                    } elseif (in_array($field->type, ['select'])) {
+                        $display = $field->options->firstWhere('value', $rawValue)?->label ?? $rawValue;
+                    } else {
+                        $display = $rawValue;
+                    }
+                @endphp
+                <div>
+                    <dt class="text-xs text-gray-400">{{ $field->label }}</dt>
+                    <dd class="text-sm text-gray-800 mt-0.5">{{ $display ?: '—' }}</dd>
+                </div>
+                @endforeach
+            </dl>
+
+            {{-- Edit mode --}}
+            <form x-show="editing" x-cloak method="POST"
+                  action="{{ route('leads.custom-values.update', $lead) }}">
+                @csrf @method('PATCH')
+
+                <div class="space-y-4">
+                @foreach($customFields as $field)
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1.5">{{ $field->label }}</label>
+
+                    @if($field->type === 'date')
+                    <input type="text" name="custom[{{ $field->key }}]"
+                           x-model="fields['{{ $field->key }}'].value"
+                           placeholder="YYYY or YYYY-MM or YYYY-MM-DD"
+                           class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+
+                    @elseif($field->type === 'text')
+                    <input type="text" name="custom[{{ $field->key }}]"
+                           x-model="fields['{{ $field->key }}'].value"
+                           class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+
+                    @elseif($field->type === 'select')
+                    <select name="custom[{{ $field->key }}]"
+                            x-model="fields['{{ $field->key }}'].value"
+                            class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">— Not set —</option>
+                        @foreach($field->options as $opt)
+                        <option value="{{ $opt->value }}">{{ $opt->label }}</option>
+                        @endforeach
+                    </select>
+
+                    @elseif($field->type === 'multi_select')
+                    <div class="flex flex-wrap gap-2">
+                        @foreach($field->options as $opt)
+                        <button type="button"
+                                @click="toggleMulti('{{ $field->key }}', '{{ $opt->value }}', {{ $opt->is_exclusive ? 'true' : 'false' }})"
+                                :class="fields['{{ $field->key }}'].value.includes('{{ $opt->value }}')
+                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'"
+                                class="px-3 py-1.5 text-xs font-medium rounded-full border transition-all">
+                            {{ $opt->label }}
+                        </button>
+                        @endforeach
+                    </div>
+                    {{-- Hidden inputs for multi_select --}}
+                    <template x-for="v in fields['{{ $field->key }}'].value" :key="v">
+                        <input type="hidden" name="custom[{{ $field->key }}][]" :value="v">
+                    </template>
+
+                    @endif
+                </div>
+                @endforeach
+                </div>
+
+                <div class="flex gap-2 mt-5 pt-4 border-t border-gray-100">
+                    <button type="submit"
+                            class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors">
+                        Save
+                    </button>
+                    <button type="button" @click="editing = false; reset()"
+                            class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+        @endif
+
         {{-- Deal --}}
         @if($lead->potential_value || $lead->our_commission || $lead->expected_close_date)
         <div class="bg-white rounded-xl border border-gray-200 p-5">
@@ -803,3 +921,42 @@
 </div>
 
 @endsection
+
+@push('scripts')
+<script>
+function customFieldsEditor(initialFields) {
+    return {
+        editing: false,
+        fields: JSON.parse(JSON.stringify(initialFields)),
+        _initial: JSON.parse(JSON.stringify(initialFields)),
+
+        toggleMulti(key, value, isExclusive) {
+            const field = this.fields[key];
+            if (!Array.isArray(field.value)) field.value = [];
+
+            if (isExclusive) {
+                // Exclusive option: if already selected, deselect; otherwise select alone
+                const already = field.value.includes(value);
+                field.value = already ? [] : [value];
+                return;
+            }
+
+            // Remove any exclusive options when selecting a non-exclusive one
+            const exclusiveVals = field.exclusive_values || [];
+            field.value = field.value.filter(v => !exclusiveVals.includes(v));
+
+            const idx = field.value.indexOf(value);
+            if (idx >= 0) {
+                field.value.splice(idx, 1);
+            } else {
+                field.value.push(value);
+            }
+        },
+
+        reset() {
+            this.fields = JSON.parse(JSON.stringify(this._initial));
+        }
+    };
+}
+</script>
+@endpush
