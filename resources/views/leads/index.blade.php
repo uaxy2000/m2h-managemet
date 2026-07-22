@@ -34,52 +34,53 @@
     </div>
 
     {{-- Filter bar --}}
+    @php
+    $allTagsFlat = $tagGroups->flatMap(fn ($g) => $g->tags)->concat($ungroupedTags);
+    $activeTag   = $allTagsFlat->firstWhere('id', $filters['tag']);
+    @endphp
     <form method="GET" action="{{ route('leads.index') }}" id="filter-form"
           class="flex-shrink-0 flex flex-wrap items-center gap-2 px-6 py-2.5 bg-white border-b border-gray-200">
         <input type="hidden" name="pipeline" value="{{ $currentPipeline?->id }}">
-        @if($filters['tag'])
-        <input type="hidden" name="tag" value="{{ $filters['tag'] }}">
-        @endif
 
         {{-- Name search --}}
         <div class="relative flex-shrink-0">
             <svg class="w-3.5 h-3.5 absolute left-2.5 top-2 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>
             </svg>
-            <input type="text" name="search" value="{{ $filters['search'] }}" placeholder="İsim ara…"
+            <input type="text" name="search" value="{{ $filters['search'] }}" placeholder="Search name…"
                    class="pl-8 pr-3 py-1.5 rounded-lg border border-gray-200 text-sm focus:ring-indigo-500 focus:border-indigo-500 w-40">
         </div>
 
         {{-- Assigned to (admin/super_admin only) --}}
         @if(auth()->user()->role !== 'user')
-        <select name="assigned_to" onchange="document.getElementById('filter-form').submit()"
+        <select name="assigned_to"
                 class="flex-shrink-0 rounded-lg border-gray-200 text-sm py-1.5 pl-2.5 pr-7 focus:ring-indigo-500 focus:border-indigo-500">
-            <option value="">Tüm kullanıcılar</option>
+            <option value="">All users</option>
             @foreach($internalUsers as $u)
             <option value="{{ $u->id }}" @selected($filters['assigned_to'] == $u->id)>{{ $u->name }}</option>
             @endforeach
         </select>
         @else
-        <span class="text-xs text-gray-400 italic flex-shrink-0">Yalnızca sizin leadleriniz</span>
+        <span class="text-xs text-gray-400 italic flex-shrink-0">Your leads only</span>
         @endif
 
         {{-- Source --}}
-        <select name="source" onchange="document.getElementById('filter-form').submit()"
+        <select name="source"
                 class="flex-shrink-0 rounded-lg border-gray-200 text-sm py-1.5 pl-2.5 pr-7 focus:ring-indigo-500 focus:border-indigo-500">
-            <option value="">Tüm kaynaklar</option>
-            <option value="meta_ad" @selected($filters['source'] === 'meta_ad')>Meta Reklam</option>
-            <option value="manual"  @selected($filters['source'] === 'manual')>Manuel</option>
+            <option value="">All sources</option>
+            <option value="meta_ad" @selected($filters['source'] === 'meta_ad')>Meta Ad</option>
+            <option value="manual"  @selected($filters['source'] === 'manual')>Manual</option>
             <option value="agent"   @selected($filters['source'] === 'agent')>Agent</option>
         </select>
 
         {{-- Program --}}
         @if($programsByCountry->isNotEmpty())
-        <select name="program_id" onchange="document.getElementById('filter-form').submit()"
+        <select name="program_id"
                 class="flex-shrink-0 rounded-lg border-gray-200 text-sm py-1.5 pl-2.5 pr-7 focus:ring-indigo-500 focus:border-indigo-500">
-            <option value="">Tüm programlar</option>
+            <option value="">All programs</option>
             @foreach($programsByCountry as $country => $countryPrograms)
             <optgroup label="{{ $country }}">
-                <option value="country:{{ $country }}" @selected($filters['program_id'] === 'country:'.$country)>— Tüm {{ $country }}</option>
+                <option value="country:{{ $country }}" @selected($filters['program_id'] === 'country:'.$country)>— All {{ $country }}</option>
                 @foreach($countryPrograms as $prog)
                 <option value="{{ $prog->id }}" @selected($filters['program_id'] === $prog->id)>{{ $prog->name }}</option>
                 @endforeach
@@ -88,18 +89,107 @@
         </select>
         @endif
 
+        {{-- Tags popup --}}
+        @if($hasTags)
+        <div x-data="{
+                open: false,
+                tagId: '{{ $filters['tag'] }}',
+                tagColor: '{{ $activeTag?->color ?? '' }}',
+                tagName: '{{ addslashes($activeTag?->name ?? '') }}'
+             }"
+             class="relative flex-shrink-0"
+             @click.outside="open = false">
+            <input type="hidden" name="tag" :value="tagId">
+            <button type="button" @click="open = !open"
+                    :class="tagId ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'"
+                    class="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border transition-colors">
+                <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z"/>
+                </svg>
+                Tags
+                <template x-if="tagId">
+                    <span class="flex items-center gap-1 ml-0.5">
+                        <span class="w-2 h-2 rounded-full flex-shrink-0" :style="'background-color:' + tagColor"></span>
+                        <span class="text-xs font-medium max-w-24 truncate" x-text="tagName"></span>
+                        <button type="button" @click.stop="tagId = ''; tagColor = ''; tagName = ''"
+                                class="text-indigo-400 hover:text-red-500 transition-colors leading-none ml-0.5">×</button>
+                    </span>
+                </template>
+                <svg class="w-3 h-3 ml-1 flex-shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
+                </svg>
+            </button>
+
+            <div x-show="open"
+                 x-transition:enter="transition ease-out duration-100"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-75"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="absolute left-0 top-full mt-1 w-60 bg-white rounded-xl border border-gray-200 shadow-lg z-50 max-h-72 overflow-y-auto py-1">
+
+                <button type="button" @click="tagId = ''; tagColor = ''; tagName = ''; open = false"
+                        class="w-full text-left px-3 py-1.5 text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors rounded">
+                    — No tag filter
+                </button>
+                <div class="border-t border-gray-100 my-1"></div>
+
+                @foreach($tagGroups as $group)
+                @if($group->tags->isNotEmpty())
+                <div class="pb-1">
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 pt-2 pb-1">{{ $group->name }}</p>
+                    @foreach($group->tags as $tag)
+                    <button type="button"
+                            @click="tagId = '{{ $tag->id }}'; tagColor = '{{ $tag->color }}'; tagName = '{{ addslashes($tag->name) }}'; open = false"
+                            :class="tagId === '{{ $tag->id }}' ? 'bg-indigo-50' : 'hover:bg-gray-50'"
+                            class="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left transition-colors">
+                        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color:{{ $tag->color }}"></span>
+                        <span :class="tagId === '{{ $tag->id }}' ? 'text-indigo-700 font-medium' : 'text-gray-700'">{{ $tag->name }}</span>
+                        <svg x-show="tagId === '{{ $tag->id }}'" class="w-3.5 h-3.5 ml-auto text-indigo-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd"/>
+                        </svg>
+                    </button>
+                    @endforeach
+                </div>
+                @endif
+                @endforeach
+
+                @if($ungroupedTags->isNotEmpty())
+                <div class="pb-1">
+                    @if($tagGroups->contains(fn ($g) => $g->tags->isNotEmpty()))
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 pt-2 pb-1">Other</p>
+                    @endif
+                    @foreach($ungroupedTags as $tag)
+                    <button type="button"
+                            @click="tagId = '{{ $tag->id }}'; tagColor = '{{ $tag->color }}'; tagName = '{{ addslashes($tag->name) }}'; open = false"
+                            :class="tagId === '{{ $tag->id }}' ? 'bg-indigo-50' : 'hover:bg-gray-50'"
+                            class="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left transition-colors">
+                        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color:{{ $tag->color }}"></span>
+                        <span :class="tagId === '{{ $tag->id }}' ? 'text-indigo-700 font-medium' : 'text-gray-700'">{{ $tag->name }}</span>
+                        <svg x-show="tagId === '{{ $tag->id }}'" class="w-3.5 h-3.5 ml-auto text-indigo-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd"/>
+                        </svg>
+                    </button>
+                    @endforeach
+                </div>
+                @endif
+            </div>
+        </div>
+        @endif
+
         {{-- Duplicate toggle --}}
         <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none flex-shrink-0">
             <input type="checkbox" name="duplicate" value="1" @checked($filters['duplicate'])
-                   onchange="document.getElementById('filter-form').submit()"
                    class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-            Duplikat
+            Duplicate
         </label>
 
-        {{-- Search submit (for text input) --}}
+        {{-- Submit --}}
         <button type="submit"
-                class="flex-shrink-0 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">
-            Ara
+                class="flex-shrink-0 px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors">
+            Search
         </button>
 
         {{-- Active filter count + clear all --}}
@@ -115,76 +205,14 @@
         @endphp
         @if($activeCount > 0)
         <span class="flex-shrink-0 text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
-            {{ $activeCount }} aktif
+            {{ $activeCount }} active
         </span>
         <a href="{{ route('leads.index', ['pipeline' => $currentPipeline?->id]) }}"
            class="flex-shrink-0 text-xs text-gray-400 hover:text-red-500 transition-colors">
-            × Temizle
+            × Clear
         </a>
         @endif
     </form>
-
-    {{-- Tag filter grouped by group --}}
-    @if($hasTags)
-    @php
-    $baseParams = array_filter([
-        'pipeline'    => $currentPipeline?->id,
-        'search'      => $filters['search'] ?: null,
-        'assigned_to' => (auth()->user()->role !== 'user' && $filters['assigned_to']) ? $filters['assigned_to'] : null,
-        'source'      => $filters['source'] ?: null,
-        'program_id'  => $filters['program_id'] ?: null,
-        'duplicate'   => $filters['duplicate'] ? 1 : null,
-    ], fn ($v) => $v !== null && $v !== '');
-    @endphp
-    <div class="flex-shrink-0 flex flex-wrap items-center gap-x-4 gap-y-1.5 px-6 py-2 bg-gray-50 border-b border-gray-200">
-        <span class="text-xs text-gray-400 font-medium flex-shrink-0">Tag:</span>
-
-        @foreach($tagGroups as $group)
-        @if($group->tags->isNotEmpty())
-        <div class="flex items-center gap-1.5 flex-wrap">
-            <span class="text-xs font-semibold text-gray-400 flex-shrink-0">{{ $group->name }}:</span>
-            @foreach($group->tags as $tag)
-            @php
-                $isActive = $filters['tag'] === $tag->id;
-                $href = route('leads.index', array_merge($baseParams, ['tag' => $isActive ? null : $tag->id]));
-            @endphp
-            <a href="{{ $href }}"
-               class="flex-shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors
-                      {{ $isActive ? 'text-white border-transparent' : 'text-gray-500 border-gray-200 hover:border-gray-400 bg-white' }}"
-               style="{{ $isActive ? 'background-color:'.$tag->color.';border-color:'.$tag->color : '' }}">
-                {{ $tag->name }}
-            </a>
-            @endforeach
-        </div>
-        @endif
-        @endforeach
-
-        @if($ungroupedTags->isNotEmpty())
-        <div class="flex items-center gap-1.5 flex-wrap">
-            @if($tagGroups->contains(fn ($g) => $g->tags->isNotEmpty()))
-            <span class="text-xs font-semibold text-gray-400 flex-shrink-0">Diğer:</span>
-            @endif
-            @foreach($ungroupedTags as $tag)
-            @php
-                $isActive = $filters['tag'] === $tag->id;
-                $href = route('leads.index', array_merge($baseParams, ['tag' => $isActive ? null : $tag->id]));
-            @endphp
-            <a href="{{ $href }}"
-               class="flex-shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors
-                      {{ $isActive ? 'text-white border-transparent' : 'text-gray-500 border-gray-200 hover:border-gray-400 bg-white' }}"
-               style="{{ $isActive ? 'background-color:'.$tag->color.';border-color:'.$tag->color : '' }}">
-                {{ $tag->name }}
-            </a>
-            @endforeach
-        </div>
-        @endif
-
-        @if($filters['tag'])
-        <a href="{{ route('leads.index', $baseParams) }}"
-           class="flex-shrink-0 text-xs text-gray-400 hover:text-gray-600 ml-auto">× Tag temizle</a>
-        @endif
-    </div>
-    @endif
 
     @if(session('success'))
     <div class="flex-shrink-0 mx-6 mt-4 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-2.5 text-sm">
