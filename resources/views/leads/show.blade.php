@@ -194,7 +194,7 @@
             @else
             @php
                 $tagsByGroup = $allTags->groupBy(fn ($t) => $t->group?->name ?? '');
-                $grouped     = $tagsByGroup->except('')->sortKeys();
+                $grouped     = $tagsByGroup->filter(fn ($v, $k) => $k !== '')->sortKeys();
                 $ungrouped   = $tagsByGroup->get('', collect());
             @endphp
 
