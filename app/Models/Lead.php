@@ -95,6 +95,11 @@ class Lead extends Model
         return $this->hasMany(LeadCustomValue::class);
     }
 
+    public function activities(): HasMany
+    {
+        return $this->hasMany(LeadActivity::class)->orderBy('created_at');
+    }
+
     public function fullName(): string
     {
         return trim("{$this->first_name} {$this->last_name}");

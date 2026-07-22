@@ -27,7 +27,7 @@ class TaskController extends Controller
             'created_at' => now(),
         ]);
 
-        return back()->with('task_success', 'Task added.')->withFragment('tasks');
+        return back()->with('task_success', 'Task added.')->withFragment('timeline');
     }
 
     public function toggle(Lead $lead, Task $task): JsonResponse
@@ -45,6 +45,6 @@ class TaskController extends Controller
 
         $task->delete();
 
-        return back()->with('task_success', 'Task deleted.')->withFragment('tasks');
+        return back()->with('task_success', 'Task deleted.')->withFragment('timeline');
     }
 }

@@ -113,7 +113,7 @@
 
 <div class="grid grid-cols-3 gap-5">
 
-    {{-- Left: Contact, Deal, Notes/Tasks --}}
+    {{-- Left: Contact, Custom Fields, Tags, Timeline --}}
     <div class="col-span-2 space-y-5">
 
         {{-- Contact --}}
@@ -411,6 +411,421 @@
             @endif
         </div>
 
+        {{-- Overdue task alert --}}
+        @php
+            $openTasks    = $lead->tasks->where('is_done', false)->sortBy('due_at');
+            $overdueTasks = $openTasks->filter(fn ($t) => $t->due_at && $t->due_at->isPast());
+        @endphp
+        @if($overdueTasks->isNotEmpty())
+        <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-2.5">
+            <svg class="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 7v5l3 3"/>
+            </svg>
+            <div>
+                <p class="text-sm font-semibold text-red-700">
+                    {{ $overdueTasks->count() }} overdue task{{ $overdueTasks->count() > 1 ? 's' : '' }}
+                </p>
+                <ul class="mt-0.5 space-y-0.5">
+                    @foreach($overdueTasks as $ot)
+                    <li class="text-xs text-red-600">
+                        {{ $ot->title }}
+                        <span class="text-red-400">· due {{ $ot->due_at->diffForHumans() }}</span>
+                        @if($ot->assignedTo)
+                        <span class="text-red-400">· {{ $ot->assignedTo->name }}</span>
+                        @endif
+                    </li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+        @endif
+
+        {{-- Timeline (internal users only) --}}
+        @if(auth()->user()->isInternal())
+        <div class="bg-white rounded-xl border border-gray-200" id="timeline">
+
+            <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-200">
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Timeline</h3>
+                <span class="text-xs text-gray-400">oldest → newest</span>
+            </div>
+
+            @if($timeline->isEmpty())
+            <div class="px-5 py-8 text-center">
+                <p class="text-sm text-gray-400">No activity yet.</p>
+            </div>
+            @else
+            <div class="px-5 py-4 space-y-5">
+                @foreach($timeline as $entry)
+                @php $item = $entry['item']; $entryType = $entry['type']; @endphp
+
+                @if($entryType === 'note')
+                {{-- Note --}}
+                <div class="flex gap-3">
+                    <div class="w-7 h-7 rounded-full bg-indigo-500 flex items-center justify-center
+                                text-white text-xs font-semibold flex-shrink-0 mt-0.5">
+                        {{ strtoupper(substr($item->createdBy->name, 0, 1)) }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-baseline gap-2 flex-wrap">
+                            <span class="text-xs font-medium text-gray-700">{{ $item->createdBy->name }}</span>
+                            <span class="text-xs text-gray-400">{{ $item->created_at->diffForHumans() }}</span>
+                            @php $visParts = array_map('trim', explode(',', $item->visibility ?? 'internal')); @endphp
+                            @if(in_array('internal', $visParts))
+                            <span class="text-xs text-gray-300">· internal</span>
+                            @else
+                            <span class="text-xs text-emerald-600">· shared</span>
+                            @endif
+                        </div>
+                        <div class="mt-1.5 bg-gray-50 rounded-lg px-3 py-2.5">
+                            <p class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{{ $item->content }}</p>
+                        </div>
+                        @php
+                            $canDeleteNote = auth()->user()->isAdmin()
+                                || ($item->created_by === auth()->id() && $item->created_at->diffInHours(now()) < 12);
+                        @endphp
+                        @if($canDeleteNote)
+                        <form method="POST" action="{{ route('leads.notes.destroy', [$lead, $item]) }}"
+                              onsubmit="return confirm('Delete this note?')" class="mt-1">
+                            @csrf @method('DELETE')
+                            <button type="submit"
+                                    class="text-xs text-gray-300 hover:text-red-500 transition-colors">Delete</button>
+                        </form>
+                        @elseif($item->created_by === auth()->id())
+                        <span class="text-xs text-gray-300 mt-1 inline-block" title="Can only delete within 12 hours">
+                            <svg class="w-3 h-3 inline" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>
+                            </svg>
+                        </span>
+                        @endif
+                    </div>
+                </div>
+
+                @elseif($entryType === 'task')
+                {{-- Task --}}
+                <div class="flex gap-3"
+                     x-data="{ done: {{ $item->is_done ? 'true' : 'false' }} }">
+                    <div class="flex-shrink-0 mt-0.5">
+                        <button type="button"
+                                @click="fetch('{{ route('leads.tasks.toggle', [$lead, $item]) }}', {
+                                    method: 'POST',
+                                    headers: {'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content}
+                                }).then(r => r.json()).then(d => done = d.is_done)"
+                                :class="done
+                                    ? 'bg-emerald-500 text-white border-emerald-500'
+                                    : 'border-gray-300 bg-white hover:border-indigo-400'"
+                                class="w-5 h-5 rounded border-2 flex items-center justify-center transition-all">
+                            <svg x-show="done" class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-baseline gap-2 flex-wrap">
+                            <span :class="done ? 'line-through text-gray-400' : 'text-gray-800'"
+                                  class="text-sm font-medium transition-all">{{ $item->title }}</span>
+                            @if($item->due_at)
+                            <span class="text-xs {{ $item->due_at->isPast() && !$item->is_done ? 'text-red-500 font-medium' : 'text-gray-400' }}">
+                                · due {{ $item->due_at->format('d M Y') }}
+                                @if($item->due_at->isPast() && !$item->is_done)
+                                <span class="text-red-400">(overdue)</span>
+                                @endif
+                            </span>
+                            @endif
+                            @if($item->assignedTo)
+                            <span class="text-xs text-gray-400">· {{ $item->assignedTo->name }}</span>
+                            @endif
+                        </div>
+                        @if($item->description)
+                        <p class="text-xs text-gray-500 mt-0.5">{{ $item->description }}</p>
+                        @endif
+                        @if($item->created_by === auth()->id() || auth()->user()->isAdmin())
+                        <form method="POST" action="{{ route('leads.tasks.destroy', [$lead, $item]) }}"
+                              onsubmit="return confirm('Delete task?')" class="mt-1">
+                            @csrf @method('DELETE')
+                            <button type="submit"
+                                    class="text-xs text-gray-300 hover:text-red-500 transition-colors">Delete</button>
+                        </form>
+                        @endif
+                    </div>
+                </div>
+
+                @elseif($entryType === 'activity')
+                {{-- Activity --}}
+                <div class="flex gap-2.5 items-start">
+                    <div class="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        @if(in_array($item->type, ['tag_added', 'tag_removed']))
+                        <svg class="w-2.5 h-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z"/>
+                        </svg>
+                        @else
+                        <svg class="w-2.5 h-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/>
+                        </svg>
+                        @endif
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm text-gray-600">{{ $item->description }}</p>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                            @if($item->user)
+                            <span class="text-xs text-gray-400">{{ $item->user->name }}</span>
+                            <span class="text-xs text-gray-300">·</span>
+                            @endif
+                            <span class="text-xs text-gray-400">{{ $item->created_at->diffForHumans() }}</span>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                @endforeach
+            </div>
+            @endif
+
+            {{-- Add Note / Add Task forms --}}
+            <div class="border-t border-gray-100 p-5"
+                 x-data="{ formTab: '{{ session('task_success') ? 'task' : 'note' }}' }">
+                <div class="flex gap-4 mb-4">
+                    <button @click="formTab = 'note'"
+                            :class="formTab === 'note'
+                                ? 'text-indigo-600 font-semibold border-b-2 border-indigo-600'
+                                : 'text-gray-400 hover:text-gray-600'"
+                            class="text-xs pb-1 transition-colors">Add Note</button>
+                    <button @click="formTab = 'task'"
+                            :class="formTab === 'task'
+                                ? 'text-indigo-600 font-semibold border-b-2 border-indigo-600'
+                                : 'text-gray-400 hover:text-gray-600'"
+                            class="text-xs pb-1 transition-colors">Add Task</button>
+                </div>
+
+                {{-- Note form --}}
+                <div x-show="formTab === 'note'">
+                    <form method="POST" action="{{ route('leads.notes.store', $lead) }}">
+                        @csrf
+                        <textarea name="content" rows="3" required
+                                  placeholder="Write a note…"
+                                  class="block w-full rounded-lg border-gray-300 text-sm shadow-sm
+                                         focus:ring-indigo-500 focus:border-indigo-500 resize-none">{{ old('content') }}</textarea>
+                        <div class="mt-2"
+                             x-data="{
+                                sel: ['internal'],
+                                toggle(v) {
+                                    this.sel = this.sel.filter(x => x !== 'internal');
+                                    this.sel.includes(v)
+                                        ? (this.sel = this.sel.filter(x => x !== v))
+                                        : this.sel.push(v);
+                                    if (this.sel.length === 0) this.sel = ['internal'];
+                                },
+                                has(v) { return this.sel.includes(v); },
+                                get val() { return this.sel.join(','); },
+                                get label() {
+                                    if (this.has('internal')) return 'Internal only';
+                                    const map = { service_provider: 'Service Provider', agent: 'Agent', client: 'Client' };
+                                    return 'Shared with: ' + this.sel.map(v => map[v]).join(', ');
+                                }
+                             }">
+                            <input type="hidden" name="visibility" :value="val">
+                            <div class="flex items-center gap-1.5 mb-2">
+                                <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                                </svg>
+                                <span class="text-xs"
+                                      :class="has('internal') ? 'text-gray-400' : 'text-emerald-600 font-medium'"
+                                      x-text="label"></span>
+                            </div>
+                            <div class="flex items-center justify-between gap-3 flex-wrap">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    @foreach([
+                                        ['key' => 'service_provider', 'label' => 'Service Provider'],
+                                        ['key' => 'agent',            'label' => 'Agent'],
+                                        ['key' => 'client',           'label' => 'Client'],
+                                    ] as $opt)
+                                    <button type="button" @click="toggle('{{ $opt['key'] }}')"
+                                            :class="has('{{ $opt['key'] }}')
+                                                ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-400'
+                                                : 'bg-gray-100 text-gray-400 hover:bg-gray-200'"
+                                            class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition-colors font-medium">
+                                        <svg x-show="has('{{ $opt['key'] }}')" class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd"/>
+                                        </svg>
+                                        {{ $opt['label'] }}
+                                    </button>
+                                    @endforeach
+                                </div>
+                                <button type="submit"
+                                        class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5
+                                               rounded-lg transition-colors font-medium">
+                                    Add Note
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                {{-- Task form --}}
+                <div x-show="formTab === 'task'" x-cloak>
+                    <form method="POST" action="{{ route('leads.tasks.store', $lead) }}">
+                        @csrf
+                        <div class="space-y-3">
+                            <input type="text" name="title" required value="{{ old('title') }}"
+                                   placeholder="Task title…"
+                                   class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            <input type="text" name="description" value="{{ old('description') }}"
+                                   placeholder="Description (optional)"
+                                   class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            <div class="grid grid-cols-2 gap-3">
+                                <select name="assigned_to" required
+                                        class="rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="">Assign to…</option>
+                                    @foreach($internalUsers as $u)
+                                    <option value="{{ $u->id }}" {{ old('assigned_to') === $u->id ? 'selected' : '' }}>
+                                        {{ $u->name }}
+                                    </option>
+                                    @endforeach
+                                </select>
+                                <input type="datetime-local" name="due_at" required value="{{ old('due_at') }}"
+                                       class="rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="submit"
+                                    class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5
+                                           rounded-lg transition-colors font-medium">
+                                Add Task
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+        @endif
+
+    </div>
+
+    {{-- Right: Assignment + Programs + Stage History --}}
+    <div class="space-y-5">
+
+        {{-- Assignment card (Assignee + Service Provider + Agent) --}}
+        <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Assignment</h3>
+
+            {{-- Assignee --}}
+            <div x-data="{ editing: false }">
+                <div class="flex items-center justify-between mb-1">
+                    <p class="text-xs text-gray-400">Internal</p>
+                    <button @click="editing = !editing" type="button"
+                            class="text-xs text-indigo-600 hover:text-indigo-800"
+                            x-text="editing ? 'Cancel' : 'Change'"></button>
+                </div>
+                <div x-show="!editing">
+                    @if($lead->assignedTo)
+                    <p class="text-sm font-medium text-gray-800">{{ $lead->assignedTo->name }}</p>
+                    @else
+                    <p class="text-sm text-gray-400">Not assigned</p>
+                    @endif
+                </div>
+                <div x-show="editing" x-cloak>
+                    <form method="POST" action="{{ route('leads.assign-user', $lead) }}" class="flex gap-2">
+                        @csrf @method('PATCH')
+                        <select name="assigned_to"
+                                class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">— None —</option>
+                            @foreach($internalUsers as $u)
+                            <option value="{{ $u->id }}" {{ $lead->assigned_to === $u->id ? 'selected' : '' }}>
+                                {{ $u->name }}
+                            </option>
+                            @endforeach
+                        </select>
+                        <button type="submit"
+                                class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">
+                            Save
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-100"></div>
+
+            {{-- Service Provider --}}
+            <div x-data="{ editing: false }">
+                <div class="flex items-center justify-between mb-1">
+                    <p class="text-xs text-gray-400">Service Provider</p>
+                    @if($serviceProviders->isNotEmpty())
+                    <button @click="editing = !editing" type="button"
+                            class="text-xs text-indigo-600 hover:text-indigo-800"
+                            x-text="editing ? 'Cancel' : 'Change'"></button>
+                    @endif
+                </div>
+                <div x-show="!editing">
+                    @if($lead->serviceProvider)
+                    <p class="text-sm font-medium text-gray-800">{{ $lead->serviceProvider->name }}</p>
+                    @else
+                    <p class="text-sm text-gray-400">Not set</p>
+                    @endif
+                </div>
+                <div x-show="editing" x-cloak>
+                    <form method="POST" action="{{ route('leads.assign-company', $lead) }}" class="flex gap-2">
+                        @csrf @method('PATCH')
+                        <input type="hidden" name="field" value="service_provider_id">
+                        <select name="company_id"
+                                class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">— None —</option>
+                            @foreach($serviceProviders as $sp)
+                            <option value="{{ $sp->id }}" {{ $lead->service_provider_id === $sp->id ? 'selected' : '' }}>
+                                {{ $sp->name }}
+                            </option>
+                            @endforeach
+                        </select>
+                        <button type="submit"
+                                class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">
+                            Save
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-100"></div>
+
+            {{-- Agent --}}
+            <div x-data="{ editing: false }">
+                <div class="flex items-center justify-between mb-1">
+                    <p class="text-xs text-gray-400">Agent</p>
+                    @if($agents->isNotEmpty())
+                    <button @click="editing = !editing" type="button"
+                            class="text-xs text-indigo-600 hover:text-indigo-800"
+                            x-text="editing ? 'Cancel' : 'Change'"></button>
+                    @endif
+                </div>
+                <div x-show="!editing">
+                    @if($lead->agent)
+                    <p class="text-sm font-medium text-gray-800">{{ $lead->agent->name }}</p>
+                    @else
+                    <p class="text-sm text-gray-400">Not set</p>
+                    @endif
+                </div>
+                <div x-show="editing" x-cloak>
+                    <form method="POST" action="{{ route('leads.assign-company', $lead) }}" class="flex gap-2">
+                        @csrf @method('PATCH')
+                        <input type="hidden" name="field" value="agent_id">
+                        <select name="company_id"
+                                class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">— None —</option>
+                            @foreach($agents as $ag)
+                            <option value="{{ $ag->id }}" {{ $lead->agent_id === $ag->id ? 'selected' : '' }}>
+                                {{ $ag->name }}
+                            </option>
+                            @endforeach
+                        </select>
+                        <button type="submit"
+                                class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">
+                            Save
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         {{-- Programs --}}
         @php $sortedPrograms = $lead->programs->sortByDesc('pivot.is_primary'); @endphp
         <div class="bg-white rounded-xl border border-gray-200 p-5">
@@ -419,7 +834,6 @@
             @forelse($sortedPrograms as $program)
             <div class="flex items-center gap-3 py-2.5 {{ !$loop->last ? 'border-b border-gray-100' : '' }}">
 
-                {{-- Primary star --}}
                 @if($program->pivot->is_primary)
                 <span class="text-amber-400 flex-shrink-0" title="Primary program">
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -439,7 +853,7 @@
                 @endif
 
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-800">{{ $program->name }}</p>
+                    <p class="text-sm font-medium text-gray-800 truncate">{{ $program->name }}</p>
                     <p class="text-xs text-gray-400 mt-0.5">
                         {{ $program->country }}
                         <span class="mx-1 text-gray-200">·</span>
@@ -482,7 +896,7 @@
                     @endforeach
                 </select>
                 <button type="submit"
-                        class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors font-medium">
+                        class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg transition-colors font-medium">
                     Add
                 </button>
             </form>
@@ -496,445 +910,6 @@
             @if(session('program_error'))
             <p class="text-red-500 text-xs mt-2">{{ session('program_error') }}</p>
             @endif
-        </div>
-
-        {{-- Notes & Tasks tabs --}}
-        @php
-            $openTasks   = $lead->tasks->where('is_done', false)->sortBy('due_at');
-            $doneTasks   = $lead->tasks->where('is_done', true)->sortByDesc('due_at');
-            $allTasks    = $openTasks->merge($doneTasks);
-            $overdueTasks = $openTasks->filter(fn ($t) => $t->due_at && $t->due_at->isPast());
-            $defaultTab  = session('task_success') || $overdueTasks->isNotEmpty() ? 'tasks' : 'notes';
-        @endphp
-
-        @if($overdueTasks->isNotEmpty())
-        <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-0 flex items-start gap-2.5">
-            <svg class="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 7v5l3 3"/>
-            </svg>
-            <div>
-                <p class="text-sm font-semibold text-red-700">
-                    {{ $overdueTasks->count() }} overdue task{{ $overdueTasks->count() > 1 ? 's' : '' }}
-                </p>
-                <ul class="mt-0.5 space-y-0.5">
-                    @foreach($overdueTasks as $ot)
-                    <li class="text-xs text-red-600">
-                        {{ $ot->title }}
-                        <span class="text-red-400">· due {{ $ot->due_at->diffForHumans() }}</span>
-                        @if($ot->assignedTo)
-                        <span class="text-red-400">· {{ $ot->assignedTo->name }}</span>
-                        @endif
-                    </li>
-                    @endforeach
-                </ul>
-            </div>
-        </div>
-        @endif
-
-        <div class="bg-white rounded-xl border border-gray-200"
-             x-data="{ tab: '{{ $defaultTab }}' }">
-
-            {{-- Tab headers --}}
-            <div class="flex border-b border-gray-200 px-5">
-                <button @click="tab = 'notes'"
-                        :class="tab === 'notes' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
-                        class="px-1 py-3.5 text-sm font-medium border-b-2 mr-6 transition-colors">
-                    Notes
-                    <span class="ml-1.5 text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">
-                        {{ $lead->notes->count() }}
-                    </span>
-                </button>
-                <button @click="tab = 'tasks'"
-                        :class="tab === 'tasks' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
-                        class="px-1 py-3.5 text-sm font-medium border-b-2 transition-colors">
-                    Tasks
-                    @if($openTasks->count() > 0)
-                    <span class="ml-1.5 text-xs bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full font-semibold">
-                        {{ $openTasks->count() }}
-                    </span>
-                    @else
-                    <span class="ml-1.5 text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">
-                        {{ $lead->tasks->count() }}
-                    </span>
-                    @endif
-                </button>
-            </div>
-
-            {{-- NOTES --}}
-            <div x-show="tab === 'notes'" id="notes" class="p-5">
-
-                {{-- Add note --}}
-                <form method="POST" action="{{ route('leads.notes.store', $lead) }}" class="mb-6">
-                    @csrf
-                    <textarea name="content" rows="3" required
-                              placeholder="Write a note…"
-                              class="block w-full rounded-lg border-gray-300 text-sm shadow-sm
-                                     focus:ring-indigo-500 focus:border-indigo-500 resize-none">{{ old('content') }}</textarea>
-                    <div class="mt-2"
-                         x-data="{
-                            sel: ['internal'],
-                            toggle(v) {
-                                this.sel = this.sel.filter(x => x !== 'internal');
-                                this.sel.includes(v)
-                                    ? (this.sel = this.sel.filter(x => x !== v))
-                                    : this.sel.push(v);
-                                if (this.sel.length === 0) this.sel = ['internal'];
-                            },
-                            has(v) { return this.sel.includes(v); },
-                            get val() { return this.sel.join(','); },
-                            get label() {
-                                if (this.has('internal')) return 'Internal only';
-                                const map = { service_provider: 'Service Provider', agent: 'Agent', client: 'Client' };
-                                return 'Shared with: ' + this.sel.map(v => map[v]).join(', ');
-                            }
-                         }">
-                        <input type="hidden" name="visibility" :value="val">
-
-                        {{-- Visibility label --}}
-                        <div class="flex items-center gap-1.5 mb-2">
-                            <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
-                            </svg>
-                            <span class="text-xs" :class="has('internal') ? 'text-gray-400' : 'text-emerald-600 font-medium'" x-text="label"></span>
-                        </div>
-
-                        {{-- Chips + submit --}}
-                        <div class="flex items-center justify-between gap-3 flex-wrap">
-                            <div class="flex items-center gap-1.5 flex-wrap">
-                                @foreach([
-                                    ['key' => 'service_provider', 'label' => 'Service Provider'],
-                                    ['key' => 'agent',            'label' => 'Agent'],
-                                    ['key' => 'client',          'label' => 'Client'],
-                                ] as $opt)
-                                <button type="button" @click="toggle('{{ $opt['key'] }}')"
-                                        :class="has('{{ $opt['key'] }}')
-                                            ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-400'
-                                            : 'bg-gray-100 text-gray-400 hover:bg-gray-200'"
-                                        class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition-colors font-medium">
-                                    <svg x-show="has('{{ $opt['key'] }}')" class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd"/>
-                                    </svg>
-                                    {{ $opt['label'] }}
-                                </button>
-                                @endforeach
-                            </div>
-                            <button type="submit"
-                                    class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5
-                                           rounded-lg transition-colors font-medium">
-                                Add Note
-                            </button>
-                        </div>
-                    </div>
-                </form>
-
-                {{-- Notes list --}}
-                @forelse($lead->notes as $note)
-                <div class="pb-4 {{ !$loop->last ? 'border-b border-gray-100 mb-4' : '' }}">
-                    <div class="flex items-start justify-between gap-2">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <div class="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center
-                                        text-white text-xs font-semibold flex-shrink-0">
-                                {{ strtoupper(substr($note->createdBy->name, 0, 1)) }}
-                            </div>
-                            <span class="text-xs font-medium text-gray-700">{{ $note->createdBy->name }}</span>
-                            <span class="text-xs text-gray-400">{{ $note->created_at->diffForHumans() }}</span>
-                            @php $visParts = explode(',', $note->visibility ?? 'internal'); @endphp
-                        </div>
-                        @php
-                            $canDelete = auth()->user()->isAdmin()
-                                || ($note->created_by === auth()->id() && $note->created_at->diffInHours(now()) < 12);
-                        @endphp
-                        @if($canDelete)
-                        <form method="POST" action="{{ route('leads.notes.destroy', [$lead, $note]) }}"
-                              onsubmit="return confirm('Delete this note?')">
-                            @csrf @method('DELETE')
-                            <button type="submit" title="Delete note"
-                                    class="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0">
-                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
-                                </svg>
-                            </button>
-                        </form>
-                        @elseif($note->created_by === auth()->id())
-                        <span class="text-xs text-gray-300 flex-shrink-0" title="Can only delete within 12 hours">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>
-                            </svg>
-                        </span>
-                        @endif
-                    </div>
-                    <p class="text-sm text-gray-700 mt-2.5 whitespace-pre-wrap leading-relaxed">{{ $note->content }}</p>
-                    {{-- Visibility indicator --}}
-                    <div class="flex items-center gap-1.5 mt-2">
-                        <svg class="w-3 h-3 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
-                        </svg>
-                        @if(in_array('internal', $visParts))
-                            <span class="text-xs text-gray-300">Internal only</span>
-                        @else
-                            <span class="text-xs text-emerald-600">
-                                Shared with:
-                                @php
-                                    $visLabels = array_filter([
-                                        in_array('service_provider', $visParts) ? 'Service Provider' : null,
-                                        in_array('agent', $visParts)            ? 'Agent'            : null,
-                                        in_array('client', $visParts)           ? 'Client'           : null,
-                                    ]);
-                                @endphp
-                                {{ implode(', ', $visLabels) }}
-                            </span>
-                        @endif
-                    </div>
-                </div>
-                @empty
-                <p class="text-sm text-gray-400 text-center py-8">No notes yet. Add one above.</p>
-                @endforelse
-            </div>
-
-            {{-- TASKS --}}
-            <div x-show="tab === 'tasks'" id="tasks" class="p-5">
-
-                {{-- Add task --}}
-                <form method="POST" action="{{ route('leads.tasks.store', $lead) }}" class="mb-6 space-y-2.5">
-                    @csrf
-                    <input type="text" name="title" value="{{ old('title') }}" required
-                           placeholder="Task title…"
-                           class="block w-full rounded-lg border-gray-300 text-sm shadow-sm
-                                  focus:ring-indigo-500 focus:border-indigo-500">
-                    <div class="grid grid-cols-2 gap-2.5">
-                        <select name="assigned_to" required
-                                class="block w-full rounded-lg border-gray-300 text-sm shadow-sm
-                                       focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">Assign to…</option>
-                            @foreach($internalUsers as $user)
-                            <option value="{{ $user->id }}"
-                                    {{ old('assigned_to', auth()->user()?->id) === $user->id ? 'selected' : '' }}>
-                                {{ $user->name }}
-                            </option>
-                            @endforeach
-                        </select>
-                        <input type="datetime-local" name="due_at" value="{{ old('due_at') }}" required
-                               class="block w-full rounded-lg border-gray-300 text-sm shadow-sm
-                                      focus:ring-indigo-500 focus:border-indigo-500">
-                    </div>
-                    <div class="flex justify-end">
-                        <button type="submit"
-                                class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5
-                                       rounded-lg transition-colors font-medium">
-                            Add Task
-                        </button>
-                    </div>
-                </form>
-
-                {{-- Tasks list --}}
-                @forelse($allTasks as $task)
-                <div x-data="{
-                         done: {{ $task->is_done ? 'true' : 'false' }},
-                         async toggle() {
-                             const r = await fetch('{{ route('leads.tasks.toggle', [$lead, $task]) }}', {
-                                 method: 'PATCH',
-                                 headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content }
-                             });
-                             const d = await r.json();
-                             this.done = d.is_done;
-                         }
-                     }"
-                     class="flex items-start gap-3 py-3 {{ !$loop->last ? 'border-b border-gray-100' : '' }}">
-
-                    {{-- Checkbox --}}
-                    <button @click="toggle()" type="button" class="flex-shrink-0 mt-0.5">
-                        <div class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
-                             :class="done ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 hover:border-indigo-400'">
-                            <template x-if="done">
-                                <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
-                                </svg>
-                            </template>
-                        </div>
-                    </button>
-
-                    {{-- Content --}}
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm text-gray-800 transition-colors"
-                           :class="done ? 'line-through text-gray-400' : ''">
-                            {{ $task->title }}
-                        </p>
-                        <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-                            <span class="text-xs text-gray-400">{{ $task->assignedTo->name }}</span>
-                            <span class="text-xs {{ $task->isOverdue() ? 'text-red-500 font-medium' : 'text-gray-400' }}"
-                                  :class="done ? 'text-gray-400 !font-normal line-through' : ''">
-                                {{ $task->due_at->format('d M Y, H:i') }}
-                                @if($task->isOverdue())
-                                <span x-show="!done" class="ml-1 text-red-500">· Overdue</span>
-                                @endif
-                            </span>
-                        </div>
-                    </div>
-
-                    {{-- Delete --}}
-                    @if($task->created_by === auth()->id() || auth()->user()->isAdmin())
-                    <form method="POST" action="{{ route('leads.tasks.destroy', [$lead, $task]) }}"
-                          onsubmit="return confirm('Delete this task?')">
-                        @csrf @method('DELETE')
-                        <button type="submit" title="Delete task"
-                                class="text-gray-300 hover:text-red-500 transition-colors mt-0.5">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
-                    </form>
-                    @endif
-                </div>
-                @empty
-                <p class="text-sm text-gray-400 text-center py-8">No tasks yet. Add one above.</p>
-                @endforelse
-            </div>
-
-        </div>{{-- end tabs --}}
-    </div>
-
-    {{-- Right: Assignment + Companies + Stage history --}}
-    <div class="space-y-5">
-
-        {{-- Assignee --}}
-        <div class="bg-white rounded-xl border border-gray-200 p-5"
-             x-data="{ editing: false }">
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Assignee</h3>
-                @if($internalUsers->isNotEmpty())
-                <button @click="editing = !editing" type="button"
-                        class="text-xs text-indigo-600 hover:text-indigo-800"
-                        x-text="editing ? 'Cancel' : 'Change'"></button>
-                @endif
-            </div>
-
-            {{-- Display --}}
-            <div x-show="!editing">
-                @if($lead->assignedTo)
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center
-                                text-white text-sm font-semibold flex-shrink-0">
-                        {{ strtoupper(substr($lead->assignedTo->name, 0, 1)) }}
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-800">{{ $lead->assignedTo->name }}</p>
-                        <p class="text-xs text-gray-400">{{ $lead->assignedTo->roleLabel() }}</p>
-                    </div>
-                </div>
-                @else
-                <p class="text-sm text-gray-400">Unassigned</p>
-                @endif
-            </div>
-
-            {{-- Edit form --}}
-            <div x-show="editing" x-cloak>
-                <form method="POST" action="{{ route('leads.assign-user', $lead) }}" class="flex gap-2">
-                    @csrf @method('PATCH')
-                    <select name="assigned_to"
-                            class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="">— Unassign —</option>
-                        @foreach($internalUsers as $u)
-                        <option value="{{ $u->id }}" {{ $lead->assigned_to === $u->id ? 'selected' : '' }}>
-                            {{ $u->name }}
-                        </option>
-                        @endforeach
-                    </select>
-                    <button type="submit"
-                            class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">
-                        Save
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        {{-- Service Provider --}}
-        <div class="bg-white rounded-xl border border-gray-200 p-5"
-             x-data="{ editing: false }">
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Service Provider</h3>
-                @if($serviceProviders->isNotEmpty())
-                <button @click="editing = !editing" type="button"
-                        class="text-xs text-indigo-600 hover:text-indigo-800"
-                        x-text="editing ? 'Cancel' : 'Change'"></button>
-                @endif
-            </div>
-
-            <div x-show="!editing">
-                @if($lead->serviceProvider)
-                <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0"></span>
-                    <p class="text-sm font-medium text-gray-800">{{ $lead->serviceProvider->name }}</p>
-                </div>
-                @else
-                <p class="text-sm text-gray-400">Not assigned</p>
-                @endif
-            </div>
-
-            <div x-show="editing" x-cloak>
-                <form method="POST" action="{{ route('leads.assign-company', $lead) }}" class="flex gap-2">
-                    @csrf @method('PATCH')
-                    <input type="hidden" name="field" value="service_provider_id">
-                    <select name="company_id"
-                            class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="">— None —</option>
-                        @foreach($serviceProviders as $sp)
-                        <option value="{{ $sp->id }}" {{ $lead->service_provider_id === $sp->id ? 'selected' : '' }}>
-                            {{ $sp->name }}
-                        </option>
-                        @endforeach
-                    </select>
-                    <button type="submit"
-                            class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">
-                        Save
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        {{-- Agent --}}
-        <div class="bg-white rounded-xl border border-gray-200 p-5"
-             x-data="{ editing: false }">
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Agent</h3>
-                @if($agents->isNotEmpty())
-                <button @click="editing = !editing" type="button"
-                        class="text-xs text-indigo-600 hover:text-indigo-800"
-                        x-text="editing ? 'Cancel' : 'Change'"></button>
-                @endif
-            </div>
-
-            <div x-show="!editing">
-                @if($lead->agent)
-                <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0"></span>
-                    <p class="text-sm font-medium text-gray-800">{{ $lead->agent->name }}</p>
-                </div>
-                @else
-                <p class="text-sm text-gray-400">Not assigned</p>
-                @endif
-            </div>
-
-            <div x-show="editing" x-cloak>
-                <form method="POST" action="{{ route('leads.assign-company', $lead) }}" class="flex gap-2">
-                    @csrf @method('PATCH')
-                    <input type="hidden" name="field" value="agent_id">
-                    <select name="company_id"
-                            class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="">— None —</option>
-                        @foreach($agents as $ag)
-                        <option value="{{ $ag->id }}" {{ $lead->agent_id === $ag->id ? 'selected' : '' }}>
-                            {{ $ag->name }}
-                        </option>
-                        @endforeach
-                    </select>
-                    <button type="submit"
-                            class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">
-                        Save
-                    </button>
-                </form>
-            </div>
         </div>
 
         {{-- Stage history --}}

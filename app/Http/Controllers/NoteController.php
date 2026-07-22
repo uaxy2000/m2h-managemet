@@ -32,7 +32,7 @@ class NoteController extends Controller
             'created_at' => now(),
         ]);
 
-        return back()->with('note_success', 'Note added.')->withFragment('notes');
+        return back()->with('note_success', 'Note added.')->withFragment('timeline');
     }
 
     public function destroy(Lead $lead, Note $note): RedirectResponse
@@ -50,6 +50,6 @@ class NoteController extends Controller
 
         $note->delete();
 
-        return back()->with('note_success', 'Note deleted.')->withFragment('notes');
+        return back()->with('note_success', 'Note deleted.')->withFragment('timeline');
     }
 }

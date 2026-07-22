@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\CustomField;
 use App\Models\Lead;
+use App\Models\LeadActivity;
 use App\Models\LeadCustomValue;
 use App\Models\LeadStatusHistory;
 use App\Models\Pipeline;
@@ -226,7 +227,23 @@ class LeadController extends Controller
             'programs',
             'tags',
             'customValues.field.options',
+            'activities.user',
         ]);
+
+        // Build unified timeline: notes + tasks + activities, sorted oldest → newest
+        $timelineItems = collect();
+
+        foreach ($lead->notes as $note) {
+            $timelineItems->push(['type' => 'note', 'sort_at' => $note->created_at, 'item' => $note]);
+        }
+        foreach ($lead->tasks as $task) {
+            $timelineItems->push(['type' => 'task', 'sort_at' => $task->due_at ?? $task->created_at, 'item' => $task]);
+        }
+        foreach ($lead->activities as $activity) {
+            $timelineItems->push(['type' => 'activity', 'sort_at' => $activity->created_at, 'item' => $activity]);
+        }
+
+        $timeline = $timelineItems->sortBy('sort_at')->values();
 
         $internalUsers = User::where(function ($q) {
             $q->whereNull('company_id')
@@ -245,12 +262,12 @@ class LeadController extends Controller
             ->orderBy('name')
             ->get();
 
-        $customFields     = CustomField::where('is_active', true)->with('options')->orderBy('sort_order')->get();
+        $customFields      = CustomField::where('is_active', true)->with('options')->orderBy('sort_order')->get();
         $customValuesByKey = $lead->customValues->keyBy(fn ($cv) => $cv->field?->key);
 
         return view('leads.show', compact(
             'lead', 'internalUsers', 'serviceProviders', 'agents', 'allTags', 'availablePrograms',
-            'customFields', 'customValuesByKey'
+            'customFields', 'customValuesByKey', 'timeline'
         ));
     }
 
@@ -315,7 +332,25 @@ class LeadController extends Controller
             'assigned_to' => ['nullable', 'uuid', 'exists:users,id'],
         ]);
 
-        $lead->update(['assigned_to' => $validated['assigned_to'] ?? null]);
+        $oldId = $lead->assigned_to;
+        $newId = $validated['assigned_to'] ?? null;
+
+        $lead->update(['assigned_to' => $newId]);
+
+        if ($oldId !== $newId) {
+            $oldName = $oldId ? User::find($oldId)?->name : null;
+            $newName = $newId ? User::find($newId)?->name : null;
+
+            LeadActivity::create([
+                'lead_id'     => $lead->id,
+                'user_id'     => auth()->id(),
+                'type'        => 'assigned',
+                'description' => $newName
+                    ? 'Assigned to ' . $newName . ($oldName ? ' (was: ' . $oldName . ')' : '')
+                    : 'Assignment removed' . ($oldName ? ' (was: ' . $oldName . ')' : ''),
+                'visible_to'  => ['internal'],
+            ]);
+        }
 
         return back()->with('success', 'Assignment updated.');
     }
@@ -327,7 +362,28 @@ class LeadController extends Controller
             'company_id' => ['nullable', 'uuid', 'exists:companies,id'],
         ]);
 
-        $lead->update([$validated['field'] => $validated['company_id'] ?: null]);
+        $field = $validated['field'];
+        $oldId = $lead->$field;
+        $newId = $validated['company_id'] ?: null;
+
+        $lead->update([$field => $newId]);
+
+        if ($oldId !== $newId) {
+            $isAgent = ($field === 'agent_id');
+            $oldName = $oldId ? Company::find($oldId)?->name : null;
+            $newName = $newId ? Company::find($newId)?->name : null;
+            $label   = $isAgent ? 'Agent' : 'Service Provider';
+
+            LeadActivity::create([
+                'lead_id'     => $lead->id,
+                'user_id'     => auth()->id(),
+                'type'        => $isAgent ? 'agent_changed' : 'sp_changed',
+                'description' => $newName
+                    ? "{$label} set to {$newName}" . ($oldName ? " (was: {$oldName})" : '')
+                    : "{$label} removed" . ($oldName ? " (was: {$oldName})" : ''),
+                'visible_to'  => ['internal'],
+            ]);
+        }
 
         return back()->with('success', 'Lead updated.');
     }
