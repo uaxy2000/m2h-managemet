@@ -224,6 +224,7 @@ class LeadController extends Controller
             'statusHistory.toStage',
             'notes.createdBy',
             'tasks.assignedTo',
+            'tasks.createdBy',
             'programs',
             'tags',
             'customValues.field.options',

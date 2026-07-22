@@ -503,13 +503,19 @@
                 @elseif($entryType === 'task')
                 {{-- Task --}}
                 <div class="flex gap-3"
-                     x-data="{ done: {{ $item->is_done ? 'true' : 'false' }} }">
+                     x-data="{
+                         done: {{ $item->is_done ? 'true' : 'false' }},
+                         async toggle() {
+                             const r = await fetch('{{ route('leads.tasks.toggle', [$lead, $item]) }}', {
+                                 method: 'POST',
+                                 headers: {'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content}
+                             });
+                             const d = await r.json();
+                             this.done = d.is_done;
+                         }
+                     }">
                     <div class="flex-shrink-0 mt-0.5">
-                        <button type="button"
-                                @click="fetch('{{ route('leads.tasks.toggle', [$lead, $item]) }}', {
-                                    method: 'POST',
-                                    headers: {'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content}
-                                }).then(r => r.json()).then(d => done = d.is_done)"
+                        <button type="button" @click="toggle()"
                                 :class="done
                                     ? 'bg-emerald-500 text-white border-emerald-500'
                                     : 'border-gray-300 bg-white hover:border-indigo-400'"
@@ -531,13 +537,19 @@
                                 @endif
                             </span>
                             @endif
-                            @if($item->assignedTo)
-                            <span class="text-xs text-gray-400">· {{ $item->assignedTo->name }}</span>
-                            @endif
                         </div>
                         @if($item->description)
                         <p class="text-xs text-gray-500 mt-0.5">{{ $item->description }}</p>
                         @endif
+                        <div class="flex items-center gap-2 mt-0.5">
+                            @if($item->createdBy)
+                            <span class="text-xs text-gray-400">{{ $item->createdBy->name }} tarafından</span>
+                            @endif
+                            @if($item->assignedTo)
+                            <span class="text-xs text-gray-300">·</span>
+                            <span class="text-xs text-gray-500">{{ $item->assignedTo->name }} için</span>
+                            @endif
+                        </div>
                         @if($item->created_by === auth()->id() || auth()->user()->isAdmin())
                         <form method="POST" action="{{ route('leads.tasks.destroy', [$lead, $item]) }}"
                               onsubmit="return confirm('Delete task?')" class="mt-1">
