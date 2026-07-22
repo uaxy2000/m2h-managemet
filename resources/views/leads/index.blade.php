@@ -35,8 +35,13 @@
 
     {{-- Filter bar --}}
     @php
-    $allTagsFlat = $tagGroups->flatMap(fn ($g) => $g->tags)->concat($ungroupedTags);
-    $activeTag   = $allTagsFlat->firstWhere('id', $filters['tag']);
+    $allTagsFlat      = $tagGroups->flatMap(fn ($g) => $g->tags)->concat($ungroupedTags);
+    $selectedTagsJson = json_encode(
+        $allTagsFlat->whereIn('id', $filters['tags'])
+            ->map(fn ($t) => ['id' => $t->id, 'color' => $t->color, 'name' => $t->name])
+            ->values()->toArray(),
+        JSON_HEX_QUOT | JSON_HEX_TAG
+    );
     @endphp
     <form method="GET" action="{{ route('leads.index') }}" id="filter-form"
           class="flex-shrink-0 flex flex-wrap items-center gap-2 px-6 py-2.5 bg-white border-b border-gray-200">
@@ -89,38 +94,46 @@
         </select>
         @endif
 
-        {{-- Tags popup --}}
+        {{-- Tags popup (multi-select) --}}
         @if($hasTags)
         <div x-data="{
                 open: false,
-                tagId: '{{ $filters['tag'] }}',
-                tagColor: '{{ $activeTag?->color ?? '' }}',
-                tagName: '{{ addslashes($activeTag?->name ?? '') }}'
+                selected: {{ $selectedTagsJson }},
+                toggle(id, color, name) {
+                    const i = this.selected.findIndex(t => t.id === id);
+                    i >= 0 ? this.selected.splice(i, 1) : this.selected.push({ id, color, name });
+                },
+                has(id) { return this.selected.some(t => t.id === id); }
              }"
              class="relative flex-shrink-0"
              @click.outside="open = false">
-            <input type="hidden" name="tag" :value="tagId">
+
+            {{-- Hidden inputs — one per selected tag --}}
+            <template x-for="t in selected" :key="t.id">
+                <input type="hidden" name="tags[]" :value="t.id">
+            </template>
+
+            {{-- Trigger button --}}
             <button type="button" @click="open = !open"
-                    :class="tagId ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'"
+                    :class="selected.length ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'"
                     class="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border transition-colors">
                 <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"/>
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z"/>
                 </svg>
                 Tags
-                <template x-if="tagId">
-                    <span class="flex items-center gap-1 ml-0.5">
-                        <span class="w-2 h-2 rounded-full flex-shrink-0" :style="'background-color:' + tagColor"></span>
-                        <span class="text-xs font-medium max-w-24 truncate" x-text="tagName"></span>
-                        <button type="button" @click.stop="tagId = ''; tagColor = ''; tagName = ''"
-                                class="text-indigo-400 hover:text-red-500 transition-colors leading-none ml-0.5">×</button>
-                    </span>
-                </template>
+                <span x-show="selected.length > 0" class="flex items-center gap-1 ml-0.5">
+                    <span class="text-xs font-semibold bg-indigo-200 text-indigo-800 rounded-full px-1.5 py-0.5 leading-none"
+                          x-text="selected.length"></span>
+                    <button type="button" @click.stop="selected = []"
+                            class="text-indigo-400 hover:text-red-500 transition-colors leading-none">×</button>
+                </span>
                 <svg class="w-3 h-3 ml-1 flex-shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
                 </svg>
             </button>
 
+            {{-- Dropdown panel --}}
             <div x-show="open"
                  x-transition:enter="transition ease-out duration-100"
                  x-transition:enter-start="opacity-0 scale-95"
@@ -128,11 +141,11 @@
                  x-transition:leave="transition ease-in duration-75"
                  x-transition:leave-start="opacity-100 scale-100"
                  x-transition:leave-end="opacity-0 scale-95"
-                 class="absolute left-0 top-full mt-1 w-60 bg-white rounded-xl border border-gray-200 shadow-lg z-50 max-h-72 overflow-y-auto py-1">
+                 class="absolute left-0 top-full mt-1 w-60 bg-white rounded-xl border border-gray-200 shadow-lg z-50 max-h-80 overflow-y-auto py-1">
 
-                <button type="button" @click="tagId = ''; tagColor = ''; tagName = ''; open = false"
-                        class="w-full text-left px-3 py-1.5 text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors rounded">
-                    — No tag filter
+                <button type="button" @click="selected = []; open = false"
+                        class="w-full text-left px-3 py-1.5 text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors">
+                    — Clear tag filter
                 </button>
                 <div class="border-t border-gray-100 my-1"></div>
 
@@ -142,12 +155,12 @@
                     <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 pt-2 pb-1">{{ $group->name }}</p>
                     @foreach($group->tags as $tag)
                     <button type="button"
-                            @click="tagId = '{{ $tag->id }}'; tagColor = '{{ $tag->color }}'; tagName = '{{ addslashes($tag->name) }}'; open = false"
-                            :class="tagId === '{{ $tag->id }}' ? 'bg-indigo-50' : 'hover:bg-gray-50'"
+                            @click="toggle('{{ $tag->id }}', '{{ $tag->color }}', '{{ addslashes($tag->name) }}')"
+                            :class="has('{{ $tag->id }}') ? 'bg-indigo-50' : 'hover:bg-gray-50'"
                             class="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left transition-colors">
                         <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color:{{ $tag->color }}"></span>
-                        <span :class="tagId === '{{ $tag->id }}' ? 'text-indigo-700 font-medium' : 'text-gray-700'">{{ $tag->name }}</span>
-                        <svg x-show="tagId === '{{ $tag->id }}'" class="w-3.5 h-3.5 ml-auto text-indigo-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <span :class="has('{{ $tag->id }}') ? 'text-indigo-700 font-medium' : 'text-gray-700'">{{ $tag->name }}</span>
+                        <svg x-show="has('{{ $tag->id }}')" class="w-3.5 h-3.5 ml-auto text-indigo-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd"/>
                         </svg>
                     </button>
@@ -163,12 +176,12 @@
                     @endif
                     @foreach($ungroupedTags as $tag)
                     <button type="button"
-                            @click="tagId = '{{ $tag->id }}'; tagColor = '{{ $tag->color }}'; tagName = '{{ addslashes($tag->name) }}'; open = false"
-                            :class="tagId === '{{ $tag->id }}' ? 'bg-indigo-50' : 'hover:bg-gray-50'"
+                            @click="toggle('{{ $tag->id }}', '{{ $tag->color }}', '{{ addslashes($tag->name) }}')"
+                            :class="has('{{ $tag->id }}') ? 'bg-indigo-50' : 'hover:bg-gray-50'"
                             class="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left transition-colors">
                         <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color:{{ $tag->color }}"></span>
-                        <span :class="tagId === '{{ $tag->id }}' ? 'text-indigo-700 font-medium' : 'text-gray-700'">{{ $tag->name }}</span>
-                        <svg x-show="tagId === '{{ $tag->id }}'" class="w-3.5 h-3.5 ml-auto text-indigo-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <span :class="has('{{ $tag->id }}') ? 'text-indigo-700 font-medium' : 'text-gray-700'">{{ $tag->name }}</span>
+                        <svg x-show="has('{{ $tag->id }}')" class="w-3.5 h-3.5 ml-auto text-indigo-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd"/>
                         </svg>
                     </button>
@@ -200,7 +213,7 @@
             $filters['source'] ?: null,
             $filters['program_id'] ?: null,
             $filters['duplicate'] ? 1 : null,
-            $filters['tag'] ?: null,
+            count($filters['tags']) > 0 ? 1 : null,
         ])->filter()->count();
         @endphp
         @if($activeCount > 0)

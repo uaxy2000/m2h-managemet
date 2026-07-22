@@ -32,15 +32,15 @@ class LeadController extends Controller
             'source'      => $request->get('source'),
             'duplicate'   => $request->boolean('duplicate'),
             'program_id'  => $request->get('program_id'),
-            'tag'         => $request->get('tag'),
+            'tags'        => array_values(array_filter((array) $request->get('tags', []))),
         ];
 
         $currentPipeline = $currentPipelineId
             ? Pipeline::with([
                 'stages'       => fn ($q) => $q->orderBy('sort_order'),
                 'stages.leads' => function ($q) use ($filters) {
-                    $q->when($filters['tag'], fn ($q, $id) =>
-                            $q->whereHas('tags', fn ($q) => $q->where('tags.id', $id))
+                    $q->when($filters['tags'], fn ($q, $ids) =>
+                            $q->whereHas('tags', fn ($q) => $q->whereIn('tags.id', $ids))
                         )
                         ->when($filters['search'], fn ($q, $s) =>
                             $q->where(fn ($q) => $q
