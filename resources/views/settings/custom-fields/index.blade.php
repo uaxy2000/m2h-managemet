@@ -247,7 +247,7 @@
                                    class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                         </div>
                         <button type="submit"
-                                class="px-3 py-2 text-sm bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium transition-colors flex-shrink-0">
+                                class="px-3 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex-shrink-0">
                             Add Option
                         </button>
                     </form>
@@ -286,7 +286,7 @@
                                placeholder="Paste the raw Meta form question text…"
                                class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                         <button type="submit"
-                                class="px-3 py-2 text-sm bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium transition-colors flex-shrink-0">
+                                class="px-3 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex-shrink-0">
                             Map
                         </button>
                     </form>
