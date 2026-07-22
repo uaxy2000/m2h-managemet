@@ -61,9 +61,9 @@
                     {{-- Edit mode --}}
                     <form x-show="editing"
                           method="POST" action="{{ route('settings.tag-groups.update', $group) }}"
-                          class="flex gap-2" @submit="name = $el.querySelector('input').value">
+                          class="flex gap-2">
                         @csrf @method('PUT')
-                        <input type="text" name="name" :value="name" required maxlength="50" x-ref="input"
+                        <input type="text" name="name" x-model="name" required maxlength="50" x-ref="input"
                                x-init="$watch('editing', v => { if (v) $nextTick(() => $refs.input.focus()) })"
                                class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                         <button type="submit"
