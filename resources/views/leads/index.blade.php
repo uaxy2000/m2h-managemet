@@ -125,8 +125,8 @@
                 <span x-show="selected.length > 0" class="flex items-center gap-1 ml-0.5">
                     <span class="text-xs font-semibold bg-indigo-200 text-indigo-800 rounded-full px-1.5 py-0.5 leading-none"
                           x-text="selected.length"></span>
-                    <button type="button" @click.stop="selected = []"
-                            class="text-indigo-400 hover:text-red-500 transition-colors leading-none">×</button>
+                    <span @click.stop="selected = []"
+                          class="text-indigo-400 hover:text-red-500 transition-colors leading-none cursor-pointer">×</span>
                 </span>
                 <svg class="w-3 h-3 ml-1 flex-shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
