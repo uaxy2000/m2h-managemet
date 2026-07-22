@@ -500,11 +500,36 @@
 
         {{-- Notes & Tasks tabs --}}
         @php
-            $openTasks = $lead->tasks->where('is_done', false)->sortBy('due_at');
-            $doneTasks = $lead->tasks->where('is_done', true)->sortByDesc('due_at');
-            $allTasks  = $openTasks->merge($doneTasks);
-            $defaultTab = session('task_success') ? 'tasks' : 'notes';
+            $openTasks   = $lead->tasks->where('is_done', false)->sortBy('due_at');
+            $doneTasks   = $lead->tasks->where('is_done', true)->sortByDesc('due_at');
+            $allTasks    = $openTasks->merge($doneTasks);
+            $overdueTasks = $openTasks->filter(fn ($t) => $t->due_at && $t->due_at->isPast());
+            $defaultTab  = session('task_success') || $overdueTasks->isNotEmpty() ? 'tasks' : 'notes';
         @endphp
+
+        @if($overdueTasks->isNotEmpty())
+        <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-0 flex items-start gap-2.5">
+            <svg class="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 7v5l3 3"/>
+            </svg>
+            <div>
+                <p class="text-sm font-semibold text-red-700">
+                    {{ $overdueTasks->count() }} overdue task{{ $overdueTasks->count() > 1 ? 's' : '' }}
+                </p>
+                <ul class="mt-0.5 space-y-0.5">
+                    @foreach($overdueTasks as $ot)
+                    <li class="text-xs text-red-600">
+                        {{ $ot->title }}
+                        <span class="text-red-400">· due {{ $ot->due_at->diffForHumans() }}</span>
+                        @if($ot->assignedTo)
+                        <span class="text-red-400">· {{ $ot->assignedTo->name }}</span>
+                        @endif
+                    </li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+        @endif
 
         <div class="bg-white rounded-xl border border-gray-200"
              x-data="{ tab: '{{ $defaultTab }}' }">

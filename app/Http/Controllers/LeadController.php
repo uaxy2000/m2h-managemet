@@ -70,6 +70,11 @@ class LeadController extends Controller
                                 ? $q->whereHas('programs', fn ($q) => $q->where('country', substr($progId, 8)))
                                 : $q->whereHas('programs', fn ($q) => $q->where('programs.id', $progId))
                         )
+                        ->withCount(['tasks as overdue_count' => fn ($q) => $q
+                            ->where('is_done', false)
+                            ->whereNotNull('due_at')
+                            ->where('due_at', '<', now())
+                        ])
                         ->with([
                             'assignedTo',
                             'tags',

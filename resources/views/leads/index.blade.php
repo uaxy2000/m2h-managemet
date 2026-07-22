@@ -334,6 +334,15 @@
                         </div>
                         @endif
 
+                        @if($lead->overdue_count > 0)
+                        <div class="mt-1.5 flex items-center gap-1 text-xs text-red-600 font-medium">
+                            <svg class="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 7v5l3 3"/>
+                            </svg>
+                            {{ $lead->overdue_count }} overdue task{{ $lead->overdue_count > 1 ? 's' : '' }}
+                        </div>
+                        @endif
+
                         @if($lead->meta_platform || $lead->is_duplicate_flag)
                         <div class="mt-1.5 flex items-center gap-1.5 flex-wrap">
                             @if($lead->meta_platform === 'ig')
