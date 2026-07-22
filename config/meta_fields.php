@@ -14,7 +14,7 @@ return [
         => 'Wealth Level',
 
     // Italy Golden Visa specific questions
-    'bu program, önce italya\'da oturum izni verir, ardından 12 ay içerisinde minimum 250.000 euro veya üstü yatırım yapmayı zorunlu kılar.'
+    'bu program, önce itayla\'da oturum izni verir, ardından 12 ay içerisinde minimum 250.000 euro veya üstü yatırım yapmayı zorunlu kılar.'
         => '€250k Position',
 
     'italya altin vize programini daha once duydunuz mu'
