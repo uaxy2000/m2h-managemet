@@ -98,6 +98,6 @@ class Lead extends Model
     public function initials(): string
     {
         $parts = array_filter([$this->first_name, $this->last_name]);
-        return strtoupper(implode('', array_map(fn ($p) => substr($p, 0, 1), $parts)));
+        return mb_strtoupper(implode('', array_map(fn ($p) => mb_substr($p, 0, 1, 'UTF-8'), $parts)), 'UTF-8');
     }
 }
