@@ -26,7 +26,6 @@
 </div>
 
 {{-- Infrastructure notes --}}
-@if(auth()->user()->isAdmin())
 <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
     <div class="flex items-start gap-3">
         <svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -41,7 +40,6 @@
         </div>
     </div>
 </div>
-@endif
 
 {{-- Stat cards --}}
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -161,10 +159,10 @@ $totalCount = $allItems->count();
              style="width: {{ round($completedCount / $totalCount * 100) }}%"></div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-2">
         @foreach($phases as $phase)
-        <div class="{{ !$loop->first && !($loop->index === 1) ? 'pt-6 border-t border-gray-100' : '' }}">
-            <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">{{ $phase['title'] }}</p>
+        <div class="{{ !$loop->first && !($loop->index === 1) ? 'mt-10 pt-6 border-t-2 border-gray-200' : '' }}">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">{{ $phase['title'] }}</p>
             <ul class="space-y-2">
                 @foreach($phase['items'] as $item)
                 <li class="flex items-center gap-2.5 text-sm">
