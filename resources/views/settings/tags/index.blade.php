@@ -37,16 +37,42 @@
             @else
             <ul class="divide-y divide-gray-100">
                 @foreach($groups as $group)
-                <li class="flex items-center gap-3 py-2.5">
-                    <span class="text-sm text-gray-800 flex-1">{{ $group->name }}</span>
-                    <span class="text-xs text-gray-400">{{ $group->tags->count() }}</span>
-                    <form method="POST" action="{{ route('settings.tag-groups.destroy', $group) }}"
-                          onsubmit="return confirm('Delete group \'{{ addslashes($group->name) }}\'? Tags will become ungrouped.')">
-                        @csrf @method('DELETE')
-                        <button type="submit" class="p-1 text-gray-400 hover:text-red-500 rounded transition-colors">
+                <li x-data="{ editing: false, name: '{{ addslashes($group->name) }}' }" class="py-2.5">
+                    {{-- View mode --}}
+                    <div x-show="!editing" class="flex items-center gap-3">
+                        <span class="text-sm text-gray-800 flex-1" x-text="name"></span>
+                        <span class="text-xs text-gray-400">{{ $group->tags->count() }}</span>
+                        <button type="button" @click="editing = true"
+                                class="p-1 text-gray-400 hover:text-indigo-500 rounded transition-colors" title="Rename">
                             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z"/>
                             </svg>
+                        </button>
+                        <form method="POST" action="{{ route('settings.tag-groups.destroy', $group) }}"
+                              onsubmit="return confirm('Delete group \'{{ addslashes($group->name) }}\'? Tags will become ungrouped.')">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="p-1 text-gray-400 hover:text-red-500 rounded transition-colors">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                    {{-- Edit mode --}}
+                    <form x-show="editing"
+                          method="POST" action="{{ route('settings.tag-groups.update', $group) }}"
+                          class="flex gap-2" @submit="name = $el.querySelector('input').value">
+                        @csrf @method('PUT')
+                        <input type="text" name="name" :value="name" required maxlength="50" x-ref="input"
+                               x-init="$watch('editing', v => { if (v) $nextTick(() => $refs.input.focus()) })"
+                               class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <button type="submit"
+                                class="px-3 py-1 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors">
+                            Save
+                        </button>
+                        <button type="button" @click="editing = false"
+                                class="px-3 py-1 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            Cancel
                         </button>
                     </form>
                 </li>

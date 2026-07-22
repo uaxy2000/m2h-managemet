@@ -91,6 +91,7 @@ Route::middleware('auth')->group(function () {
 
             // Tag Groups
             Route::post('tag-groups', [TagGroupController::class, 'store'])->name('tag-groups.store');
+            Route::put('tag-groups/{tagGroup}', [TagGroupController::class, 'update'])->name('tag-groups.update');
             Route::delete('tag-groups/{tagGroup}', [TagGroupController::class, 'destroy'])->name('tag-groups.destroy');
 
             // Programs

@@ -20,6 +20,17 @@ class TagGroupController extends Controller
         return redirect()->route('settings.tags.index')->with('success', 'Group created.');
     }
 
+    public function update(Request $request, TagGroup $tagGroup): RedirectResponse
+    {
+        $request->validate([
+            'name' => ['required', 'string', 'max:50', 'unique:tag_groups,name,' . $tagGroup->id],
+        ]);
+
+        $tagGroup->update($request->only('name'));
+
+        return redirect()->route('settings.tags.index')->with('success', 'Group renamed.');
+    }
+
     public function destroy(TagGroup $tagGroup): RedirectResponse
     {
         $tagGroup->tags()->update(['tag_group_id' => null]);
