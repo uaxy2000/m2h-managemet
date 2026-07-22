@@ -507,7 +507,7 @@
                          done: {{ $item->is_done ? 'true' : 'false' }},
                          async toggle() {
                              const r = await fetch('{{ route('leads.tasks.toggle', [$lead, $item]) }}', {
-                                 method: 'POST',
+                                 method: 'PATCH',
                                  headers: {'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content}
                              });
                              const d = await r.json();
@@ -543,11 +543,11 @@
                         @endif
                         <div class="flex items-center gap-2 mt-0.5">
                             @if($item->createdBy)
-                            <span class="text-xs text-gray-400">{{ $item->createdBy->name }} tarafından</span>
+                            <span class="text-xs text-gray-400">by {{ $item->createdBy->name }}</span>
                             @endif
                             @if($item->assignedTo)
                             <span class="text-xs text-gray-300">·</span>
-                            <span class="text-xs text-gray-500">{{ $item->assignedTo->name }} için</span>
+                            <span class="text-xs text-gray-400">assigned to {{ $item->assignedTo->name }}</span>
                             @endif
                         </div>
                         @if($item->created_by === auth()->id() || auth()->user()->isAdmin())
@@ -580,7 +580,7 @@
                         <p class="text-sm text-gray-600">{{ $item->description }}</p>
                         <div class="flex items-center gap-1.5 mt-0.5">
                             @if($item->user)
-                            <span class="text-xs text-gray-400">{{ $item->user->name }}</span>
+                            <span class="text-xs text-gray-400">by {{ $item->user->name }}</span>
                             <span class="text-xs text-gray-300">·</span>
                             @endif
                             <span class="text-xs text-gray-400">{{ $item->created_at->diffForHumans() }}</span>
