@@ -142,13 +142,21 @@
 
         {{-- Meta Form Responses --}}
         @if(!empty($lead->meta_form_data))
+        @php
+        $metaLabels  = config('meta_fields', []);
+        $normalizeKey = fn(string $s) => mb_strtolower(str_replace(['İ', 'I'], 'i', $s), 'UTF-8');
+        @endphp
         <div class="bg-white rounded-xl border border-gray-200 p-5">
             <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Form Responses</h3>
             <dl class="space-y-3">
                 @foreach($lead->meta_form_data as $key => $value)
+                @php
+                $label = $metaLabels[$normalizeKey($key)]
+                    ?? ucwords(str_replace(['_', '-'], ' ', $key));
+                @endphp
                 <div>
-                    <dt class="text-xs text-gray-400">{{ ucwords(str_replace(['_', '-'], ' ', $key)) }}</dt>
-                    <dd class="text-sm text-gray-800 mt-0.5">{{ ucwords(str_replace('_', ' ', $value ?? '—')) }}</dd>
+                    <dt class="text-xs text-gray-400">{{ $label }}</dt>
+                    <dd class="text-sm text-gray-800 mt-0.5">{{ $value ?? '—' }}</dd>
                 </div>
                 @endforeach
             </dl>
