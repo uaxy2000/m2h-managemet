@@ -33,24 +33,155 @@
         </div>
     </div>
 
-    {{-- Tag filter bar --}}
-    @if($tags->isNotEmpty())
-    <div class="flex-shrink-0 flex items-center gap-2 px-6 py-2 bg-gray-50 border-b border-gray-200 overflow-x-auto">
-        <span class="text-xs text-gray-400 font-medium flex-shrink-0">Filter:</span>
-        @foreach($tags as $tag)
+    {{-- Filter bar --}}
+    <form method="GET" action="{{ route('leads.index') }}" id="filter-form"
+          class="flex-shrink-0 flex flex-wrap items-center gap-2 px-6 py-2.5 bg-white border-b border-gray-200">
+        <input type="hidden" name="pipeline" value="{{ $currentPipeline?->id }}">
+        @if($filters['tag'])
+        <input type="hidden" name="tag" value="{{ $filters['tag'] }}">
+        @endif
+
+        {{-- Name search --}}
+        <div class="relative flex-shrink-0">
+            <svg class="w-3.5 h-3.5 absolute left-2.5 top-2 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>
+            </svg>
+            <input type="text" name="search" value="{{ $filters['search'] }}" placeholder="İsim ara…"
+                   class="pl-8 pr-3 py-1.5 rounded-lg border border-gray-200 text-sm focus:ring-indigo-500 focus:border-indigo-500 w-40">
+        </div>
+
+        {{-- Assigned to (admin/super_admin only) --}}
+        @if(auth()->user()->role !== 'user')
+        <select name="assigned_to" onchange="document.getElementById('filter-form').submit()"
+                class="flex-shrink-0 rounded-lg border-gray-200 text-sm py-1.5 pl-2.5 pr-7 focus:ring-indigo-500 focus:border-indigo-500">
+            <option value="">Tüm kullanıcılar</option>
+            @foreach($internalUsers as $u)
+            <option value="{{ $u->id }}" @selected($filters['assigned_to'] == $u->id)>{{ $u->name }}</option>
+            @endforeach
+        </select>
+        @else
+        <span class="text-xs text-gray-400 italic flex-shrink-0">Yalnızca sizin leadleriniz</span>
+        @endif
+
+        {{-- Source --}}
+        <select name="source" onchange="document.getElementById('filter-form').submit()"
+                class="flex-shrink-0 rounded-lg border-gray-200 text-sm py-1.5 pl-2.5 pr-7 focus:ring-indigo-500 focus:border-indigo-500">
+            <option value="">Tüm kaynaklar</option>
+            <option value="meta_ad" @selected($filters['source'] === 'meta_ad')>Meta Reklam</option>
+            <option value="manual"  @selected($filters['source'] === 'manual')>Manuel</option>
+            <option value="agent"   @selected($filters['source'] === 'agent')>Agent</option>
+        </select>
+
+        {{-- Program --}}
+        @if($programsByCountry->isNotEmpty())
+        <select name="program_id" onchange="document.getElementById('filter-form').submit()"
+                class="flex-shrink-0 rounded-lg border-gray-200 text-sm py-1.5 pl-2.5 pr-7 focus:ring-indigo-500 focus:border-indigo-500">
+            <option value="">Tüm programlar</option>
+            @foreach($programsByCountry as $country => $countryPrograms)
+            <optgroup label="{{ $country }}">
+                <option value="country:{{ $country }}" @selected($filters['program_id'] === 'country:'.$country)>— Tüm {{ $country }}</option>
+                @foreach($countryPrograms as $prog)
+                <option value="{{ $prog->id }}" @selected($filters['program_id'] === $prog->id)>{{ $prog->name }}</option>
+                @endforeach
+            </optgroup>
+            @endforeach
+        </select>
+        @endif
+
+        {{-- Duplicate toggle --}}
+        <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none flex-shrink-0">
+            <input type="checkbox" name="duplicate" value="1" @checked($filters['duplicate'])
+                   onchange="document.getElementById('filter-form').submit()"
+                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            Duplikat
+        </label>
+
+        {{-- Search submit (for text input) --}}
+        <button type="submit"
+                class="flex-shrink-0 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">
+            Ara
+        </button>
+
+        {{-- Active filter count + clear all --}}
         @php
-            $isActive = $activeTagId === $tag->id;
-            $href = route('leads.index', ['pipeline' => $currentPipeline?->id, 'tag' => $isActive ? null : $tag->id]);
+        $activeCount = collect([
+            $filters['search'] ?: null,
+            (auth()->user()->role !== 'user' && $filters['assigned_to']) ? $filters['assigned_to'] : null,
+            $filters['source'] ?: null,
+            $filters['program_id'] ?: null,
+            $filters['duplicate'] ? 1 : null,
+            $filters['tag'] ?: null,
+        ])->filter()->count();
         @endphp
-        <a href="{{ $href }}"
-           class="flex-shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors {{ $isActive ? 'text-white border-transparent' : 'text-gray-500 border-gray-200 hover:border-gray-400 bg-white' }}"
-           style="{{ $isActive ? 'background-color:' . $tag->color . ';border-color:' . $tag->color : '' }}">
-            {{ $tag->name }}
-        </a>
-        @endforeach
-        @if($activeTagId)
+        @if($activeCount > 0)
+        <span class="flex-shrink-0 text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
+            {{ $activeCount }} aktif
+        </span>
         <a href="{{ route('leads.index', ['pipeline' => $currentPipeline?->id]) }}"
-           class="flex-shrink-0 text-xs text-gray-400 hover:text-gray-600 ml-1">× Clear</a>
+           class="flex-shrink-0 text-xs text-gray-400 hover:text-red-500 transition-colors">
+            × Temizle
+        </a>
+        @endif
+    </form>
+
+    {{-- Tag filter grouped by group --}}
+    @if($hasTags)
+    @php
+    $baseParams = array_filter([
+        'pipeline'    => $currentPipeline?->id,
+        'search'      => $filters['search'] ?: null,
+        'assigned_to' => (auth()->user()->role !== 'user' && $filters['assigned_to']) ? $filters['assigned_to'] : null,
+        'source'      => $filters['source'] ?: null,
+        'program_id'  => $filters['program_id'] ?: null,
+        'duplicate'   => $filters['duplicate'] ? 1 : null,
+    ], fn ($v) => $v !== null && $v !== '');
+    @endphp
+    <div class="flex-shrink-0 flex flex-wrap items-center gap-x-4 gap-y-1.5 px-6 py-2 bg-gray-50 border-b border-gray-200">
+        <span class="text-xs text-gray-400 font-medium flex-shrink-0">Tag:</span>
+
+        @foreach($tagGroups as $group)
+        @if($group->tags->isNotEmpty())
+        <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="text-xs font-semibold text-gray-400 flex-shrink-0">{{ $group->name }}:</span>
+            @foreach($group->tags as $tag)
+            @php
+                $isActive = $filters['tag'] === $tag->id;
+                $href = route('leads.index', array_merge($baseParams, ['tag' => $isActive ? null : $tag->id]));
+            @endphp
+            <a href="{{ $href }}"
+               class="flex-shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors
+                      {{ $isActive ? 'text-white border-transparent' : 'text-gray-500 border-gray-200 hover:border-gray-400 bg-white' }}"
+               style="{{ $isActive ? 'background-color:'.$tag->color.';border-color:'.$tag->color : '' }}">
+                {{ $tag->name }}
+            </a>
+            @endforeach
+        </div>
+        @endif
+        @endforeach
+
+        @if($ungroupedTags->isNotEmpty())
+        <div class="flex items-center gap-1.5 flex-wrap">
+            @if($tagGroups->contains(fn ($g) => $g->tags->isNotEmpty()))
+            <span class="text-xs font-semibold text-gray-400 flex-shrink-0">Diğer:</span>
+            @endif
+            @foreach($ungroupedTags as $tag)
+            @php
+                $isActive = $filters['tag'] === $tag->id;
+                $href = route('leads.index', array_merge($baseParams, ['tag' => $isActive ? null : $tag->id]));
+            @endphp
+            <a href="{{ $href }}"
+               class="flex-shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors
+                      {{ $isActive ? 'text-white border-transparent' : 'text-gray-500 border-gray-200 hover:border-gray-400 bg-white' }}"
+               style="{{ $isActive ? 'background-color:'.$tag->color.';border-color:'.$tag->color : '' }}">
+                {{ $tag->name }}
+            </a>
+            @endforeach
+        </div>
+        @endif
+
+        @if($filters['tag'])
+        <a href="{{ route('leads.index', $baseParams) }}"
+           class="flex-shrink-0 text-xs text-gray-400 hover:text-gray-600 ml-auto">× Tag temizle</a>
         @endif
     </div>
     @endif

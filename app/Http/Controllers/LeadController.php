@@ -8,6 +8,7 @@ use App\Models\LeadStatusHistory;
 use App\Models\Pipeline;
 use App\Models\Program;
 use App\Models\Tag;
+use App\Models\TagGroup;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -23,28 +24,80 @@ class LeadController extends Controller
             ->get();
 
         $currentPipelineId = $request->get('pipeline', $pipelines->first()?->id);
+        $authUser          = auth()->user();
+
+        $filters = [
+            'search'      => trim((string) $request->get('search')),
+            'assigned_to' => $authUser->role === 'user' ? $authUser->id : $request->get('assigned_to'),
+            'source'      => $request->get('source'),
+            'duplicate'   => $request->boolean('duplicate'),
+            'program_id'  => $request->get('program_id'),
+            'tag'         => $request->get('tag'),
+        ];
 
         $currentPipeline = $currentPipelineId
             ? Pipeline::with([
-                'stages' => function ($q) {
-                    $q->orderBy('sort_order');
-                },
-                'stages.leads' => function ($q) use ($request) {
-                    $q->when($request->get('tag'), fn ($q, $tagId) =>
-                        $q->whereHas('tags', fn ($q) => $q->where('tags.id', $tagId))
-                    )->with([
-                        'assignedTo',
-                        'tags',
-                        'programs' => fn ($q) => $q->wherePivot('is_primary', true),
-                    ])->orderByDesc('created_at');
+                'stages'       => fn ($q) => $q->orderBy('sort_order'),
+                'stages.leads' => function ($q) use ($filters) {
+                    $q->when($filters['tag'], fn ($q, $id) =>
+                            $q->whereHas('tags', fn ($q) => $q->where('tags.id', $id))
+                        )
+                        ->when($filters['search'], fn ($q, $s) =>
+                            $q->where(fn ($q) => $q
+                                ->where('first_name', 'like', "%{$s}%")
+                                ->orWhere('last_name', 'like', "%{$s}%")
+                            )
+                        )
+                        ->when($filters['assigned_to'], fn ($q, $uid) =>
+                            $q->where('assigned_to', $uid)
+                        )
+                        ->when($filters['source'] === 'meta_ad',
+                            fn ($q) => $q->where('source', 'meta_ad')
+                        )
+                        ->when($filters['source'] === 'manual',
+                            fn ($q) => $q->whereNull('source')->whereNull('agent_id')
+                        )
+                        ->when($filters['source'] === 'agent',
+                            fn ($q) => $q->whereNotNull('agent_id')
+                        )
+                        ->when($filters['duplicate'], fn ($q) =>
+                            $q->where('is_duplicate_flag', true)
+                        )
+                        ->when($filters['program_id'], fn ($q, $progId) =>
+                            str_starts_with($progId, 'country:')
+                                ? $q->whereHas('programs', fn ($q) => $q->where('country', substr($progId, 8)))
+                                : $q->whereHas('programs', fn ($q) => $q->where('programs.id', $progId))
+                        )
+                        ->with([
+                            'assignedTo',
+                            'tags',
+                            'programs' => fn ($q) => $q->wherePivot('is_primary', true),
+                        ])
+                        ->orderByDesc('created_at');
                 },
             ])->find($currentPipelineId)
             : null;
 
-        $tags        = Tag::orderBy('name')->get();
-        $activeTagId = $request->get('tag');
+        $tagGroups     = TagGroup::with(['tags' => fn ($q) => $q->orderBy('name')])->orderBy('name')->get();
+        $ungroupedTags = Tag::whereNull('tag_group_id')->orderBy('name')->get();
+        $hasTags       = $tagGroups->contains(fn ($g) => $g->tags->isNotEmpty()) || $ungroupedTags->isNotEmpty();
 
-        return view('leads.index', compact('pipelines', 'currentPipeline', 'tags', 'activeTagId'));
+        $internalUsers = $authUser->role !== 'user'
+            ? User::where(function ($q) {
+                $q->whereNull('company_id')
+                  ->orWhereHas('company', fn ($q) => $q->where('type', 'internal'));
+            })->orderBy('name')->get()
+            : collect();
+
+        $programsByCountry = Program::where('is_active', true)
+            ->orderBy('country')->orderBy('name')
+            ->get()->groupBy('country');
+
+        return view('leads.index', compact(
+            'pipelines', 'currentPipeline', 'filters',
+            'tagGroups', 'ungroupedTags', 'hasTags',
+            'internalUsers', 'programsByCountry'
+        ));
     }
 
     public function create(Request $request): View
