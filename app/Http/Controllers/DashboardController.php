@@ -10,9 +10,33 @@ class DashboardController extends Controller
 {
     public function index(): View
     {
-        $totalLeads = Lead::count();
-        $openTasks  = Task::where('is_done', false)->count();
+        $authUser = auth()->user();
 
-        return view('dashboard', compact('totalLeads', 'openTasks'));
+        $leadQuery = Lead::query();
+        if ($authUser->role === 'user') {
+            $leadQuery->where('assigned_to', $authUser->id);
+        }
+
+        $totalLeads      = (clone $leadQuery)->count();
+        $metaLeads       = (clone $leadQuery)->where('source', 'meta_ad')->count();
+        $duplicates      = (clone $leadQuery)->where('is_duplicate_flag', true)->count();
+        $newThisWeek     = (clone $leadQuery)->where('created_at', '>=', now()->startOfWeek())->count();
+
+        $taskQuery = Task::where('is_done', false);
+        if ($authUser->role === 'user') {
+            $taskQuery->whereHas('lead', fn ($q) => $q->where('assigned_to', $authUser->id));
+        }
+        $openTasks = $taskQuery->count();
+
+        $recentLeads = (clone $leadQuery)
+            ->with(['stage', 'assignedTo', 'tags'])
+            ->orderByDesc('created_at')
+            ->limit(8)
+            ->get();
+
+        return view('dashboard', compact(
+            'totalLeads', 'metaLeads', 'duplicates', 'newThisWeek',
+            'openTasks', 'recentLeads'
+        ));
     }
 }
