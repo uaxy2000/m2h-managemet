@@ -47,7 +47,7 @@ class CustomFieldController extends Controller
 
         $customField->update($validated);
 
-        return back()->with('success', 'Field updated.');
+        return back()->with('success', 'Field updated.')->with('open_field', $customField->id);
     }
 
     public function destroy(CustomField $customField): RedirectResponse
@@ -76,7 +76,7 @@ class CustomFieldController extends Controller
 
         CustomFieldOption::create($validated);
 
-        return back()->with('success', 'Option added.');
+        return back()->with('success', 'Option added.')->with('open_field', $customField->id);
     }
 
     public function updateOption(Request $request, CustomField $customField, CustomFieldOption $option): RedirectResponse
@@ -101,14 +101,14 @@ class CustomFieldController extends Controller
             'meta_aliases' => $aliases,
         ]);
 
-        return back()->with('success', 'Option updated.');
+        return back()->with('success', 'Option updated.')->with('open_field', $customField->id);
     }
 
     public function destroyOption(CustomField $customField, CustomFieldOption $option): RedirectResponse
     {
         $option->delete();
 
-        return back()->with('success', 'Option deleted.');
+        return back()->with('success', 'Option deleted.')->with('open_field', $customField->id);
     }
 
     // ── Meta question mappings ─────────────────────────────────────────
@@ -129,13 +129,14 @@ class CustomFieldController extends Controller
             'custom_field_id'   => $customField->id,
         ]);
 
-        return back()->with('success', 'Meta question mapped.');
+        return back()->with('success', 'Meta question mapped.')->with('open_field', $customField->id);
     }
 
     public function destroyMapping(MetaQuestionMapping $mapping): RedirectResponse
     {
+        $fieldId = $mapping->custom_field_id;
         $mapping->delete();
 
-        return back()->with('success', 'Mapping removed.');
+        return back()->with('success', 'Mapping removed.')->with('open_field', $fieldId);
     }
 }

@@ -67,7 +67,7 @@
 
         <div class="space-y-4">
         @foreach($fields as $field)
-        <div x-data="{ open: false, editing: false, editingOption: null }"
+        <div x-data="{ open: {{ session('open_field') === $field->id ? 'true' : 'false' }}, editing: false, editingOption: null }"
              class="bg-white rounded-xl border border-gray-200 overflow-hidden">
 
             {{-- Field header --}}
