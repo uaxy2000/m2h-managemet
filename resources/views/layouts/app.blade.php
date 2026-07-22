@@ -21,6 +21,7 @@
 
         {{-- Navigation --}}
         <nav class="flex-1 px-3 py-5 space-y-0.5 overflow-y-auto">
+            <span class="block px-3 py-1 text-xs text-red-400">⚡ TEST {{ now()->format('H:i:s') }}</span>
 
             <a href="{{ route('dashboard') }}"
                class="group flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
