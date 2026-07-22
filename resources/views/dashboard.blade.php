@@ -143,10 +143,10 @@ $totalCount = $allItems->count();
              style="width: {{ round($completedCount / $totalCount * 100) }}%"></div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-10">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-8">
         @foreach($phases as $phase)
-        <div>
-            <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3 pb-2 border-b border-gray-100">{{ $phase['title'] }}</p>
+        <div class="{{ !$loop->first && !($loop->index === 1) ? 'pt-6 border-t border-gray-100' : '' }}">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">{{ $phase['title'] }}</p>
             <ul class="space-y-2">
                 @foreach($phase['items'] as $item)
                 <li class="flex items-center gap-2.5 text-sm">
