@@ -719,8 +719,8 @@
     <div class="space-y-5">
 
         {{-- Assignment card (Assignee + Service Provider + Agent) --}}
-        <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Assignment</h3>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Assignment</h3>
 
             {{-- Assignee --}}
             <div x-data="{ editing: false }">
@@ -757,10 +757,8 @@
                 </div>
             </div>
 
-            <div class="border-t border-gray-100"></div>
-
             {{-- Service Provider --}}
-            <div x-data="{ editing: false }">
+            <div class="border-t border-gray-100 mt-5 pt-4" x-data="{ editing: false }">
                 <div class="flex items-center justify-between mb-1">
                     <p class="text-xs text-gray-400">Service Provider</p>
                     @if($serviceProviders->isNotEmpty())
@@ -797,10 +795,8 @@
                 </div>
             </div>
 
-            <div class="border-t border-gray-100"></div>
-
             {{-- Agent --}}
-            <div x-data="{ editing: false }">
+            <div class="border-t border-gray-100 mt-5 pt-4" x-data="{ editing: false }">
                 <div class="flex items-center justify-between mb-1">
                     <p class="text-xs text-gray-400">Agent</p>
                     @if($agents->isNotEmpty())
