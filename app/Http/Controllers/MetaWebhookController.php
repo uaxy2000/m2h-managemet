@@ -186,19 +186,28 @@ class MetaWebhookController extends Controller
             return;
         }
 
-        // Load all meta_question_mappings keyed by their normalized question key
+        // Key all stored mappings by their normalized form (spaces→underscores)
         $questionMappings = MetaQuestionMapping::with('field.options')->get()
-            ->keyBy('meta_question_key');
+            ->keyBy(fn ($m) => $this->normalizeKey($m->meta_question_key));
+
+        Log::info('Meta webhook: populateCustomFields', [
+            'lead_id'      => $lead->id,
+            'incoming'     => array_keys($customFields),
+            'stored_keys'  => $questionMappings->keys()->values()->all(),
+        ]);
 
         foreach ($customFields as $rawKey => $rawValue) {
             if ($rawValue === null || $rawValue === '') {
                 continue;
             }
 
-            $normalizedKey = mb_strtolower(str_replace(['İ', 'I'], 'i', $rawKey), 'UTF-8');
+            $normalizedKey = $this->normalizeKey($rawKey);
             $questionMap   = $questionMappings[$normalizedKey] ?? null;
 
             if (!$questionMap || !$questionMap->field) {
+                Log::info('Meta webhook: no mapping for key', [
+                    'raw' => $rawKey, 'normalized' => $normalizedKey,
+                ]);
                 continue;
             }
 
@@ -206,13 +215,12 @@ class MetaWebhookController extends Controller
 
             // For select/multi_select: match raw value against option meta_aliases
             if (in_array($field->type, ['select', 'multi_select'], true)) {
-                $normalizedRaw  = mb_strtolower(str_replace(['İ', 'I'], 'i', $rawValue), 'UTF-8');
-                $matchedOption  = null;
+                $normalizedRaw = $this->normalizeKey($rawValue);
+                $matchedOption = null;
 
                 foreach ($field->options as $opt) {
-                    $aliases = $opt->meta_aliases ?? [];
-                    foreach ($aliases as $alias) {
-                        if (mb_strtolower(str_replace(['İ', 'I'], 'i', $alias), 'UTF-8') === $normalizedRaw) {
+                    foreach ($opt->meta_aliases ?? [] as $alias) {
+                        if ($this->normalizeKey($alias) === $normalizedRaw) {
                             $matchedOption = $opt;
                             break 2;
                         }
@@ -221,7 +229,13 @@ class MetaWebhookController extends Controller
 
                 if (!$matchedOption) {
                     Log::info('Meta webhook: no option alias match', [
-                        'field' => $field->key, 'raw_value' => $rawValue,
+                        'field'          => $field->key,
+                        'raw_value'      => $rawValue,
+                        'normalized_raw' => $normalizedRaw,
+                        'stored_aliases' => $field->options->map(fn ($o) => [
+                            'value'   => $o->value,
+                            'aliases' => $o->meta_aliases,
+                        ])->all(),
                     ]);
                     continue;
                 }
@@ -230,7 +244,6 @@ class MetaWebhookController extends Controller
                     ? json_encode([$matchedOption->value])
                     : $matchedOption->value;
             } else {
-                // date / text: store raw value directly
                 $storedValue = $rawValue;
             }
 
@@ -238,7 +251,19 @@ class MetaWebhookController extends Controller
                 ['lead_id' => $lead->id, 'custom_field_id' => $field->id],
                 ['value' => $storedValue]
             );
+
+            Log::info('Meta webhook: custom field populated', [
+                'lead_id' => $lead->id, 'field' => $field->key, 'value' => $storedValue,
+            ]);
         }
+    }
+
+    private function normalizeKey(string $key): string
+    {
+        // lowercase + Turkish İ/I fix + spaces to underscores
+        return str_replace(' ', '_',
+            mb_strtolower(str_replace(['İ', 'I'], 'i', trim($key)), 'UTF-8')
+        );
     }
 
     private function parseFields(array $fieldData): array
