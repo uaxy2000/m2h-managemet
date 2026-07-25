@@ -82,7 +82,7 @@
             {{ $lead->initials() }}
         </div>
         <div class="flex-1 min-w-0">
-            <div class="flex items-start gap-4 justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-start sm:gap-4 sm:justify-between gap-2">
 
                 {{-- Left: name, badges, pipeline info --}}
                 <div class="min-w-0">
@@ -128,8 +128,8 @@
                 </div>
 
                 {{-- Right: Tags --}}
-                <div class="flex-shrink-0 text-right">
-                    <div class="flex flex-wrap gap-1.5 justify-end mb-2">
+                <div class="sm:flex-shrink-0 sm:text-right sm:max-w-xs">
+                    <div class="flex flex-wrap gap-1.5 sm:justify-end mb-2">
                         @forelse($lead->tags as $tag)
                         <span class="px-2.5 py-0.5 rounded-full text-xs font-medium text-white whitespace-nowrap"
                               style="background: {{ $tag->color }}">{{ $tag->name }}</span>
@@ -265,10 +265,10 @@
 @endif
 
 {{-- Two-column layout: 40% left | 60% right --}}
-<div class="flex gap-5 items-start">
+<div class="flex flex-col lg:flex-row gap-5 items-start">
 
     {{-- Left column (40%) --}}
-    <div class="space-y-5" style="width:40%;flex-shrink:0">
+    <div class="space-y-5 w-full lg:w-2/5 lg:flex-shrink-0">
 
         {{-- Contact --}}
         <div class="bg-white rounded-xl border border-gray-200 p-5">
@@ -686,7 +686,7 @@
     </div>
 
     {{-- Right column (60%) --}}
-    <div class="space-y-5 min-w-0 flex-1">
+    <div class="space-y-5 min-w-0 w-full lg:flex-1">
 
         {{-- Overdue task alert --}}
         @php
