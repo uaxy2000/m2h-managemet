@@ -719,7 +719,7 @@
 
         {{-- Timeline (internal users only) --}}
         @if(auth()->user()->isInternal())
-        <div class="bg-white rounded-xl border border-gray-200" id="timeline">
+        <div class="bg-white rounded-xl border border-indigo-200 shadow-md shadow-indigo-50" id="timeline">
 
             <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-200">
                 <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Timeline</h3>
