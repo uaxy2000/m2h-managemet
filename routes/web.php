@@ -41,7 +41,7 @@ Route::middleware('auth')->group(function () {
 
     // Tasks (nested under lead)
     Route::post('leads/{lead}/tasks', [TaskController::class, 'store'])->name('leads.tasks.store');
-    Route::patch('leads/{lead}/tasks/{task}/toggle', [TaskController::class, 'toggle'])->name('leads.tasks.toggle');
+    Route::post('leads/{lead}/tasks/{task}/toggle', [TaskController::class, 'toggle'])->name('leads.tasks.toggle');
     Route::delete('leads/{lead}/tasks/{task}', [TaskController::class, 'destroy'])->name('leads.tasks.destroy');
 
     // Tags (nested under lead)

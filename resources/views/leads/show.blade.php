@@ -784,7 +784,7 @@
                          done: {{ $item->is_done ? 'true' : 'false' }},
                          async toggle() {
                              const r = await fetch('{{ route('leads.tasks.toggle', [$lead, $item]) }}', {
-                                 method: 'PATCH',
+                                 method: 'POST',
                                  headers: {'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content}
                              });
                              const d = await r.json();
