@@ -138,6 +138,7 @@ $phases = [
             ['label' => 'Service Provider & Agent linking per lead',                       'complete' => true],
             ['label' => 'Lead filters (search, source, tags, program, duplicate)',         'complete' => true],
             ['label' => 'Custom fields with per-lead values & Meta form mapping',          'complete' => true],
+            ['label' => 'Unified lead timeline (notes, tasks, tag & assignment activity)', 'complete' => true],
             ['label' => 'Client portal login (read-only lead view)',                       'complete' => false],
         ],
     ],
