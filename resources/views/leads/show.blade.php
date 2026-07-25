@@ -175,11 +175,11 @@
                     <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ $groupName }}</p>
                     <div class="flex flex-wrap gap-2">
                         @foreach($groupTags as $tag)
-                        <button type="button" @click="toggle({{ $tag->id }})"
-                                :class="isSelected({{ $tag->id }})
+                        <button type="button" @click="toggle('{{ $tag->id }}')"
+                                :class="isSelected('{{ $tag->id }}')
                                     ? 'text-white border-transparent'
                                     : 'text-gray-500 border-gray-200 bg-white hover:border-gray-400'"
-                                :style="isSelected({{ $tag->id }}) ? 'background:{{ $tag->color }};border-color:{{ $tag->color }}' : ''"
+                                :style="isSelected('{{ $tag->id }}') ? 'background:{{ $tag->color }};border-color:{{ $tag->color }}' : ''"
                                 class="px-3 py-1 rounded-full text-xs font-medium border transition-all">
                             {{ $tag->name }}
                         </button>
@@ -195,11 +195,11 @@
                     @endif
                     <div class="flex flex-wrap gap-2">
                         @foreach($tagsUngrouped as $tag)
-                        <button type="button" @click="toggle({{ $tag->id }})"
-                                :class="isSelected({{ $tag->id }})
+                        <button type="button" @click="toggle('{{ $tag->id }}')"
+                                :class="isSelected('{{ $tag->id }}')
                                     ? 'text-white border-transparent'
                                     : 'text-gray-500 border-gray-200 bg-white hover:border-gray-400'"
-                                :style="isSelected({{ $tag->id }}) ? 'background:{{ $tag->color }};border-color:{{ $tag->color }}' : ''"
+                                :style="isSelected('{{ $tag->id }}') ? 'background:{{ $tag->color }};border-color:{{ $tag->color }}' : ''"
                                 class="px-3 py-1 rounded-full text-xs font-medium border transition-all">
                             {{ $tag->name }}
                         </button>
@@ -265,10 +265,10 @@
 @endif
 
 {{-- Two-column layout: 40% left | 60% right --}}
-<div class="grid grid-cols-5 gap-5">
+<div class="flex gap-5 items-start">
 
     {{-- Left column (40%) --}}
-    <div class="col-span-2 space-y-5">
+    <div class="space-y-5" style="width:40%;flex-shrink:0">
 
         {{-- Contact --}}
         <div class="bg-white rounded-xl border border-gray-200 p-5">
@@ -686,7 +686,7 @@
     </div>
 
     {{-- Right column (60%) --}}
-    <div class="col-span-3 space-y-5">
+    <div class="space-y-5 min-w-0 flex-1">
 
         {{-- Overdue task alert --}}
         @php
