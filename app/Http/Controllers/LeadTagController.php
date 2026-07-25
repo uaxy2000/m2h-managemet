@@ -13,7 +13,7 @@ class LeadTagController extends Controller
 {
     public function sync(Lead $lead, Request $request): RedirectResponse
     {
-        $newIds  = collect($request->input('tag_ids', []))->map('intval')->filter()->values();
+        $newIds  = collect($request->input('tag_ids', []))->filter()->values();
         $oldIds  = $lead->tags()->pluck('tags.id');
 
         $added   = $newIds->diff($oldIds);
