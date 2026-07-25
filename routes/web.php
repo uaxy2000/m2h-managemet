@@ -46,6 +46,7 @@ Route::middleware('auth')->group(function () {
 
     // Tags (nested under lead)
     Route::post('leads/{lead}/tags/{tag}/toggle', [LeadTagController::class, 'toggle'])->name('leads.tags.toggle');
+    Route::put('leads/{lead}/tags', [LeadTagController::class, 'sync'])->name('leads.tags.sync');
 
     // Lead assignment actions
     Route::patch('leads/{lead}/assign-user', [LeadController::class, 'assignUser'])->name('leads.assign-user');

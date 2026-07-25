@@ -58,62 +58,216 @@
 @endif
 
 {{-- Lead header --}}
-<div class="flex items-center gap-3 mb-6">
-    <div class="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
-        {{ $lead->initials() }}
-    </div>
-    <div>
-        <div class="flex items-center gap-2 flex-wrap">
-            <h2 class="text-xl font-bold text-gray-900">{{ $lead->fullName() }}</h2>
-            @if($lead->is_duplicate_flag)
-            <span class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
-                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/>
-                </svg>
-                Possible duplicate
-            </span>
-            @endif
-            @if($lead->meta_platform === 'ig')
-            <span class="inline-flex items-center gap-1 text-xs font-medium text-pink-700 bg-pink-100 px-2 py-0.5 rounded-full">
-                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-                Instagram
-            </span>
-            @elseif($lead->meta_platform === 'fb')
-            <span class="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
-                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                Facebook
-            </span>
-            @endif
+@php
+    $currentTagIds = $lead->tags->pluck('id')->values()->toArray();
+    $tagsByGroup   = $allTags->groupBy(fn ($t) => $t->group?->name ?? '');
+    $tagsGrouped   = $tagsByGroup->filter(fn ($v, $k) => $k !== '')->sortKeys();
+    $tagsUngrouped = $tagsByGroup->get('', collect());
+@endphp
+
+<div x-data="{
+        open: false,
+        selected: {{ json_encode($currentTagIds) }},
+        toggle(id) {
+            const idx = this.selected.indexOf(id);
+            idx >= 0 ? this.selected.splice(idx, 1) : this.selected.push(id);
+        },
+        isSelected(id) { return this.selected.includes(id); }
+     }"
+     class="mb-5">
+
+    {{-- Header row --}}
+    <div class="flex items-start gap-3">
+        <div class="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-white text-lg font-bold flex-shrink-0 mt-0.5">
+            {{ $lead->initials() }}
         </div>
-        <p class="text-sm text-gray-500 mt-0.5">
-            {{ $lead->pipeline?->name }}
-            @if($lead->stage)
-            <span class="mx-1.5 text-gray-300">·</span>
-            <span class="font-medium" style="color: {{ $lead->stage->color }}">{{ $lead->stage->name }}</span>
-            @endif
-            @if($lead->subStage)
-            <span class="mx-1.5 text-gray-300">·</span>{{ $lead->subStage->name }}
-            @endif
-        </p>
-        @if($lead->meta_ad_name || $lead->meta_campaign_name)
-        <p class="text-xs text-gray-400 mt-0.5">
-            @if($lead->meta_ad_name)
-            <span title="Ad">{{ $lead->meta_ad_name }}</span>
-            @endif
-            @if($lead->meta_ad_name && $lead->meta_campaign_name)
-            <span class="mx-1 text-gray-300">·</span>
-            @endif
-            @if($lead->meta_campaign_name)
-            <span title="Campaign" class="text-gray-300">{{ $lead->meta_campaign_name }}</span>
-            @endif
-        </p>
-        @endif
+        <div class="flex-1 min-w-0">
+            <div class="flex items-start gap-4 justify-between">
+
+                {{-- Left: name, badges, pipeline info --}}
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h2 class="text-xl font-bold text-gray-900">{{ $lead->fullName() }}</h2>
+                        @if($lead->is_duplicate_flag)
+                        <span class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/>
+                            </svg>
+                            Possible duplicate
+                        </span>
+                        @endif
+                        @if($lead->meta_platform === 'ig')
+                        <span class="inline-flex items-center gap-1 text-xs font-medium text-pink-700 bg-pink-100 px-2 py-0.5 rounded-full">
+                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                            Instagram
+                        </span>
+                        @elseif($lead->meta_platform === 'fb')
+                        <span class="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                            Facebook
+                        </span>
+                        @endif
+                    </div>
+                    <p class="text-sm text-gray-500 mt-0.5">
+                        {{ $lead->pipeline?->name }}
+                        @if($lead->stage)
+                        <span class="mx-1.5 text-gray-300">·</span>
+                        <span class="font-medium" style="color: {{ $lead->stage->color }}">{{ $lead->stage->name }}</span>
+                        @endif
+                        @if($lead->subStage)
+                        <span class="mx-1.5 text-gray-300">·</span>{{ $lead->subStage->name }}
+                        @endif
+                    </p>
+                    @if($lead->meta_ad_name || $lead->meta_campaign_name)
+                    <p class="text-xs text-gray-400 mt-0.5">
+                        @if($lead->meta_ad_name)<span title="Ad">{{ $lead->meta_ad_name }}</span>@endif
+                        @if($lead->meta_ad_name && $lead->meta_campaign_name)<span class="mx-1 text-gray-300">·</span>@endif
+                        @if($lead->meta_campaign_name)<span title="Campaign" class="text-gray-300">{{ $lead->meta_campaign_name }}</span>@endif
+                    </p>
+                    @endif
+                </div>
+
+                {{-- Right: Tags --}}
+                <div class="flex-shrink-0 text-right">
+                    <div class="flex flex-wrap gap-1.5 justify-end mb-2">
+                        @forelse($lead->tags as $tag)
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-medium text-white whitespace-nowrap"
+                              style="background: {{ $tag->color }}">{{ $tag->name }}</span>
+                        @empty
+                        <span class="text-xs text-gray-400">No tags</span>
+                        @endforelse
+                    </div>
+                    @if($allTags->isNotEmpty())
+                    <button @click="open = true" type="button"
+                            class="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 transition-colors">
+                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"/>
+                        </svg>
+                        Edit tags
+                    </button>
+                    @endif
+                </div>
+
+            </div>
+        </div>
     </div>
+
+    {{-- Tag edit modal --}}
+    <div x-show="open" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center p-4"
+         @keydown.escape.window="open = false">
+        <div class="absolute inset-0 bg-black/40" @click="open = false"></div>
+        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col">
+
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <h3 class="text-sm font-semibold text-gray-800">Edit Tags</h3>
+                <button @click="open = false" type="button"
+                        class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="overflow-y-auto flex-1 px-6 py-4 space-y-5">
+                @foreach($tagsGrouped as $groupName => $groupTags)
+                <div>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ $groupName }}</p>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach($groupTags as $tag)
+                        <button type="button" @click="toggle({{ $tag->id }})"
+                                :class="isSelected({{ $tag->id }})
+                                    ? 'text-white border-transparent'
+                                    : 'text-gray-500 border-gray-200 bg-white hover:border-gray-400'"
+                                :style="isSelected({{ $tag->id }}) ? 'background:{{ $tag->color }};border-color:{{ $tag->color }}' : ''"
+                                class="px-3 py-1 rounded-full text-xs font-medium border transition-all">
+                            {{ $tag->name }}
+                        </button>
+                        @endforeach
+                    </div>
+                </div>
+                @endforeach
+
+                @if($tagsUngrouped->isNotEmpty())
+                <div class="{{ $tagsGrouped->isNotEmpty() ? 'border-t border-gray-100 pt-4' : '' }}">
+                    @if($tagsGrouped->isNotEmpty())
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Other</p>
+                    @endif
+                    <div class="flex flex-wrap gap-2">
+                        @foreach($tagsUngrouped as $tag)
+                        <button type="button" @click="toggle({{ $tag->id }})"
+                                :class="isSelected({{ $tag->id }})
+                                    ? 'text-white border-transparent'
+                                    : 'text-gray-500 border-gray-200 bg-white hover:border-gray-400'"
+                                :style="isSelected({{ $tag->id }}) ? 'background:{{ $tag->color }};border-color:{{ $tag->color }}' : ''"
+                                class="px-3 py-1 rounded-full text-xs font-medium border transition-all">
+                            {{ $tag->name }}
+                        </button>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+            </div>
+
+            <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+                <span class="text-xs text-gray-400" x-text="selected.length + ' tag' + (selected.length !== 1 ? 's' : '') + ' selected'"></span>
+                <div class="flex gap-2">
+                    <button @click="open = false" type="button"
+                            class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                    <form method="POST" action="{{ route('leads.tags.sync', $lead) }}">
+                        @csrf @method('PUT')
+                        <template x-for="id in selected" :key="id">
+                            <input type="hidden" name="tag_ids[]" :value="id">
+                        </template>
+                        <button type="submit"
+                                class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors">
+                            Save
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
 </div>
 
-<div class="grid grid-cols-3 gap-5">
+{{-- Stage History — horizontal strip --}}
+@if($lead->statusHistory->isNotEmpty())
+<div class="bg-white rounded-xl border border-gray-200 px-5 py-4 mb-5 overflow-x-auto">
+    <div class="flex items-start min-w-max">
+        @foreach($lead->statusHistory as $entry)
+        @php $isLast = $loop->last; $color = $entry->toStage?->color ?? '#6366f1'; @endphp
+        <div class="flex items-start">
+            <div class="flex flex-col items-center text-center w-28">
+                <div class="w-3 h-3 rounded-full flex-shrink-0 mb-1.5 {{ $isLast ? 'ring-2 ring-offset-2' : '' }}"
+                     style="background: {{ $color }}; {{ $isLast ? 'ring-color:'.$color : '' }}"></div>
+                <p class="text-xs font-medium leading-tight {{ $isLast ? 'text-gray-900' : 'text-gray-500' }}">
+                    {{ $entry->toStage?->name ?? '—' }}
+                </p>
+                <p class="text-xs text-gray-400 mt-0.5 whitespace-nowrap">
+                    {{ $entry->changed_at->format('d M Y') }}
+                </p>
+            </div>
+            @if(!$isLast)
+            <div class="flex-shrink-0 mt-1.5 mx-1">
+                <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>
+                </svg>
+            </div>
+            @endif
+        </div>
+        @endforeach
+    </div>
+</div>
+@endif
 
-    {{-- Left: Contact, Custom Fields, Tags, Timeline --}}
+{{-- Two-column layout: 40% left | 60% right --}}
+<div class="grid grid-cols-5 gap-5">
+
+    {{-- Left column (40%) --}}
     <div class="col-span-2 space-y-5">
 
         {{-- Contact --}}
@@ -164,10 +318,211 @@
             @endif
         </div>
 
+        {{-- Assignment --}}
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Assignment</h3>
+
+            {{-- Assignee --}}
+            <div x-data="{ editing: false }">
+                <div class="flex items-center justify-between mb-1">
+                    <p class="text-xs text-gray-400">Internal</p>
+                    <button @click="editing = !editing" type="button"
+                            class="text-xs text-indigo-600 hover:text-indigo-800"
+                            x-text="editing ? 'Cancel' : 'Change'"></button>
+                </div>
+                <div x-show="!editing">
+                    @if($lead->assignedTo)
+                    <p class="text-sm font-medium text-gray-800">{{ $lead->assignedTo->name }}</p>
+                    @else
+                    <p class="text-sm text-gray-400">Not assigned</p>
+                    @endif
+                </div>
+                <div x-show="editing" x-cloak>
+                    <form method="POST" action="{{ route('leads.assign-user', $lead) }}" class="flex gap-2">
+                        @csrf @method('PATCH')
+                        <select name="assigned_to"
+                                class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">— None —</option>
+                            @foreach($internalUsers as $u)
+                            <option value="{{ $u->id }}" {{ $lead->assigned_to === $u->id ? 'selected' : '' }}>
+                                {{ $u->name }}
+                            </option>
+                            @endforeach
+                        </select>
+                        <button type="submit"
+                                class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">
+                            Save
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {{-- Service Provider --}}
+            <div class="border-t border-gray-100 mt-5 pt-4" x-data="{ editing: false }">
+                <div class="flex items-center justify-between mb-1">
+                    <p class="text-xs text-gray-400">Service Provider</p>
+                    @if($serviceProviders->isNotEmpty())
+                    <button @click="editing = !editing" type="button"
+                            class="text-xs text-indigo-600 hover:text-indigo-800"
+                            x-text="editing ? 'Cancel' : 'Change'"></button>
+                    @endif
+                </div>
+                <div x-show="!editing">
+                    @if($lead->serviceProvider)
+                    <p class="text-sm font-medium text-gray-800">{{ $lead->serviceProvider->name }}</p>
+                    @else
+                    <p class="text-sm text-gray-400">Not set</p>
+                    @endif
+                </div>
+                <div x-show="editing" x-cloak>
+                    <form method="POST" action="{{ route('leads.assign-company', $lead) }}" class="flex gap-2">
+                        @csrf @method('PATCH')
+                        <input type="hidden" name="field" value="service_provider_id">
+                        <select name="company_id"
+                                class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">— None —</option>
+                            @foreach($serviceProviders as $sp)
+                            <option value="{{ $sp->id }}" {{ $lead->service_provider_id === $sp->id ? 'selected' : '' }}>
+                                {{ $sp->name }}
+                            </option>
+                            @endforeach
+                        </select>
+                        <button type="submit"
+                                class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">
+                            Save
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {{-- Agent --}}
+            <div class="border-t border-gray-100 mt-5 pt-4" x-data="{ editing: false }">
+                <div class="flex items-center justify-between mb-1">
+                    <p class="text-xs text-gray-400">Agent</p>
+                    @if($agents->isNotEmpty())
+                    <button @click="editing = !editing" type="button"
+                            class="text-xs text-indigo-600 hover:text-indigo-800"
+                            x-text="editing ? 'Cancel' : 'Change'"></button>
+                    @endif
+                </div>
+                <div x-show="!editing">
+                    @if($lead->agent)
+                    <p class="text-sm font-medium text-gray-800">{{ $lead->agent->name }}</p>
+                    @else
+                    <p class="text-sm text-gray-400">Not set</p>
+                    @endif
+                </div>
+                <div x-show="editing" x-cloak>
+                    <form method="POST" action="{{ route('leads.assign-company', $lead) }}" class="flex gap-2">
+                        @csrf @method('PATCH')
+                        <input type="hidden" name="field" value="agent_id">
+                        <select name="company_id"
+                                class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">— None —</option>
+                            @foreach($agents as $ag)
+                            <option value="{{ $ag->id }}" {{ $lead->agent_id === $ag->id ? 'selected' : '' }}>
+                                {{ $ag->name }}
+                            </option>
+                            @endforeach
+                        </select>
+                        <button type="submit"
+                                class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">
+                            Save
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {{-- Programs --}}
+        @php $sortedPrograms = $lead->programs->sortByDesc('pivot.is_primary'); @endphp
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Programs</h3>
+
+            @forelse($sortedPrograms as $program)
+            <div class="flex items-center gap-3 py-2.5 {{ !$loop->last ? 'border-b border-gray-100' : '' }}">
+                @if($program->pivot->is_primary)
+                <span class="text-amber-400 flex-shrink-0" title="Primary program">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 0 0 .95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 0 0-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 0 0-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 0 0-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 0 0 .951-.69l1.07-3.292Z"/>
+                    </svg>
+                </span>
+                @else
+                <form method="POST" action="{{ route('leads.programs.primary', [$lead, $program->pivot->id]) }}">
+                    @csrf
+                    <button type="submit" title="Set as primary"
+                            class="text-gray-200 hover:text-amber-400 transition-colors flex-shrink-0">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 0 0 .95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 0 0-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 0 0-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 0 0-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 0 0 .951-.69l1.07-3.292Z"/>
+                        </svg>
+                    </button>
+                </form>
+                @endif
+
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-800 truncate">{{ $program->name }}</p>
+                    <p class="text-xs text-gray-400 mt-0.5">
+                        {{ $program->country }}
+                        <span class="mx-1 text-gray-200">·</span>
+                        {{ $program->typeLabel() }}
+                        @if($program->min_investment)
+                        <span class="mx-1 text-gray-200">·</span>
+                        Min. {{ $program->currency }} {{ number_format((float) $program->min_investment) }}
+                        @endif
+                    </p>
+                </div>
+
+                <form method="POST" action="{{ route('leads.programs.destroy', [$lead, $program->pivot->id]) }}"
+                      onsubmit="return confirm('Remove {{ addslashes($program->name) }} from this lead?')">
+                    @csrf @method('DELETE')
+                    <button type="submit" title="Remove program"
+                            class="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+            @empty
+            <p class="text-sm text-gray-400">No programs attached yet.</p>
+            @endforelse
+
+            @if($availablePrograms->isNotEmpty())
+            <form method="POST" action="{{ route('leads.programs.store', $lead) }}"
+                  class="flex gap-2 mt-4 {{ $sortedPrograms->isNotEmpty() ? 'pt-4 border-t border-gray-100' : '' }}">
+                @csrf
+                <select name="program_id" required
+                        class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">Add program…</option>
+                    @foreach($availablePrograms->groupBy('country') as $country => $progs)
+                    <optgroup label="{{ $country }}">
+                        @foreach($progs as $p)
+                        <option value="{{ $p->id }}">{{ $p->name }}</option>
+                        @endforeach
+                    </optgroup>
+                    @endforeach
+                </select>
+                <button type="submit"
+                        class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg transition-colors font-medium">
+                    Add
+                </button>
+            </form>
+            @elseif(auth()->user()->isAdmin() && $availablePrograms->isEmpty() && $lead->programs->isEmpty())
+            <a href="{{ route('settings.programs.create') }}"
+               class="text-xs text-indigo-600 hover:text-indigo-800 mt-2 inline-block">
+                Create programs in Settings →
+            </a>
+            @endif
+
+            @if(session('program_error'))
+            <p class="text-red-500 text-xs mt-2">{{ session('program_error') }}</p>
+            @endif
+        </div>
+
         {{-- Meta Form Responses --}}
         @if(!empty($lead->meta_form_data))
         @php
-        $metaLabels  = config('meta_fields', []);
+        $metaLabels   = config('meta_fields', []);
         $normalizeKey = fn(string $s) => mb_strtolower(str_replace(['İ', 'I'], 'i', $s), 'UTF-8');
         @endphp
         <div class="bg-white rounded-xl border border-gray-200 p-5">
@@ -189,17 +544,14 @@
 
         {{-- Custom Fields --}}
         @if($customFields->isNotEmpty())
-        @php
-            $hasAnyValue = $customValuesByKey->isNotEmpty();
-        @endphp
         <div class="bg-white rounded-xl border border-gray-200 p-5"
              x-data="customFieldsEditor({{ json_encode(
                 $customFields->map(function ($f) use ($customValuesByKey) {
                     $cv = $customValuesByKey[$f->key] ?? null;
                     return [
-                        'key'     => $f->key,
-                        'type'    => $f->type,
-                        'value'   => $f->type === 'multi_select'
+                        'key'              => $f->key,
+                        'type'             => $f->type,
+                        'value'            => $f->type === 'multi_select'
                             ? (json_decode($cv?->value ?? '[]', true) ?? [])
                             : ($cv?->value ?? ''),
                         'exclusive_values' => $f->options->where('is_exclusive', true)->pluck('value')->values()->toArray(),
@@ -219,12 +571,12 @@
             <dl class="space-y-3" x-show="!editing">
                 @foreach($customFields as $field)
                 @php
-                    $cv        = $customValuesByKey[$field->key] ?? null;
-                    $rawValue  = $cv?->value;
+                    $cv       = $customValuesByKey[$field->key] ?? null;
+                    $rawValue = $cv?->value;
                     if ($field->type === 'multi_select') {
                         $vals    = json_decode($rawValue ?? '[]', true) ?? [];
                         $display = $field->options->whereIn('value', $vals)->pluck('label')->join(', ');
-                    } elseif (in_array($field->type, ['select'])) {
+                    } elseif ($field->type === 'select') {
                         $display = $field->options->firstWhere('value', $rawValue)?->label ?? $rawValue;
                     } else {
                         $display = $rawValue;
@@ -281,7 +633,6 @@
                         </button>
                         @endforeach
                     </div>
-                    {{-- Hidden inputs for multi_select --}}
                     <template x-for="v in fields['{{ $field->key }}'].value" :key="v">
                         <input type="hidden" name="custom[{{ $field->key }}][]" :value="v">
                     </template>
@@ -332,84 +683,10 @@
         </div>
         @endif
 
-        {{-- Tags --}}
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Tags</h3>
-            @if($allTags->isEmpty())
-            <p class="text-sm text-gray-400">No tags yet.
-                @if(auth()->user()->isAdmin())
-                <a href="{{ route('settings.tags.create') }}" class="text-indigo-600 hover:text-indigo-800 ml-1">Create tags →</a>
-                @endif
-            </p>
-            @else
-            @php
-                $tagsByGroup = $allTags->groupBy(fn ($t) => $t->group?->name ?? '');
-                $grouped     = $tagsByGroup->filter(fn ($v, $k) => $k !== '')->sortKeys();
-                $ungrouped   = $tagsByGroup->get('', collect());
-            @endphp
+    </div>
 
-            @foreach($grouped as $groupName => $tags)
-            <div class="mb-4 last:mb-0">
-                <p class="text-xs text-gray-400 font-medium mb-2">{{ $groupName }}</p>
-                <div class="flex flex-wrap gap-2">
-                    @foreach($tags as $tag)
-                    @php $isActive = $lead->tags->contains('id', $tag->id); @endphp
-                    <button type="button"
-                            x-data="{
-                                active: {{ $isActive ? 'true' : 'false' }},
-                                async toggle() {
-                                    const r = await fetch('{{ route('leads.tags.toggle', [$lead, $tag]) }}', {
-                                        method: 'POST',
-                                        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content }
-                                    });
-                                    const d = await r.json();
-                                    this.active = d.active;
-                                }
-                            }"
-                            @click="toggle()"
-                            class="px-3 py-1 rounded-full text-xs font-medium border transition-all"
-                            :class="active ? 'text-white border-transparent' : 'text-gray-500 border-gray-200 bg-white hover:border-gray-400'"
-                            :style="active ? 'background-color: {{ $tag->color }}; border-color: {{ $tag->color }}' : ''">
-                        {{ $tag->name }}
-                    </button>
-                    @endforeach
-                </div>
-            </div>
-            @endforeach
-
-            @if($ungrouped->isNotEmpty())
-            <div class="{{ $grouped->isNotEmpty() ? 'mt-4 pt-4 border-t border-gray-100' : '' }}">
-                @if($grouped->isNotEmpty())
-                <p class="text-xs text-gray-400 font-medium mb-2">Other</p>
-                @endif
-                <div class="flex flex-wrap gap-2">
-                    @foreach($ungrouped as $tag)
-                    @php $isActive = $lead->tags->contains('id', $tag->id); @endphp
-                    <button type="button"
-                            x-data="{
-                                active: {{ $isActive ? 'true' : 'false' }},
-                                async toggle() {
-                                    const r = await fetch('{{ route('leads.tags.toggle', [$lead, $tag]) }}', {
-                                        method: 'POST',
-                                        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content }
-                                    });
-                                    const d = await r.json();
-                                    this.active = d.active;
-                                }
-                            }"
-                            @click="toggle()"
-                            class="px-3 py-1 rounded-full text-xs font-medium border transition-all"
-                            :class="active ? 'text-white border-transparent' : 'text-gray-500 border-gray-200 bg-white hover:border-gray-400'"
-                            :style="active ? 'background-color: {{ $tag->color }}; border-color: {{ $tag->color }}' : ''">
-                        {{ $tag->name }}
-                    </button>
-                    @endforeach
-                </div>
-            </div>
-            @endif
-
-            @endif
-        </div>
+    {{-- Right column (60%) --}}
+    <div class="col-span-3 space-y-5">
 
         {{-- Overdue task alert --}}
         @php
@@ -565,7 +842,7 @@
                 {{-- Activity --}}
                 <div class="flex gap-2.5 items-start">
                     <div class="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        @if(in_array($item->type, ['tag_added', 'tag_removed']))
+                        @if(in_array($item->type, ['tag_added', 'tag_removed', 'tags_updated']))
                         <svg class="w-2.5 h-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"/>
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z"/>
@@ -715,241 +992,6 @@
 
     </div>
 
-    {{-- Right: Assignment + Programs + Stage History --}}
-    <div class="space-y-5">
-
-        {{-- Assignment card (Assignee + Service Provider + Agent) --}}
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Assignment</h3>
-
-            {{-- Assignee --}}
-            <div x-data="{ editing: false }">
-                <div class="flex items-center justify-between mb-1">
-                    <p class="text-xs text-gray-400">Internal</p>
-                    <button @click="editing = !editing" type="button"
-                            class="text-xs text-indigo-600 hover:text-indigo-800"
-                            x-text="editing ? 'Cancel' : 'Change'"></button>
-                </div>
-                <div x-show="!editing">
-                    @if($lead->assignedTo)
-                    <p class="text-sm font-medium text-gray-800">{{ $lead->assignedTo->name }}</p>
-                    @else
-                    <p class="text-sm text-gray-400">Not assigned</p>
-                    @endif
-                </div>
-                <div x-show="editing" x-cloak>
-                    <form method="POST" action="{{ route('leads.assign-user', $lead) }}" class="flex gap-2">
-                        @csrf @method('PATCH')
-                        <select name="assigned_to"
-                                class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">— None —</option>
-                            @foreach($internalUsers as $u)
-                            <option value="{{ $u->id }}" {{ $lead->assigned_to === $u->id ? 'selected' : '' }}>
-                                {{ $u->name }}
-                            </option>
-                            @endforeach
-                        </select>
-                        <button type="submit"
-                                class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">
-                            Save
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            {{-- Service Provider --}}
-            <div class="border-t border-gray-100 mt-5 pt-4" x-data="{ editing: false }">
-                <div class="flex items-center justify-between mb-1">
-                    <p class="text-xs text-gray-400">Service Provider</p>
-                    @if($serviceProviders->isNotEmpty())
-                    <button @click="editing = !editing" type="button"
-                            class="text-xs text-indigo-600 hover:text-indigo-800"
-                            x-text="editing ? 'Cancel' : 'Change'"></button>
-                    @endif
-                </div>
-                <div x-show="!editing">
-                    @if($lead->serviceProvider)
-                    <p class="text-sm font-medium text-gray-800">{{ $lead->serviceProvider->name }}</p>
-                    @else
-                    <p class="text-sm text-gray-400">Not set</p>
-                    @endif
-                </div>
-                <div x-show="editing" x-cloak>
-                    <form method="POST" action="{{ route('leads.assign-company', $lead) }}" class="flex gap-2">
-                        @csrf @method('PATCH')
-                        <input type="hidden" name="field" value="service_provider_id">
-                        <select name="company_id"
-                                class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">— None —</option>
-                            @foreach($serviceProviders as $sp)
-                            <option value="{{ $sp->id }}" {{ $lead->service_provider_id === $sp->id ? 'selected' : '' }}>
-                                {{ $sp->name }}
-                            </option>
-                            @endforeach
-                        </select>
-                        <button type="submit"
-                                class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">
-                            Save
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            {{-- Agent --}}
-            <div class="border-t border-gray-100 mt-5 pt-4" x-data="{ editing: false }">
-                <div class="flex items-center justify-between mb-1">
-                    <p class="text-xs text-gray-400">Agent</p>
-                    @if($agents->isNotEmpty())
-                    <button @click="editing = !editing" type="button"
-                            class="text-xs text-indigo-600 hover:text-indigo-800"
-                            x-text="editing ? 'Cancel' : 'Change'"></button>
-                    @endif
-                </div>
-                <div x-show="!editing">
-                    @if($lead->agent)
-                    <p class="text-sm font-medium text-gray-800">{{ $lead->agent->name }}</p>
-                    @else
-                    <p class="text-sm text-gray-400">Not set</p>
-                    @endif
-                </div>
-                <div x-show="editing" x-cloak>
-                    <form method="POST" action="{{ route('leads.assign-company', $lead) }}" class="flex gap-2">
-                        @csrf @method('PATCH')
-                        <input type="hidden" name="field" value="agent_id">
-                        <select name="company_id"
-                                class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">— None —</option>
-                            @foreach($agents as $ag)
-                            <option value="{{ $ag->id }}" {{ $lead->agent_id === $ag->id ? 'selected' : '' }}>
-                                {{ $ag->name }}
-                            </option>
-                            @endforeach
-                        </select>
-                        <button type="submit"
-                                class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">
-                            Save
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        {{-- Programs --}}
-        @php $sortedPrograms = $lead->programs->sortByDesc('pivot.is_primary'); @endphp
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Programs</h3>
-
-            @forelse($sortedPrograms as $program)
-            <div class="flex items-center gap-3 py-2.5 {{ !$loop->last ? 'border-b border-gray-100' : '' }}">
-
-                @if($program->pivot->is_primary)
-                <span class="text-amber-400 flex-shrink-0" title="Primary program">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 0 0 .95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 0 0-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 0 0-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 0 0-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 0 0 .951-.69l1.07-3.292Z"/>
-                    </svg>
-                </span>
-                @else
-                <form method="POST" action="{{ route('leads.programs.primary', [$lead, $program->pivot->id]) }}">
-                    @csrf
-                    <button type="submit" title="Set as primary"
-                            class="text-gray-200 hover:text-amber-400 transition-colors flex-shrink-0">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 0 0 .95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 0 0-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 0 0-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 0 0-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 0 0 .951-.69l1.07-3.292Z"/>
-                        </svg>
-                    </button>
-                </form>
-                @endif
-
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-800 truncate">{{ $program->name }}</p>
-                    <p class="text-xs text-gray-400 mt-0.5">
-                        {{ $program->country }}
-                        <span class="mx-1 text-gray-200">·</span>
-                        {{ $program->typeLabel() }}
-                        @if($program->min_investment)
-                        <span class="mx-1 text-gray-200">·</span>
-                        Min. {{ $program->currency }} {{ number_format((float) $program->min_investment) }}
-                        @endif
-                    </p>
-                </div>
-
-                <form method="POST" action="{{ route('leads.programs.destroy', [$lead, $program->pivot->id]) }}"
-                      onsubmit="return confirm('Remove {{ addslashes($program->name) }} from this lead?')">
-                    @csrf @method('DELETE')
-                    <button type="submit" title="Remove program"
-                            class="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
-                </form>
-            </div>
-            @empty
-            <p class="text-sm text-gray-400">No programs attached yet.</p>
-            @endforelse
-
-            @if($availablePrograms->isNotEmpty())
-            <form method="POST" action="{{ route('leads.programs.store', $lead) }}"
-                  class="flex gap-2 mt-4 {{ $sortedPrograms->isNotEmpty() ? 'pt-4 border-t border-gray-100' : '' }}">
-                @csrf
-                <select name="program_id" required
-                        class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="">Add program…</option>
-                    @foreach($availablePrograms->groupBy('country') as $country => $progs)
-                    <optgroup label="{{ $country }}">
-                        @foreach($progs as $p)
-                        <option value="{{ $p->id }}">{{ $p->name }}</option>
-                        @endforeach
-                    </optgroup>
-                    @endforeach
-                </select>
-                <button type="submit"
-                        class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg transition-colors font-medium">
-                    Add
-                </button>
-            </form>
-            @elseif(auth()->user()->isAdmin() && $availablePrograms->isEmpty() && $lead->programs->isEmpty())
-            <a href="{{ route('settings.programs.create') }}"
-               class="text-xs text-indigo-600 hover:text-indigo-800 mt-2 inline-block">
-                Create programs in Settings →
-            </a>
-            @endif
-
-            @if(session('program_error'))
-            <p class="text-red-500 text-xs mt-2">{{ session('program_error') }}</p>
-            @endif
-        </div>
-
-        {{-- Stage history --}}
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Stage History</h3>
-            @forelse($lead->statusHistory as $entry)
-            <div class="flex gap-3 pb-4 {{ !$loop->last ? 'border-b border-gray-100 mb-4' : '' }}">
-                <div class="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0 mt-1.5"></div>
-                <div class="flex-1 min-w-0">
-                    @if($entry->fromStage)
-                    <p class="text-xs text-gray-700">
-                        <span class="text-gray-400">{{ $entry->fromStage->name }}</span>
-                        <span class="mx-1 text-gray-300">→</span>
-                        <span class="font-medium">{{ $entry->toStage?->name }}</span>
-                    </p>
-                    @else
-                    <p class="text-xs text-gray-700">
-                        Added to <span class="font-medium">{{ $entry->toStage?->name }}</span>
-                    </p>
-                    @endif
-                    <p class="text-xs text-gray-400 mt-0.5">
-                        {{ $entry->changedBy?->name ?? 'System' }}
-                        · {{ $entry->changed_at->diffForHumans() }}
-                    </p>
-                </div>
-            </div>
-            @empty
-            <p class="text-sm text-gray-400">No history yet.</p>
-            @endforelse
-        </div>
-
-    </div>
 </div>
 
 @endsection
@@ -967,13 +1009,11 @@ function customFieldsEditor(initialFields) {
             if (!Array.isArray(field.value)) field.value = [];
 
             if (isExclusive) {
-                // Exclusive option: if already selected, deselect; otherwise select alone
                 const already = field.value.includes(value);
                 field.value = already ? [] : [value];
                 return;
             }
 
-            // Remove any exclusive options when selecting a non-exclusive one
             const exclusiveVals = field.exclusive_values || [];
             field.value = field.value.filter(v => !exclusiveVals.includes(v));
 
