@@ -267,8 +267,8 @@
 {{-- Two-column layout: 40% left | 60% right --}}
 <div class="flex flex-col lg:flex-row gap-5 items-start">
 
-    {{-- Left column (40%) --}}
-    <div class="space-y-5 w-full lg:w-2/5 lg:flex-shrink-0">
+    {{-- Left column (40%) — on mobile drops below timeline --}}
+    <div class="space-y-5 w-full lg:w-2/5 lg:flex-shrink-0 order-2 lg:order-1">
 
         {{-- Contact --}}
         <div class="bg-white rounded-xl border border-gray-200 p-5">
@@ -685,8 +685,8 @@
 
     </div>
 
-    {{-- Right column (60%) --}}
-    <div class="space-y-5 min-w-0 w-full lg:flex-1">
+    {{-- Right column (60%) — on mobile appears first --}}
+    <div class="space-y-5 min-w-0 w-full lg:flex-1 order-1 lg:order-2">
 
         {{-- Overdue task alert --}}
         @php
