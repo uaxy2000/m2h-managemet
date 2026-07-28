@@ -17,6 +17,7 @@ use App\Http\Controllers\Settings\CustomFieldController;
 use App\Http\Controllers\Settings\TagController;
 use App\Http\Controllers\Settings\TagGroupController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\WhatsAppController;
 use Illuminate\Support\Facades\Route;
 
 // Meta webhook routes are registered in bootstrap/app.php with no middleware
@@ -43,6 +44,9 @@ Route::middleware('auth')->group(function () {
     Route::post('leads/{lead}/tasks', [TaskController::class, 'store'])->name('leads.tasks.store');
     Route::post('leads/{lead}/tasks/{task}/toggle', [TaskController::class, 'toggle'])->name('leads.tasks.toggle');
     Route::delete('leads/{lead}/tasks/{task}', [TaskController::class, 'destroy'])->name('leads.tasks.destroy');
+
+    // WhatsApp
+    Route::post('leads/{lead}/whatsapp/send', [WhatsAppController::class, 'send'])->name('leads.whatsapp.send');
 
     // Tags (nested under lead)
     Route::post('leads/{lead}/tags/{tag}/toggle', [LeadTagController::class, 'toggle'])->name('leads.tags.toggle');
