@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Company;
 use App\Models\Lead;
 use App\Models\LeadActivity;
 use Illuminate\Http\Request;
@@ -69,11 +70,14 @@ class WhatsAppWebhookController extends Controller
             ->first();
 
         if (!$lead) {
+            $companyId = Company::where('type', 'internal')->orderBy('created_at')->value('id');
+
             $lead = Lead::create([
                 'first_name' => 'WA',
                 'last_name'  => $from,
                 'phone'      => '+' . $from,
                 'source'     => 'whatsapp',
+                'company_id' => $companyId,
             ]);
 
             Log::info('WhatsApp webhook: new lead created from unknown number', [
