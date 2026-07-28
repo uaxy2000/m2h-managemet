@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\Lead;
 use App\Models\LeadActivity;
+use App\Models\Pipeline;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -70,14 +71,19 @@ class WhatsAppWebhookController extends Controller
             ->first();
 
         if (!$lead) {
-            $companyId = Company::where('type', 'internal')->orderBy('created_at')->value('id');
+            $companyId  = Company::where('type', 'internal')->orderBy('created_at')->value('id');
+            $pipeline   = Pipeline::with('stages')->orderBy('created_at')->first();
+            $pipelineId = $pipeline?->id;
+            $stageId    = $pipeline?->stages->sortBy('sort_order')->first()?->id;
 
             $lead = Lead::create([
-                'first_name' => 'WA',
-                'last_name'  => $from,
-                'phone'      => '+' . $from,
-                'source'     => 'whatsapp',
-                'company_id' => $companyId,
+                'first_name'  => 'WA',
+                'last_name'   => $from,
+                'phone'       => '+' . $from,
+                'source'      => 'whatsapp',
+                'company_id'  => $companyId,
+                'pipeline_id' => $pipelineId,
+                'stage_id'    => $stageId,
             ]);
 
             Log::info('WhatsApp webhook: new lead created from unknown number', [
