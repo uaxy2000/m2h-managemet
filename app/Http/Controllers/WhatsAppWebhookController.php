@@ -72,7 +72,7 @@ class WhatsAppWebhookController extends Controller
 
         if (!$lead) {
             $companyId  = Company::where('type', 'internal')->orderBy('created_at')->value('id');
-            $pipeline   = Pipeline::with('stages')->orderBy('created_at')->first();
+            $pipeline   = Pipeline::with('stages')->orderBy('sort_order')->first();
             $pipelineId = $pipeline?->id;
             $stageId    = $pipeline?->stages->sortBy('sort_order')->first()?->id;
 
