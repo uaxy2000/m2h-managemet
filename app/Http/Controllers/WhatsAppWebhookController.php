@@ -91,10 +91,6 @@ class WhatsAppWebhookController extends Controller
             ]);
         }
 
-        if (LeadActivity::where('meta->wa_message_id', $waId)->exists()) {
-            return;
-        }
-
         LeadActivity::create([
             'lead_id'     => $lead->id,
             'user_id'     => null,
