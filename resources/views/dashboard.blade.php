@@ -151,7 +151,7 @@ $phases = [
             ['label' => 'Meta Lead Ads — auto lead import (incl. Turkish field names)',   'complete' => true],
             ['label' => 'Meta Lead Ads — custom form question capture & field mapping',   'complete' => true],
             ['label' => 'Meta Lead Ads — bulk import of existing leads via Graph API',    'complete' => false],
-            ['label' => 'WhatsApp — send & receive messages per lead',                    'complete' => false],
+            ['label' => 'WhatsApp — send & receive messages per lead',                    'complete' => true],
             ['label' => 'Google Form → CRM (auto lead import)',                           'complete' => false],
             ['label' => 'Google Sheets sync',                                             'complete' => false],
             ['label' => 'Email integration (send & receive per lead)',                    'complete' => false],
