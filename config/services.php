@@ -37,4 +37,11 @@ return [
         'verify_token' => env('META_VERIFY_TOKEN'),
     ],
 
+    'whatsapp' => [
+        'phone_number_id'      => env('WHATSAPP_PHONE_NUMBER_ID'),
+        'business_account_id'  => env('WHATSAPP_BUSINESS_ACCOUNT_ID'),
+        'token'                => env('WHATSAPP_TOKEN'),
+        'verify_token'         => env('WHATSAPP_VERIFY_TOKEN'),
+    ],
+
 ];

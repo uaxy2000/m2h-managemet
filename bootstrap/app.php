@@ -13,6 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Support\Facades\Route::middleware([])->group(function () {
                 \Illuminate\Support\Facades\Route::get('/webhook/meta', [\App\Http\Controllers\MetaWebhookController::class, 'verify']);
                 \Illuminate\Support\Facades\Route::post('/webhook/meta', [\App\Http\Controllers\MetaWebhookController::class, 'receive']);
+                \Illuminate\Support\Facades\Route::get('/webhook/whatsapp', [\App\Http\Controllers\WhatsAppWebhookController::class, 'verify']);
+                \Illuminate\Support\Facades\Route::post('/webhook/whatsapp', [\App\Http\Controllers\WhatsAppWebhookController::class, 'receive']);
             });
         },
     )
@@ -23,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo('/login');
         $middleware->validateCsrfTokens(except: [
             'webhook/meta',
+            'webhook/whatsapp',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
