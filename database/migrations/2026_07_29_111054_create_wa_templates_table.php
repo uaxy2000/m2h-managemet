@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('wa_templates', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
+            $table->string('name', 191)->unique();
             $table->string('display_name')->nullable();
             $table->string('language', 10)->default('tr');
             $table->string('category')->default('MARKETING');

@@ -21,8 +21,8 @@ try {
     DB::statement("
         CREATE TABLE `wa_templates` (
           `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-          `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-          `display_name` varchar(255) COLLATE utf8mb4_unicode_ci NULL,
+          `name` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+          `display_name` varchar(191) COLLATE utf8mb4_unicode_ci NULL,
           `language` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'tr',
           `category` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'MARKETING',
           `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'APPROVED',
@@ -35,7 +35,7 @@ try {
           `updated_at` timestamp NULL,
           PRIMARY KEY (`id`),
           UNIQUE KEY `wa_templates_name_unique` (`name`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC
     ");
     $done[] = 'wa_templates recreated with correct schema';
 
