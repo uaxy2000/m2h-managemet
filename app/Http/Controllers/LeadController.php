@@ -244,7 +244,40 @@ class LeadController extends Controller
             $timelineItems->push(['type' => 'activity', 'sort_at' => $activity->created_at, 'item' => $activity]);
         }
 
-        $timeline = $timelineItems->sortBy('sort_at')->values();
+        $sorted = $timelineItems->sortBy('sort_at')->values()->all();
+
+        // Group consecutive WA messages of the same direction into a single bubble
+        $grouped = collect();
+        $i = 0;
+        while ($i < count($sorted)) {
+            $entry = $sorted[$i];
+            $isWa  = $entry['type'] === 'activity'
+                  && in_array($entry['item']->type, ['whatsapp_incoming', 'whatsapp_outgoing']);
+
+            if ($isWa) {
+                $waType   = $entry['item']->type;
+                $messages = [$entry['item']];
+                $j        = $i + 1;
+                while ($j < count($sorted)
+                    && $sorted[$j]['type'] === 'activity'
+                    && $sorted[$j]['item']->type === $waType) {
+                    $messages[] = $sorted[$j]['item'];
+                    $j++;
+                }
+                $grouped->push([
+                    'type'      => 'wa_group',
+                    'sort_at'   => end($messages)->created_at,
+                    'direction' => $waType,
+                    'messages'  => $messages,
+                ]);
+                $i = $j;
+            } else {
+                $grouped->push($entry);
+                $i++;
+            }
+        }
+
+        $timeline = $grouped;
 
         $internalUsers = User::where(function ($q) {
             $q->whereNull('company_id')
