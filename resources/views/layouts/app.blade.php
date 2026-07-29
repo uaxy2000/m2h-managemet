@@ -62,12 +62,16 @@
             </a>
 
             @php
-                $inboxCount = auth()->id()
-                    ? \App\Models\LeadActivity::where('type', 'whatsapp_incoming')
-                        ->where('is_read', false)
-                        ->whereHas('lead', fn ($q) => $q->where('assigned_to', auth()->id()))
-                        ->count()
-                    : 0;
+                try {
+                    $inboxCount = auth()->id()
+                        ? \App\Models\LeadActivity::where('type', 'whatsapp_incoming')
+                            ->where('is_read', false)
+                            ->whereHas('lead', fn ($q) => $q->where('assigned_to', auth()->id()))
+                            ->count()
+                        : 0;
+                } catch (\Throwable $e) {
+                    $inboxCount = 0;
+                }
             @endphp
             <a href="{{ route('inbox') }}"
                :class="(sidebar || mobileNav) ? 'px-3 gap-3' : 'lg:justify-center lg:px-0 px-3 gap-3'"
