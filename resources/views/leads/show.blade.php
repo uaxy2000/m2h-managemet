@@ -733,7 +733,7 @@
             @else
             <div class="px-5 py-4 space-y-5">
                 @foreach($timeline as $entry)
-                @php $item = $entry['item']; $entryType = $entry['type']; @endphp
+                @php $item = $entry['item'] ?? null; $entryType = $entry['type']; @endphp
 
                 @if($entryType === 'note')
                 {{-- Note --}}
