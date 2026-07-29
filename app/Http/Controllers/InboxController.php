@@ -3,17 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lead;
-use App\Models\LeadActivity;
-use Illuminate\Http\Request;
 
 class InboxController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-        $userId = auth()->id();
+        $user   = auth()->user();
+        $isAdmin = in_array($user->role, ['super_admin', 'admin']);
 
-        // Leads assigned to current user that have unread incoming WA messages
-        $whatsappLeads = Lead::where('assigned_to', $userId)
+        $whatsappLeads = Lead::when(!$isAdmin, fn ($q) => $q->where('assigned_to', $user->id))
             ->whereHas('activities', fn ($q) => $q
                 ->where('type', 'whatsapp_incoming')
                 ->where('is_read', false)
@@ -21,7 +19,8 @@ class InboxController extends Controller
             ->with(['activities' => fn ($q) => $q
                 ->where('type', 'whatsapp_incoming')
                 ->where('is_read', false)
-                ->orderByDesc('created_at')
+                ->orderByDesc('created_at'),
+                'assignedTo',
             ])
             ->get()
             ->map(fn ($lead) => [

@@ -45,6 +45,9 @@
                         <span class="text-xs text-gray-400 flex-shrink-0">{{ $msg?->created_at->diffForHumans() }}</span>
                     </div>
                     <p class="text-sm text-gray-500 truncate mt-0.5">{{ $msg?->description }}</p>
+                    @if($lead->assignedTo)
+                    <p class="text-xs text-gray-400 mt-0.5">→ {{ $lead->assignedTo->name }}</p>
+                    @endif
                 </div>
 
                 {{-- Unread badge --}}
