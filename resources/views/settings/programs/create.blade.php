@@ -4,7 +4,7 @@
 @section('heading', 'Settings')
 
 @section('content')
-@include('settings._nav')
+@include('settings._nav_crm')
 
 <div class="mb-5">
     <a href="{{ route('settings.programs.index') }}"

@@ -4,7 +4,7 @@
 @section('heading', 'Settings')
 
 @section('content')
-@include('settings._nav')
+@include('settings._nav_crm')
 
 <div class="flex items-center justify-between mb-6">
     <p class="text-sm text-gray-500">Users with access to the system.</p>

@@ -4,7 +4,7 @@
 @section('heading', 'Settings')
 
 @section('content')
-@include('settings._nav')
+@include('settings._nav_crm')
 
 @if(session('success'))
 <div class="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-5 text-sm">{{ session('success') }}</div>

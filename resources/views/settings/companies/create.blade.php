@@ -4,7 +4,7 @@
 @section('heading', 'Settings')
 
 @section('content')
-@include('settings._nav')
+@include('settings._nav_crm')
 
 <div class="max-w-lg">
     <h2 class="text-base font-semibold text-gray-800 mb-5">New Company</h2>
