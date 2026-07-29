@@ -16,6 +16,7 @@ use App\Http\Controllers\Settings\SubStageController;
 use App\Http\Controllers\Settings\CustomFieldController;
 use App\Http\Controllers\Settings\TagController;
 use App\Http\Controllers\Settings\TagGroupController;
+use App\Http\Controllers\Settings\WaTemplateController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\InboxController;
 use App\Http\Controllers\WhatsAppController;
@@ -49,6 +50,7 @@ Route::middleware('auth')->group(function () {
 
     // WhatsApp
     Route::post('leads/{lead}/whatsapp/send', [WhatsAppController::class, 'send'])->name('leads.whatsapp.send');
+    Route::post('leads/{lead}/whatsapp/send-template', [WhatsAppController::class, 'sendTemplate'])->name('leads.whatsapp.send-template');
 
     // Tags (nested under lead)
     Route::post('leads/{lead}/tags/{tag}/toggle', [LeadTagController::class, 'toggle'])->name('leads.tags.toggle');
@@ -139,6 +141,11 @@ Route::middleware('auth')->group(function () {
             Route::delete('custom-fields/{customField}/options/{option}', [CustomFieldController::class, 'destroyOption'])->name('custom-fields.options.destroy');
             Route::post('custom-fields/{customField}/mappings', [CustomFieldController::class, 'storeMapping'])->name('custom-fields.mappings.store');
             Route::delete('custom-fields/mappings/{mapping}', [CustomFieldController::class, 'destroyMapping'])->name('custom-fields.mappings.destroy');
+
+            // WhatsApp Templates
+            Route::get('wa-templates', [WaTemplateController::class, 'index'])->name('wa-templates.index');
+            Route::post('wa-templates/sync', [WaTemplateController::class, 'sync'])->name('wa-templates.sync');
+            Route::put('wa-templates/{waTemplate}', [WaTemplateController::class, 'update'])->name('wa-templates.update');
 
             // Meta Integration
             Route::get('meta', [MetaPageController::class, 'index'])->name('meta.index');

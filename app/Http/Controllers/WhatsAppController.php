@@ -3,49 +3,41 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lead;
-use App\Models\LeadActivity;
+use App\Models\WaTemplate;
+use App\Services\WhatsAppService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class WhatsAppController extends Controller
 {
-    public function send(Lead $lead, Request $request): RedirectResponse
+    public function send(Lead $lead, Request $request, WhatsAppService $wa): RedirectResponse
     {
         $request->validate(['message' => ['required', 'string', 'max:4096']]);
 
-        $phone = preg_replace('/\D/', '', $lead->phone ?? '');
-
-        if (!$phone) {
+        if (!$lead->phone) {
             return back()->with('wa_error', 'Lead has no phone number.');
         }
 
-        $phoneNumberId = config('services.whatsapp.phone_number_id');
-        $token         = config('services.whatsapp.token');
+        $ok = $wa->sendText($lead, $request->input('message'), auth()->id());
 
-        $response = Http::withToken($token)
-            ->post("https://graph.facebook.com/v20.0/{$phoneNumberId}/messages", [
-                'messaging_product' => 'whatsapp',
-                'to'                => $phone,
-                'type'              => 'text',
-                'text'              => ['body' => $request->input('message')],
-            ]);
+        return $ok
+            ? back()->with('wa_success', 'Mesaj gönderildi.')->withFragment('timeline')
+            : back()->with('wa_error', 'Mesaj gönderilemedi. Lütfen tekrar deneyin.');
+    }
 
-        if (!$response->successful()) {
-            Log::error('WhatsApp send failed', ['response' => $response->json(), 'lead_id' => $lead->id]);
-            return back()->with('wa_error', 'Message could not be sent. Please try again.');
+    public function sendTemplate(Lead $lead, Request $request, WhatsAppService $wa): RedirectResponse
+    {
+        $request->validate(['template_id' => ['required', 'integer', 'exists:wa_templates,id']]);
+
+        if (!$lead->phone) {
+            return back()->with('wa_error', 'Lead has no phone number.');
         }
 
-        LeadActivity::create([
-            'lead_id'     => $lead->id,
-            'user_id'     => auth()->id(),
-            'type'        => 'whatsapp_outgoing',
-            'description' => $request->input('message'),
-            'visible_to'  => ['internal'],
-            'meta'        => ['wa_message_id' => $response->json('messages.0.id') ?? null],
-        ]);
+        $template = WaTemplate::findOrFail($request->integer('template_id'));
+        $ok       = $wa->sendTemplate($lead, $template, auth()->id());
 
-        return back()->with('wa_success', 'Message sent.')->withFragment('timeline');
+        return $ok
+            ? back()->with('wa_success', "'{$template->display_name ?? $template->name}' gönderildi.")->withFragment('timeline')
+            : back()->with('wa_error', 'Şablon gönderilemedi. Token süresi dolmuş olabilir.');
     }
 }

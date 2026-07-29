@@ -13,12 +13,18 @@ class MetaFormMapping extends Model
     protected $fillable = [
         'meta_page_id', 'form_id', 'form_name', 'is_default',
         'pipeline_id', 'stage_id', 'tag_ids', 'assigned_to',
+        'wa_template_id',
     ];
 
     protected $casts = [
         'is_default' => 'boolean',
         'tag_ids'    => 'json',
     ];
+
+    public function waTemplate(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Models\WaTemplate::class, 'wa_template_id');
+    }
 
     public function page(): BelongsTo
     {

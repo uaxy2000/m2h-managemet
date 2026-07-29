@@ -314,9 +314,11 @@ class LeadController extends Controller
         $customFields      = CustomField::where('is_active', true)->with('options')->orderBy('sort_order')->get();
         $customValuesByKey = $lead->customValues->keyBy(fn ($cv) => $cv->field?->key);
 
+        $waTemplates = \App\Models\WaTemplate::where('is_active', true)->orderBy('display_name')->orderBy('name')->get();
+
         return view('leads.show', compact(
             'lead', 'internalUsers', 'serviceProviders', 'agents', 'allTags', 'availablePrograms',
-            'customFields', 'customValuesByKey', 'timeline'
+            'customFields', 'customValuesByKey', 'timeline', 'waTemplates'
         ));
     }
 

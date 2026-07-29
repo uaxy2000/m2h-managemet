@@ -1026,7 +1026,9 @@
 
                 {{-- WhatsApp send form --}}
                 @if($lead->phone)
-                <div x-show="formTab === 'whatsapp'" x-cloak>
+                <div x-show="formTab === 'whatsapp'" x-cloak
+                     x-data="{ waTab: '{{ session('wa_success') || session('wa_error') ? 'text' : 'text' }}' }">
+
                     @if(session('wa_error'))
                     <div class="mb-3 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                         {{ session('wa_error') }}
@@ -1037,25 +1039,67 @@
                         {{ session('wa_success') }}
                     </div>
                     @endif
-                    <form method="POST" action="{{ route('leads.whatsapp.send', $lead) }}">
-                        @csrf
-                        <textarea name="message" rows="3" required
-                                  placeholder="Write a WhatsApp message…"
-                                  class="block w-full rounded-lg border-gray-300 text-sm shadow-sm
-                                         focus:ring-green-500 focus:border-green-500 resize-none">{{ old('message') }}</textarea>
-                        <div class="mt-2 flex items-center justify-between">
-                            <span class="text-xs text-gray-400">To: {{ $lead->phone }}</span>
-                            <button type="submit"
-                                    class="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1.5
-                                           rounded-lg transition-colors font-medium flex items-center gap-1.5">
-                                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                                    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.554 4.118 1.522 5.845L.057 23.25l5.565-1.457A11.938 11.938 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.712 9.712 0 0 1-4.95-1.354l-.355-.21-3.305.866.881-3.218-.231-.371A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
-                                </svg>
-                                Send
-                            </button>
-                        </div>
-                    </form>
+
+                    {{-- WA sub-tabs --}}
+                    <div class="flex gap-3 mb-3 border-b border-gray-100 pb-2">
+                        <button type="button" @click="waTab = 'text'"
+                                :class="waTab === 'text' ? 'text-green-700 font-semibold border-b-2 border-green-600' : 'text-gray-400 hover:text-gray-600'"
+                                class="text-xs pb-1 -mb-2 transition-colors">Mesaj Yaz</button>
+                        @if($waTemplates->isNotEmpty())
+                        <button type="button" @click="waTab = 'template'"
+                                :class="waTab === 'template' ? 'text-green-700 font-semibold border-b-2 border-green-600' : 'text-gray-400 hover:text-gray-600'"
+                                class="text-xs pb-1 -mb-2 transition-colors">Şablon Gönder</button>
+                        @endif
+                    </div>
+
+                    {{-- Free text --}}
+                    <div x-show="waTab === 'text'">
+                        <form method="POST" action="{{ route('leads.whatsapp.send', $lead) }}">
+                            @csrf
+                            <textarea name="message" rows="3" required
+                                      placeholder="WhatsApp mesajı yaz…"
+                                      class="block w-full rounded-lg border-gray-300 text-sm shadow-sm
+                                             focus:ring-green-500 focus:border-green-500 resize-none">{{ old('message') }}</textarea>
+                            <div class="mt-2 flex items-center justify-between">
+                                <span class="text-xs text-gray-400">{{ $lead->phone }}</span>
+                                <button type="submit"
+                                        class="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1.5
+                                               rounded-lg transition-colors font-medium">Gönder</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    {{-- Template send --}}
+                    @if($waTemplates->isNotEmpty())
+                    <div x-show="waTab === 'template'" x-cloak
+                         x-data="{
+                             selectedId: '',
+                             templates: {{ $waTemplates->map(fn($t) => ['id' => $t->id, 'label' => $t->display_name ?? $t->name, 'preview' => $t->resolveBodyPreview($lead)])->values()->toJson() }},
+                             get preview() { const t = this.templates.find(t => t.id == this.selectedId); return t ? t.preview : ''; }
+                         }">
+                        <form method="POST" action="{{ route('leads.whatsapp.send-template', $lead) }}">
+                            @csrf
+                            <select name="template_id" x-model="selectedId" required
+                                    class="block w-full rounded-lg border-gray-300 text-sm focus:ring-green-500 focus:border-green-500 mb-3">
+                                <option value="">— Şablon seçin</option>
+                                @foreach($waTemplates as $tpl)
+                                <option value="{{ $tpl->id }}">{{ $tpl->display_name ?? $tpl->name }}</option>
+                                @endforeach
+                            </select>
+
+                            {{-- Preview --}}
+                            <div x-show="preview" class="mb-3 bg-green-50 border border-green-200 rounded-lg px-3 py-2.5 text-xs text-gray-700 whitespace-pre-wrap leading-relaxed" x-text="preview"></div>
+
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-gray-400">{{ $lead->phone }}</span>
+                                <button type="submit" :disabled="!selectedId"
+                                        class="text-xs bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white px-3 py-1.5
+                                               rounded-lg transition-colors font-medium">Gönder</button>
+                            </div>
+                        </form>
+                    </div>
+                    @endif
+
                 </div>
                 @endif
             </div>
