@@ -17,6 +17,7 @@ use App\Http\Controllers\Settings\CustomFieldController;
 use App\Http\Controllers\Settings\TagController;
 use App\Http\Controllers\Settings\TagGroupController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\InboxController;
 use App\Http\Controllers\WhatsAppController;
 use Illuminate\Support\Facades\Route;
 
@@ -30,6 +31,7 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/inbox', [InboxController::class, 'index'])->name('inbox');
     Route::get('/', fn () => redirect()->route('dashboard'));
 
     // Leads

@@ -61,6 +61,33 @@
                 <span x-show="sidebar || mobileNav" class="whitespace-nowrap">Dashboard</span>
             </a>
 
+            @php
+                $inboxCount = auth()->id()
+                    ? \App\Models\LeadActivity::where('type', 'whatsapp_incoming')
+                        ->where('is_read', false)
+                        ->whereHas('lead', fn ($q) => $q->where('assigned_to', auth()->id()))
+                        ->count()
+                    : 0;
+            @endphp
+            <a href="{{ route('inbox') }}"
+               :class="(sidebar || mobileNav) ? 'px-3 gap-3' : 'lg:justify-center lg:px-0 px-3 gap-3'"
+               class="group flex items-center py-2 rounded-lg text-sm font-medium transition-colors relative
+                      {{ request()->routeIs('inbox') ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}"
+               :title="(!sidebar && !mobileNav) ? 'Inbox' : ''">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z" />
+                </svg>
+                <span x-show="sidebar || mobileNav" class="whitespace-nowrap">Inbox</span>
+                @if($inboxCount > 0)
+                <span x-show="sidebar || mobileNav"
+                      class="ml-auto text-xs bg-green-500 text-white font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center">
+                    {{ $inboxCount }}
+                </span>
+                <span x-show="!sidebar && !mobileNav"
+                      class="hidden lg:block absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full"></span>
+                @endif
+            </a>
+
             <a href="{{ route('leads.index') }}"
                :class="(sidebar || mobileNav) ? 'px-3 gap-3' : 'lg:justify-center lg:px-0 px-3 gap-3'"
                class="group flex items-center py-2 rounded-lg text-sm font-medium transition-colors

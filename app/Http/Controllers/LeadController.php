@@ -76,6 +76,9 @@ class LeadController extends Controller
                             ->whereNotNull('due_at')
                             ->where('due_at', '<', now())
                         ])
+                        ->withExists(['activities as has_wa_messages' => fn ($q) => $q
+                            ->whereIn('type', ['whatsapp_incoming', 'whatsapp_outgoing'])
+                        ])
                         ->with([
                             'assignedTo',
                             'tags',
@@ -278,6 +281,18 @@ class LeadController extends Controller
         }
 
         $timeline = $grouped;
+
+        // Mark unread incoming messages as read if the assigned user is viewing
+        if (auth()->id() === $lead->assigned_to) {
+            LeadActivity::where('lead_id', $lead->id)
+                ->where('type', 'whatsapp_incoming')
+                ->where('is_read', false)
+                ->update([
+                    'is_read' => true,
+                    'read_at' => now(),
+                    'read_by' => auth()->id(),
+                ]);
+        }
 
         $internalUsers = User::where(function ($q) {
             $q->whereNull('company_id')

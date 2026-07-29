@@ -15,12 +15,15 @@ class LeadActivity extends Model
     protected $fillable = [
         'lead_id', 'user_id', 'type', 'description',
         'subject_type', 'subject_id', 'meta', 'visible_to',
+        'is_read', 'read_at', 'read_by',
     ];
 
     protected $casts = [
         'meta'       => 'array',
         'visible_to' => 'array',
         'created_at' => 'datetime',
+        'read_at'    => 'datetime',
+        'is_read'    => 'boolean',
     ];
 
     public function user(): BelongsTo

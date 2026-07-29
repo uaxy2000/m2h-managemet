@@ -98,6 +98,7 @@ class WhatsAppWebhookController extends Controller
             'description' => $text,
             'visible_to'  => ['internal'],
             'meta'        => ['wa_message_id' => $waId, 'from' => $from, 'sent_at' => $sentAt],
+            'is_read'     => false,
         ]);
 
         Log::info('WhatsApp webhook: message logged', ['lead_id' => $lead->id, 'from' => $from]);
