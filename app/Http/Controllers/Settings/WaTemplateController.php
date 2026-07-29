@@ -47,6 +47,7 @@ class WaTemplateController extends Controller
             'is_active'        => $request->boolean('is_active', true),
         ]);
 
-        return back()->with('success', "'{$waTemplate->display_name ?? $waTemplate->name}' güncellendi.");
+        $label = $waTemplate->display_name ?? $waTemplate->name;
+        return back()->with('success', "'{$label}' güncellendi.");
     }
 }
