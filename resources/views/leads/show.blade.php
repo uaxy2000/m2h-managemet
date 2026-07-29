@@ -852,14 +852,14 @@
                                 {{ $isOutgoing ? ($entry['messages'][0]->user?->name ?? 'Team') : 'WhatsApp' }}
                             </span>
                         </div>
-                        <div class="space-y-1.5">
+                        <div class="space-y-2">
                             @foreach($entry['messages'] as $msg)
-                            <p class="text-sm text-gray-800 leading-relaxed {{ !$loop->last ? 'pb-1.5 border-b border-gray-100' : '' }}">{{ $msg->description }}</p>
+                            <div class="{{ !$loop->last ? 'pb-2 border-b border-gray-100' : '' }}">
+                                <p class="text-sm text-gray-800 leading-relaxed">{{ $msg->description }}</p>
+                                <p class="text-xs text-gray-400 mt-0.5 {{ $isOutgoing ? 'text-right' : '' }}">{{ $msg->created_at->diffForHumans() }}</p>
+                            </div>
                             @endforeach
                         </div>
-                        <p class="text-xs text-gray-400 mt-1.5 {{ $isOutgoing ? 'text-right' : '' }}">
-                            {{ end($entry['messages'])->created_at->diffForHumans() }}
-                        </p>
                     </div>
                 </div>
 
