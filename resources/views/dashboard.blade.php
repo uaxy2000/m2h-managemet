@@ -138,7 +138,7 @@ $phases = [
             ['label' => 'Service Provider & Agent linking per lead',                       'complete' => true],
             ['label' => 'Lead filters (search, source, tags, program, duplicate)',         'complete' => true],
             ['label' => 'Custom fields with per-lead values & Meta form mapping',          'complete' => true],
-            ['label' => 'Unified lead timeline (notes, tasks, tag & assignment activity)', 'complete' => true],
+            ['label' => 'Lead timeline — notes, tasks, tag, assignment & custom field changes', 'complete' => true],
             ['label' => 'Client portal login (read-only lead view)',                       'complete' => false],
         ],
     ],
@@ -174,6 +174,14 @@ $phases = [
             ['label' => 'Service provider login (read-only view of assigned leads)',       'complete' => false],
             ['label' => 'Agent login (read-only view of assigned leads)',                  'complete' => false],
             ['label' => 'Role-based field visibility',                                    'complete' => false],
+        ],
+    ],
+    [
+        'title' => 'Collaboration',
+        'items' => [
+            ['label' => 'Boards — cards, notes & tasks with read/write access control',  'complete' => true],
+            ['label' => 'Board unread tracking (sidebar badge, per-card indicator)',      'complete' => true],
+            ['label' => 'Task assignment restricted to board members',                    'complete' => true],
         ],
     ],
     [
