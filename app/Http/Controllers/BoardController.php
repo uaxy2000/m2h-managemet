@@ -60,11 +60,14 @@ class BoardController extends Controller
 
         $board->load(['permissions', 'cards.notes.author', 'cards.tasks.assignedTo', 'cards.permissions', 'creator', 'userReads']);
 
-        // Mark board as read
-        BoardUserRead::updateOrCreate(
-            ['user_id' => $user->id, 'board_id' => $board->id],
-            ['last_read_at' => now()]
-        );
+        // Mark board as read (composite PK — can't use updateOrCreate)
+        $read = BoardUserRead::where('user_id', $user->id)->where('board_id', $board->id)->first();
+        if ($read) {
+            $read->last_read_at = now();
+            $read->save();
+        } else {
+            BoardUserRead::create(['user_id' => $user->id, 'board_id' => $board->id, 'last_read_at' => now()]);
+        }
 
         $allUsers = User::orderBy('name')->get();
 
