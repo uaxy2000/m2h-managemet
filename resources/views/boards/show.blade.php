@@ -46,7 +46,7 @@
              'update_url' => route('boards.cards.update', [$board, $card]),
              'delete_url' => route('boards.cards.destroy', [$board, $card]),
          ];
-     })->values()) }}, '{{ csrf_token() }}')">
+     })->values()) }}, '{{ csrf_token() }}', {{ session('opened_card') ?? 'null' }})">
 
     @if(session('success') || session('note_success') || session('task_success'))
     <div class="px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">
@@ -342,16 +342,22 @@
 </div>
 
 <script>
-function boardPage(cards, csrf) {
+function boardPage(cards, csrf, openCardId) {
     return {
         cards,
         activeCard: null,
         modalTab: 'notes',
         addCardOpen: false,
         editCardOpen: false,
+        init() {
+            if (openCardId) {
+                const card = this.cards.find(c => c.id === openCardId);
+                if (card) this.openCard(card);
+            }
+        },
         openCard(card) {
             this.activeCard = card;
-            this.modalTab = card.has_new ? 'notes' : 'notes';
+            this.modalTab = 'notes';
             this.editCardOpen = false;
         },
         closeCard() {

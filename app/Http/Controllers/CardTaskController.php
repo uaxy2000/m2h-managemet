@@ -29,7 +29,7 @@ class CardTaskController extends Controller
             'created_by'  => auth()->id(),
         ]);
 
-        return back()->with('task_success', 'Task added.');
+        return back()->with('task_success', 'Task added.')->with('opened_card', $card->id);
     }
 
     public function toggle(Board $board, BoardCard $card, CardTask $task): JsonResponse

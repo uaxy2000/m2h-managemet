@@ -22,7 +22,7 @@ class CardNoteController extends Controller
             'created_by' => auth()->id(),
         ]);
 
-        return back()->with('note_success', 'Note added.');
+        return back()->with('note_success', 'Note added.')->with('opened_card', $card->id);
     }
 
     public function destroy(Board $board, BoardCard $card, CardNote $note): RedirectResponse
