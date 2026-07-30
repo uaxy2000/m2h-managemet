@@ -20,6 +20,10 @@ use App\Http\Controllers\Settings\WaTemplateController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\InboxController;
 use App\Http\Controllers\WhatsAppController;
+use App\Http\Controllers\BoardController;
+use App\Http\Controllers\BoardCardController;
+use App\Http\Controllers\CardNoteController;
+use App\Http\Controllers\CardTaskController;
 use Illuminate\Support\Facades\Route;
 
 // Meta webhook routes are registered in bootstrap/app.php with no middleware
@@ -34,6 +38,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/inbox', [InboxController::class, 'index'])->name('inbox');
     Route::get('/', fn () => redirect()->route('dashboard'));
+
+    // Boards
+    Route::resource('boards', BoardController::class);
+    Route::post('boards/{board}/cards', [BoardCardController::class, 'store'])->name('boards.cards.store');
+    Route::put('boards/{board}/cards/{card}', [BoardCardController::class, 'update'])->name('boards.cards.update');
+    Route::delete('boards/{board}/cards/{card}', [BoardCardController::class, 'destroy'])->name('boards.cards.destroy');
+    Route::post('boards/{board}/cards/{card}/notes', [CardNoteController::class, 'store'])->name('boards.cards.notes.store');
+    Route::delete('boards/{board}/cards/{card}/notes/{note}', [CardNoteController::class, 'destroy'])->name('boards.cards.notes.destroy');
+    Route::post('boards/{board}/cards/{card}/tasks', [CardTaskController::class, 'store'])->name('boards.cards.tasks.store');
+    Route::post('boards/{board}/cards/{card}/tasks/{task}/toggle', [CardTaskController::class, 'toggle'])->name('boards.cards.tasks.toggle');
+    Route::delete('boards/{board}/cards/{card}/tasks/{task}', [CardTaskController::class, 'destroy'])->name('boards.cards.tasks.destroy');
 
     // Leads
     Route::post('leads/{lead}/move', [LeadController::class, 'move'])->name('leads.move');

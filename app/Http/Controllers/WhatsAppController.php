@@ -33,11 +33,12 @@ class WhatsAppController extends Controller
             return back()->with('wa_error', 'Lead has no phone number.');
         }
 
-        $template = WaTemplate::findOrFail($request->integer('template_id'));
-        $ok       = $wa->sendTemplate($lead, $template, auth()->id());
+        $template      = WaTemplate::findOrFail($request->integer('template_id'));
+        $ok            = $wa->sendTemplate($lead, $template, auth()->id());
+        $templateLabel = $template->display_name ?? $template->name;
 
         return $ok
-            ? back()->with('wa_success', "'{$template->display_name ?? $template->name}' gönderildi.")->withFragment('timeline')
+            ? back()->with('wa_success', "'{$templateLabel}' gönderildi.")->withFragment('timeline')
             : back()->with('wa_error', 'Şablon gönderilemedi. Token süresi dolmuş olabilir.');
     }
 }
