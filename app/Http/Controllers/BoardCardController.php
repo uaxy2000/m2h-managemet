@@ -7,7 +7,6 @@ use App\Models\BoardCard;
 use App\Models\CardPermission;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 
 class BoardCardController extends Controller
 {
@@ -29,7 +28,7 @@ class BoardCardController extends Controller
             'created_by' => auth()->id(),
         ]);
 
-        return back()->with('success', 'Kart eklendi.');
+        return back()->with('success', 'Card added.');
     }
 
     public function update(Request $request, Board $board, BoardCard $card): RedirectResponse
@@ -64,7 +63,7 @@ class BoardCardController extends Controller
             }
         }
 
-        return back()->with('success', 'Kart güncellendi.');
+        return back()->with('success', 'Card updated.');
     }
 
     public function destroy(Board $board, BoardCard $card): RedirectResponse
@@ -74,6 +73,6 @@ class BoardCardController extends Controller
 
         $card->delete();
 
-        return back()->with('success', 'Kart silindi.');
+        return back()->with('success', 'Card deleted.');
     }
 }

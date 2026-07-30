@@ -22,7 +22,7 @@ class CardNoteController extends Controller
             'created_by' => auth()->id(),
         ]);
 
-        return back()->with('note_success', 'Not eklendi.');
+        return back()->with('note_success', 'Note added.');
     }
 
     public function destroy(Board $board, BoardCard $card, CardNote $note): RedirectResponse
@@ -38,6 +38,6 @@ class CardNoteController extends Controller
 
         $note->delete();
 
-        return back()->with('note_success', 'Not silindi.');
+        return back()->with('note_success', 'Note deleted.');
     }
 }

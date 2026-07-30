@@ -29,7 +29,7 @@ class CardTaskController extends Controller
             'created_by'  => auth()->id(),
         ]);
 
-        return back()->with('task_success', 'Görev eklendi.');
+        return back()->with('task_success', 'Task added.');
     }
 
     public function toggle(Board $board, BoardCard $card, CardTask $task): JsonResponse
@@ -51,6 +51,6 @@ class CardTaskController extends Controller
 
         $task->delete();
 
-        return back()->with('task_success', 'Görev silindi.');
+        return back()->with('task_success', 'Task deleted.');
     }
 }

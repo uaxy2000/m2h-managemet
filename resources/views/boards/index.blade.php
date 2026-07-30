@@ -13,14 +13,14 @@
     @endif
 
     <div class="flex items-center justify-between mb-6">
-        <p class="text-sm text-gray-500">{{ $boards->count() }} board</p>
+        <p class="text-sm text-gray-500">{{ $boards->count() }} board{{ $boards->count() !== 1 ? 's' : '' }}</p>
         @if(auth()->user()->isAdmin())
         <a href="{{ route('boards.create') }}"
            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
             </svg>
-            Yeni Board
+            New Board
         </a>
         @endif
     </div>
@@ -30,7 +30,7 @@
         <svg class="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"/>
         </svg>
-        <p class="text-sm">Henüz board yok.</p>
+        <p class="text-sm">No boards yet.</p>
     </div>
     @else
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -52,7 +52,7 @@
             @endif
 
             <div class="mt-4 flex items-center gap-4 text-xs text-gray-400">
-                <span>{{ $board->cards->count() }} kart</span>
+                <span>{{ $board->cards->count() }} card{{ $board->cards->count() !== 1 ? 's' : '' }}</span>
                 <span>·</span>
                 <span>{{ $board->updated_at->diffForHumans() }}</span>
             </div>

@@ -25,13 +25,13 @@ class BoardController extends Controller
 
     public function create(): View
     {
-        $this->authorize('create', Board::class);
+        abort_unless(auth()->user()->isAdmin(), 403);
         return view('boards.create');
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorize('create', Board::class);
+        abort_unless(auth()->user()->isAdmin(), 403);
 
         $data = $request->validate([
             'title'       => 'required|string|max:191',
@@ -50,7 +50,7 @@ class BoardController extends Controller
 
         $this->syncPermissions($board, $request->input('permissions', []));
 
-        return redirect()->route('boards.show', $board)->with('success', 'Board oluşturuldu.');
+        return redirect()->route('boards.show', $board)->with('success', 'Board created.');
     }
 
     public function show(Board $board): View
@@ -73,14 +73,14 @@ class BoardController extends Controller
 
     public function edit(Board $board): View
     {
-        $this->authorize('update', $board);
+        abort_unless(auth()->user()->isAdmin(), 403);
         $board->load('permissions');
         return view('boards.edit', compact('board'));
     }
 
     public function update(Request $request, Board $board): RedirectResponse
     {
-        $this->authorize('update', $board);
+        abort_unless(auth()->user()->isAdmin(), 403);
 
         $data = $request->validate([
             'title'       => 'required|string|max:191',
@@ -95,14 +95,14 @@ class BoardController extends Controller
 
         $this->syncPermissions($board, $request->input('permissions', []));
 
-        return redirect()->route('boards.show', $board)->with('success', 'Board güncellendi.');
+        return redirect()->route('boards.show', $board)->with('success', 'Board updated.');
     }
 
     public function destroy(Board $board): RedirectResponse
     {
-        $this->authorize('delete', $board);
+        abort_unless(auth()->user()->isAdmin(), 403);
         $board->delete();
-        return redirect()->route('boards.index')->with('success', 'Board silindi.');
+        return redirect()->route('boards.index')->with('success', 'Board deleted.');
     }
 
     private function syncPermissions(Board $board, array $permissions): void

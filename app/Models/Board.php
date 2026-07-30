@@ -57,13 +57,13 @@ class Board extends Model
         foreach ($this->permissions as $p) {
             $label = $roleLabels[$p->role] ?? $p->role;
             if ($p->can_write) {
-                $parts[] = "{$label}: okuma + yazma";
+                $parts[] = "{$label}: read + write";
             } elseif ($p->can_read) {
-                $parts[] = "{$label}: sadece okuma";
+                $parts[] = "{$label}: read only";
             }
         }
 
-        return $parts ? implode(', ', $parts) : 'Yalnızca Admin';
+        return $parts ? implode(', ', $parts) : 'Admin only';
     }
 
     public function hasUnreadFor(User $user): bool
