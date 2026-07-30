@@ -556,7 +556,7 @@
                             : ($cv?->value ?? ''),
                         'exclusive_values' => $f->options->where('is_exclusive', true)->pluck('value')->values()->toArray(),
                     ];
-                })->keyBy('key')->toJson()
+                })->keyBy('key')
              ) }})">
 
             <div class="flex items-center justify-between mb-4">
