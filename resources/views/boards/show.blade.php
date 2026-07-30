@@ -180,14 +180,23 @@
                 @php $taskIsNew = $since && $task->created_at > $since && $task->created_by !== $user->id; @endphp
                 <div class="flex items-start gap-3 {{ $taskIsNew ? 'bg-indigo-50 -mx-2 px-2 py-1 rounded-lg' : '' }}"
                      x-data="{ done: {{ $task->is_done ? 'true' : 'false' }} }">
+                    @if($canWrite)
                     <button type="button"
-                            @click="{{ $canWrite ? "fetch('".route('boards.cards.tasks.toggle', [$board, $card, $task])."', {method:'POST',headers:{'X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]').content}}).then(r=>r.json()).then(d=>done=d.is_done)" : '' }}"
-                            :class="done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 bg-white {{ $canWrite ? 'hover:border-indigo-400' : 'opacity-60 cursor-default' }}'"
+                            @click="fetch('{{ route('boards.cards.tasks.toggle', [$board, $card, $task]) }}', {method:'POST',headers:{'X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]').content}}).then(r=>r.json()).then(d=>done=d.is_done)"
+                            :class="done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 bg-white hover:border-indigo-400'"
                             class="w-5 h-5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-all mt-0.5">
                         <svg x-show="done" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
                         </svg>
                     </button>
+                    @else
+                    <div :class="done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 bg-white opacity-50'"
+                         class="w-5 h-5 flex-shrink-0 rounded border-2 flex items-center justify-center mt-0.5">
+                        <svg x-show="done" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
+                        </svg>
+                    </div>
+                    @endif
                     <div class="flex-1 min-w-0">
                         <p class="text-sm text-gray-700" :class="done ? 'line-through text-gray-400' : ''">
                             {{ $task->title }}
