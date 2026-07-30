@@ -45,10 +45,7 @@ class Board extends Model
 
     private function isInternalAdmin(User $user): bool
     {
-        if (!$user->isAdmin()) return false;
-        // Lazy-load company if needed
-        $company = $user->relationLoaded('company') ? $user->company : $user->load('company')->company;
-        return $company?->type === 'internal';
+        return $user->isInternalAdmin();
     }
 
     public function memberSummary(): string

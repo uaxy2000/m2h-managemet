@@ -36,7 +36,12 @@ class CardTaskController extends Controller
     {
         abort_unless($card->board_id === $board->id, 404);
         abort_unless($task->card_id === $card->id, 404);
-        abort_unless($card->canWrite(auth()->user()), 403);
+
+        $user = auth()->user();
+        $canToggle = $user->isInternalAdmin()
+            || $task->assigned_to === $user->id;
+
+        abort_unless($canToggle, 403);
 
         $task->update(['is_done' => !$task->is_done]);
 
@@ -47,7 +52,12 @@ class CardTaskController extends Controller
     {
         abort_unless($card->board_id === $board->id, 404);
         abort_unless($task->card_id === $card->id, 404);
-        abort_unless($card->canWrite(auth()->user()), 403);
+
+        $user = auth()->user();
+        $canDelete = $user->isInternalAdmin()
+            || $task->assigned_to === $user->id;
+
+        abort_unless($canDelete, 403);
 
         $task->delete();
 

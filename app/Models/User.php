@@ -56,6 +56,13 @@ class User extends Authenticatable
         return $this->hasRole(['super_admin', 'admin']);
     }
 
+    public function isInternalAdmin(): bool
+    {
+        if (!$this->isAdmin()) return false;
+        $company = $this->relationLoaded('company') ? $this->company : $this->load('company')->company;
+        return $company?->type === 'internal';
+    }
+
     public function isInternal(): bool
     {
         return $this->hasRole(['super_admin', 'admin', 'member']);

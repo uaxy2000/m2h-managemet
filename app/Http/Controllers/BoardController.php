@@ -27,11 +27,20 @@ class BoardController extends Controller
 
     private function selectableUsers()
     {
-        // Users from non-internal companies — any role, must be explicitly added to boards
-        return User::whereHas('company', fn ($q) => $q->where('type', '!=', 'internal'))
-            ->with('company')
-            ->orderBy('name')
-            ->get();
+        // Exclude only internal-company admins/super_admins (they have automatic access).
+        // Everyone else — including internal members and all non-internal users — must be
+        // added explicitly and therefore appear in the member picker.
+        return User::where(function ($q) {
+            // All users from non-internal companies
+            $q->whereHas('company', fn ($q2) => $q2->where('type', '!=', 'internal'));
+        })->orWhere(function ($q) {
+            // Internal company users who are NOT admin/super_admin
+            $q->whereHas('company', fn ($q2) => $q2->where('type', 'internal'))
+              ->whereNotIn('role', ['super_admin', 'admin']);
+        })
+        ->with('company')
+        ->orderBy('name')
+        ->get();
     }
 
     public function create(): View
@@ -77,16 +86,18 @@ class BoardController extends Controller
             'userReads',
         ]);
 
-        // Mark board as read
-        \DB::table('board_user_reads')->upsert(
-            [['user_id' => $user->id, 'board_id' => $board->id, 'last_read_at' => now()]],
-            ['user_id', 'board_id'],
-            ['last_read_at']
-        );
-
         $allUsers = $this->selectableUsers();
 
-        return view('boards.show', compact('board', 'user', 'allUsers'));
+        // Users who can be assigned tasks: internal admins + explicit board members
+        $memberUserIds = $board->members->pluck('user_id')->all();
+        $assignableUsers = User::where(function ($q) {
+            $q->whereHas('company', fn ($q2) => $q2->where('type', 'internal'))
+              ->whereIn('role', ['super_admin', 'admin']);
+        })->orWhereIn('id', $memberUserIds)
+          ->orderBy('name')
+          ->get();
+
+        return view('boards.show', compact('board', 'user', 'allUsers', 'assignableUsers'));
     }
 
     public function edit(Board $board): View
@@ -123,6 +134,20 @@ class BoardController extends Controller
         abort_unless(auth()->user()->isAdmin(), 403);
         $board->delete();
         return redirect()->route('boards.index')->with('success', 'Board deleted.');
+    }
+
+    public function markRead(Board $board): \Illuminate\Http\JsonResponse
+    {
+        $user = auth()->user();
+        abort_unless($board->canRead($user), 403);
+
+        \DB::table('board_user_reads')->upsert(
+            [['user_id' => $user->id, 'board_id' => $board->id, 'last_read_at' => now()]],
+            ['user_id', 'board_id'],
+            ['last_read_at']
+        );
+
+        return response()->json(['ok' => true]);
     }
 
     private function syncMembers(Board $board, array $memberIds, array $canWriteIds): void

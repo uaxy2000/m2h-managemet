@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', $board->title)
 @section('heading', $board->title)
@@ -8,7 +8,8 @@
 
 <div class="max-w-5xl mx-auto px-4 py-6 space-y-4"
      x-data="boardPage({{ json_encode($board->cards->map(function ($card) use ($user, $since, $board) {
-         $canWrite = $card->canWrite($user);
+         $canWrite       = $card->canWrite($user);
+         $isInternalAdmin = $user->isInternalAdmin();
          return [
              'id'         => $card->id,
              'title'      => $card->title,
@@ -32,8 +33,10 @@
                  'due'         => $t->due_at?->format('d M Y'),
                  'due_past'    => $t->due_at && $t->due_at->isPast() && !$t->is_done,
                  'is_new'      => $since && $t->created_at > $since && $t->created_by !== $user->id,
-                 'toggle_url'  => $canWrite ? route('boards.cards.tasks.toggle', [$board, $card, $t]) : null,
-                 'delete_url'  => $canWrite ? route('boards.cards.tasks.destroy', [$board, $card, $t]) : null,
+                 'toggle_url'  => ($isInternalAdmin || $t->assigned_to === $user->id)
+                     ? route('boards.cards.tasks.toggle', [$board, $card, $t]) : null,
+                 'delete_url'  => ($isInternalAdmin || $t->assigned_to === $user->id)
+                     ? route('boards.cards.tasks.destroy', [$board, $card, $t]) : null,
              ])->values()->all(),
              'note_count' => $card->notes->count(),
              'task_count' => $card->tasks->count(),
@@ -46,7 +49,7 @@
              'update_url' => route('boards.cards.update', [$board, $card]),
              'delete_url' => route('boards.cards.destroy', [$board, $card]),
          ];
-     })->values()) }}, '{{ csrf_token() }}', {{ session('opened_card') ?? 'null' }})">
+     })->values()) }}, '{{ csrf_token() }}', {{ session('opened_card') ?? 'null' }}, '{{ route('boards.mark-read', $board) }}')">
 
     @if(session('success') || session('note_success') || session('task_success'))
     <div class="px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">
@@ -256,7 +259,7 @@
                             <select name="assigned_to"
                                     class="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 <option value="">Assign to (optional)</option>
-                                @foreach($allUsers as $u)
+                                @foreach($assignableUsers as $u)
                                 <option value="{{ $u->id }}">{{ $u->name }}</option>
                                 @endforeach
                             </select>
@@ -310,31 +313,35 @@
          @click.self="editCardOpen = false">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
             <h3 class="font-semibold text-gray-800 mb-4">Edit Card</h3>
-            <form :action="activeCard?.update_url" method="POST" class="space-y-3">
+
+            {{-- Update form: closed before action bar so Delete form cannot be nested inside --}}
+            <form id="card-update-form" :action="activeCard?.update_url" method="POST" class="space-y-3">
                 @csrf @method('PUT')
                 <input type="text" name="title" :value="activeCard?.title" required
                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <textarea name="body" rows="3"
                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                           x-text="activeCard?.body"></textarea>
-                <div class="flex justify-between items-center pt-1">
-                    <form :action="activeCard?.delete_url" method="POST"
-                          onsubmit="return confirm('Delete this card?')">
-                        @csrf @method('DELETE')
-                        <button type="submit" class="text-xs text-red-500 hover:text-red-700">Delete Card</button>
-                    </form>
-                    <div class="flex gap-2">
-                        <button type="button" @click="editCardOpen = false"
-                                class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                                class="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
-                            Save
-                        </button>
-                    </div>
-                </div>
             </form>
+
+            {{-- Action bar: separate from update form; Save uses form="card-update-form" --}}
+            <div class="flex justify-between items-center pt-3">
+                <form :action="activeCard?.delete_url" method="POST"
+                      onsubmit="return confirm('Delete this card?')">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="text-xs text-red-500 hover:text-red-700">Delete Card</button>
+                </form>
+                <div class="flex gap-2">
+                    <button type="button" @click="editCardOpen = false"
+                            class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit" form="card-update-form"
+                            class="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
+                        Save
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
     @endif
@@ -342,7 +349,7 @@
 </div>
 
 <script>
-function boardPage(cards, csrf, openCardId) {
+function boardPage(cards, csrf, openCardId, markReadUrl) {
     return {
         cards,
         activeCard: null,
@@ -359,6 +366,8 @@ function boardPage(cards, csrf, openCardId) {
             this.activeCard = card;
             this.modalTab = 'notes';
             this.editCardOpen = false;
+            // Mark board as read when user actually opens a card
+            fetch(markReadUrl, { method: 'POST', headers: { 'X-CSRF-TOKEN': csrf } });
         },
         closeCard() {
             this.activeCard = null;

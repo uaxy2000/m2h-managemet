@@ -41,6 +41,7 @@ Route::middleware('auth')->group(function () {
 
     // Boards
     Route::resource('boards', BoardController::class);
+    Route::post('boards/{board}/mark-read', [BoardController::class, 'markRead'])->name('boards.mark-read');
     Route::post('boards/{board}/cards', [BoardCardController::class, 'store'])->name('boards.cards.store');
     Route::put('boards/{board}/cards/{card}', [BoardCardController::class, 'update'])->name('boards.cards.update');
     Route::delete('boards/{board}/cards/{card}', [BoardCardController::class, 'destroy'])->name('boards.cards.destroy');
