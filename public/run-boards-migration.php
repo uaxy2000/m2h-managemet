@@ -131,12 +131,34 @@ if (tableExists($pdo, 'board_user_reads')) {
     echo "✓ board_user_reads created\n";
 }
 
-// Mark migration as run in migrations table
-$exists = $pdo->query("SELECT COUNT(*) FROM migrations WHERE migration = '2026_07_30_000001_create_boards_tables'")->fetchColumn();
-if (!$exists) {
-    $batch = (int) $pdo->query("SELECT COALESCE(MAX(batch), 0) FROM migrations")->fetchColumn();
+// board_members
+if (tableExists($pdo, 'board_members')) {
+    echo "✓ board_members already exists — skipped\n";
+} else {
+    $pdo->exec("CREATE TABLE `board_members` (
+        `board_id` bigint unsigned NOT NULL,
+        `user_id` char(36) NOT NULL,
+        `can_write` tinyint(1) NOT NULL DEFAULT 0,
+        PRIMARY KEY (`board_id`, `user_id`),
+        CONSTRAINT `bm_board_fk` FOREIGN KEY (`board_id`) REFERENCES `boards` (`id`) ON DELETE CASCADE,
+        CONSTRAINT `bm_user_fk`  FOREIGN KEY (`user_id`)  REFERENCES `users` (`id`)  ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC");
+    echo "✓ board_members created\n";
+}
+
+// Mark migrations as run
+$batch = (int) $pdo->query("SELECT COALESCE(MAX(batch), 0) FROM migrations")->fetchColumn();
+
+$exists1 = $pdo->query("SELECT COUNT(*) FROM migrations WHERE migration = '2026_07_30_000001_create_boards_tables'")->fetchColumn();
+if (!$exists1) {
     $pdo->exec("INSERT INTO migrations (migration, batch) VALUES ('2026_07_30_000001_create_boards_tables', " . ($batch + 1) . ")");
-    echo "✓ Migration kaydedildi\n";
+    echo "✓ Migration 1 kaydedildi\n";
+}
+
+$exists2 = $pdo->query("SELECT COUNT(*) FROM migrations WHERE migration = '2026_07_30_000002_create_board_members_table'")->fetchColumn();
+if (!$exists2) {
+    $pdo->exec("INSERT INTO migrations (migration, batch) VALUES ('2026_07_30_000002_create_board_members_table', " . ($batch + 1) . ")");
+    echo "✓ Migration 2 kaydedildi\n";
 }
 
 echo "\nTamamlandı!\n</pre>";
