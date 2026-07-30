@@ -14,7 +14,9 @@ class BoardController extends Controller
 {
     public function index(): View
     {
-        $user   = auth()->user();
+        $user = auth()->user();
+        $user->loadMissing('company');
+
         $boards = Board::with(['members.user', 'cards.notes', 'cards.tasks', 'userReads'])
             ->get()
             ->filter(fn ($b) => $b->canRead($user))
@@ -23,10 +25,19 @@ class BoardController extends Controller
         return view('boards.index', compact('boards', 'user'));
     }
 
+    private function selectableUsers()
+    {
+        // Users from non-internal companies — any role, must be explicitly added to boards
+        return User::whereHas('company', fn ($q) => $q->where('type', '!=', 'internal'))
+            ->with('company')
+            ->orderBy('name')
+            ->get();
+    }
+
     public function create(): View
     {
         abort_unless(auth()->user()->isAdmin(), 403);
-        $allUsers = User::orderBy('name')->get();
+        $allUsers = $this->selectableUsers();
         return view('boards.create', compact('allUsers'));
     }
 
@@ -73,7 +84,7 @@ class BoardController extends Controller
             ['last_read_at']
         );
 
-        $allUsers = User::orderBy('name')->get();
+        $allUsers = $this->selectableUsers();
 
         return view('boards.show', compact('board', 'user', 'allUsers'));
     }
@@ -82,7 +93,7 @@ class BoardController extends Controller
     {
         abort_unless(auth()->user()->isAdmin(), 403);
         $board->load('members.user');
-        $allUsers = User::orderBy('name')->get();
+        $allUsers = $this->selectableUsers();
         return view('boards.edit', compact('board', 'allUsers'));
     }
 

@@ -32,15 +32,23 @@ class Board extends Model
 
     public function canRead(User $user): bool
     {
-        if ($user->isAdmin()) return true;
+        if ($this->isInternalAdmin($user)) return true;
         return $this->members->contains('user_id', $user->id);
     }
 
     public function canWrite(User $user): bool
     {
-        if ($user->isAdmin()) return true;
+        if ($this->isInternalAdmin($user)) return true;
         $member = $this->members->firstWhere('user_id', $user->id);
         return $member?->can_write ?? false;
+    }
+
+    private function isInternalAdmin(User $user): bool
+    {
+        if (!$user->isAdmin()) return false;
+        // Lazy-load company if needed
+        $company = $user->relationLoaded('company') ? $user->company : $user->load('company')->company;
+        return $company?->type === 'internal';
     }
 
     public function memberSummary(): string
