@@ -184,7 +184,13 @@ class LeadController extends Controller
 
     public function updateCustomValues(Request $request, Lead $lead): \Illuminate\Http\RedirectResponse
     {
-        $fields = CustomField::where('is_active', true)->get()->keyBy('key');
+        $fields = CustomField::where('is_active', true)->with('options')->get()->keyBy('key');
+
+        $existingValues = LeadCustomValue::where('lead_id', $lead->id)
+            ->get()
+            ->keyBy('custom_field_id');
+
+        $changes = [];
 
         foreach ($fields as $key => $field) {
             $raw = $request->input("custom.{$key}");
@@ -194,12 +200,32 @@ class LeadController extends Controller
                 $value  = empty($values) ? null : json_encode($values);
             } elseif ($field->type === 'date') {
                 $value = $raw ? trim($raw) : null;
-                // Accept YYYY, YYYY-MM, or YYYY-MM-DD
                 if ($value && !preg_match('/^\d{4}(-\d{2}(-\d{2})?)?$/', $value)) {
                     $value = null;
                 }
             } else {
                 $value = $raw ? trim($raw) : null;
+            }
+
+            $oldValue = $existingValues->get($field->id)?->value;
+
+            if ($oldValue !== $value) {
+                $optionLabels = $field->options->pluck('label', 'value');
+
+                if ($field->type === 'multi_select') {
+                    $oldArr = $oldValue ? (json_decode($oldValue, true) ?? []) : [];
+                    $newArr = $value   ? (json_decode($value,    true) ?? []) : [];
+                    $oldStr = $oldArr ? implode(', ', array_map(fn ($v) => $optionLabels[$v] ?? $v, $oldArr)) : '—';
+                    $newStr = $newArr ? implode(', ', array_map(fn ($v) => $optionLabels[$v] ?? $v, $newArr)) : '—';
+                } elseif ($field->type === 'select') {
+                    $oldStr = $oldValue ? ($optionLabels[$oldValue] ?? $oldValue) : '—';
+                    $newStr = $value    ? ($optionLabels[$value]    ?? $value)    : '—';
+                } else {
+                    $oldStr = $oldValue ?? '—';
+                    $newStr = $value    ?? '—';
+                }
+
+                $changes[] = "{$field->label}: {$oldStr} → {$newStr}";
             }
 
             if ($value === null) {
@@ -212,6 +238,16 @@ class LeadController extends Controller
                     ['value' => $value]
                 );
             }
+        }
+
+        if (!empty($changes)) {
+            LeadActivity::create([
+                'lead_id'     => $lead->id,
+                'user_id'     => auth()->id(),
+                'type'        => 'custom_field_updated',
+                'description' => implode(' · ', $changes),
+                'created_at'  => now(),
+            ]);
         }
 
         return back()->with('success', 'Custom fields saved.');
