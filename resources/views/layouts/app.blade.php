@@ -108,7 +108,7 @@
                     $boardsUnreadCount = 0;
                     if (auth()->id()) {
                         $user = auth()->user();
-                        $boards = \App\Models\Board::with(['permissions', 'cards.notes', 'cards.tasks', 'userReads'])
+                        $boards = \App\Models\Board::with(['members', 'cards.notes', 'cards.tasks', 'userReads'])
                             ->get()
                             ->filter(fn ($b) => $b->canRead($user));
                         foreach ($boards as $b) {

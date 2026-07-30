@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Board;
-use App\Models\BoardPermission;
+use App\Models\BoardMember;
 use App\Models\BoardUserRead;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -15,7 +15,7 @@ class BoardController extends Controller
     public function index(): View
     {
         $user   = auth()->user();
-        $boards = Board::with(['permissions', 'cards.notes', 'cards.tasks', 'userReads'])
+        $boards = Board::with(['members.user', 'cards.notes', 'cards.tasks', 'userReads'])
             ->get()
             ->filter(fn ($b) => $b->canRead($user))
             ->values();
@@ -26,7 +26,8 @@ class BoardController extends Controller
     public function create(): View
     {
         abort_unless(auth()->user()->isAdmin(), 403);
-        return view('boards.create');
+        $allUsers = User::orderBy('name')->get();
+        return view('boards.create', compact('allUsers'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -36,10 +37,8 @@ class BoardController extends Controller
         $data = $request->validate([
             'title'       => 'required|string|max:191',
             'description' => 'nullable|string|max:2000',
-            'permissions' => 'nullable|array',
-            'permissions.*.role'      => 'required|string',
-            'permissions.*.can_read'  => 'nullable|boolean',
-            'permissions.*.can_write' => 'nullable|boolean',
+            'members'     => 'nullable|array',
+            'members.*'   => 'exists:users,id',
         ]);
 
         $board = Board::create([
@@ -48,7 +47,7 @@ class BoardController extends Controller
             'created_by'  => auth()->id(),
         ]);
 
-        $this->syncPermissions($board, $request->input('permissions', []));
+        $this->syncMembers($board, $request->input('members', []), $request->input('can_write', []));
 
         return redirect()->route('boards.show', $board)->with('success', 'Board created.');
     }
@@ -58,9 +57,16 @@ class BoardController extends Controller
         $user = auth()->user();
         abort_unless($board->canRead($user), 403);
 
-        $board->load(['permissions', 'cards.notes.author', 'cards.tasks.assignedTo', 'cards.permissions', 'creator', 'userReads']);
+        $board->load([
+            'members.user',
+            'cards.notes.author',
+            'cards.tasks.assignedTo',
+            'cards.permissions',
+            'creator',
+            'userReads',
+        ]);
 
-        // Mark board as read (composite PK — use raw upsert, Eloquent save() doesn't support it)
+        // Mark board as read
         \DB::table('board_user_reads')->upsert(
             [['user_id' => $user->id, 'board_id' => $board->id, 'last_read_at' => now()]],
             ['user_id', 'board_id'],
@@ -75,26 +81,28 @@ class BoardController extends Controller
     public function edit(Board $board): View
     {
         abort_unless(auth()->user()->isAdmin(), 403);
-        $board->load('permissions');
-        return view('boards.edit', compact('board'));
+        $board->load('members.user');
+        $allUsers = User::orderBy('name')->get();
+        return view('boards.edit', compact('board', 'allUsers'));
     }
 
     public function update(Request $request, Board $board): RedirectResponse
     {
         abort_unless(auth()->user()->isAdmin(), 403);
 
-        $data = $request->validate([
+        $request->validate([
             'title'       => 'required|string|max:191',
             'description' => 'nullable|string|max:2000',
-            'permissions' => 'nullable|array',
+            'members'     => 'nullable|array',
+            'members.*'   => 'exists:users,id',
         ]);
 
         $board->update([
-            'title'       => $data['title'],
-            'description' => $data['description'] ?? null,
+            'title'       => $request->input('title'),
+            'description' => $request->input('description'),
         ]);
 
-        $this->syncPermissions($board, $request->input('permissions', []));
+        $this->syncMembers($board, $request->input('members', []), $request->input('can_write', []));
 
         return redirect()->route('boards.show', $board)->with('success', 'Board updated.');
     }
@@ -106,24 +114,16 @@ class BoardController extends Controller
         return redirect()->route('boards.index')->with('success', 'Board deleted.');
     }
 
-    private function syncPermissions(Board $board, array $permissions): void
+    private function syncMembers(Board $board, array $memberIds, array $canWriteIds): void
     {
-        $board->permissions()->delete();
+        \DB::table('board_members')->where('board_id', $board->id)->delete();
 
-        $roles = ['member', 'service_provider_user', 'agent_user', 'client'];
-
-        foreach ($roles as $role) {
-            $canRead  = !empty($permissions[$role]['can_read']);
-            $canWrite = !empty($permissions[$role]['can_write']);
-
-            if ($canRead || $canWrite) {
-                BoardPermission::create([
-                    'board_id'  => $board->id,
-                    'role'      => $role,
-                    'can_read'  => $canRead,
-                    'can_write' => $canWrite || $canRead ? $canWrite : false,
-                ]);
-            }
+        foreach ($memberIds as $userId) {
+            \DB::table('board_members')->insert([
+                'board_id'  => $board->id,
+                'user_id'   => $userId,
+                'can_write' => in_array($userId, $canWriteIds),
+            ]);
         }
     }
 }

@@ -15,9 +15,9 @@ class Board extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function permissions(): HasMany
+    public function members(): HasMany
     {
-        return $this->hasMany(BoardPermission::class);
+        return $this->hasMany(BoardMember::class);
     }
 
     public function cards(): HasMany
@@ -33,42 +33,27 @@ class Board extends Model
     public function canRead(User $user): bool
     {
         if ($user->isAdmin()) return true;
-        $perm = $this->permissions->firstWhere('role', $user->role);
-        return $perm?->can_read ?? false;
+        return $this->members->contains('user_id', $user->id);
     }
 
     public function canWrite(User $user): bool
     {
         if ($user->isAdmin()) return true;
-        $perm = $this->permissions->firstWhere('role', $user->role);
-        return $perm?->can_write ?? false;
+        $member = $this->members->firstWhere('user_id', $user->id);
+        return $member?->can_write ?? false;
     }
 
-    public function permissionSummary(): string
+    public function memberSummary(): string
     {
-        $roleLabels = [
-            'member'               => 'User',
-            'service_provider_user'=> 'Service Provider',
-            'agent_user'           => 'Agent',
-            'client'               => 'Client',
-        ];
-
-        $parts = [];
-        foreach ($this->permissions as $p) {
-            $label = $roleLabels[$p->role] ?? $p->role;
-            if ($p->can_write) {
-                $parts[] = "{$label}: read + write";
-            } elseif ($p->can_read) {
-                $parts[] = "{$label}: read only";
-            }
-        }
-
-        return $parts ? implode(', ', $parts) : 'Admin only';
+        if ($this->members->isEmpty()) return 'Admin only';
+        $names = $this->members->map(fn ($m) => $m->user?->name ?? '?')->filter()->take(3)->join(', ');
+        $extra = $this->members->count() > 3 ? ' +' . ($this->members->count() - 3) . ' more' : '';
+        return $names . $extra;
     }
 
     public function hasUnreadFor(User $user): bool
     {
-        $read = $this->userReads->firstWhere('user_id', $user->id);
+        $read  = $this->userReads->firstWhere('user_id', $user->id);
         $since = $read?->last_read_at;
 
         return $this->cards->some(function ($card) use ($user, $since) {
