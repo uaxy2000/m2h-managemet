@@ -149,15 +149,15 @@
                 <span x-show="sidebar || mobileNav" class="ml-auto text-xs text-slate-600 whitespace-nowrap">Soon</span>
             </a>
 
-            <a href="#"
+            <a href="{{ route('tasks.index') }}"
                :class="(sidebar || mobileNav) ? 'px-3 gap-3' : 'lg:justify-center lg:px-0 px-3 gap-3'"
-               class="group flex items-center py-2 rounded-lg text-sm font-medium text-slate-500 cursor-not-allowed"
-               :title="(!sidebar && !mobileNav) ? 'Tasks (soon)' : ''">
+               class="group flex items-center py-2 rounded-lg text-sm font-medium transition-colors
+                      {{ request()->routeIs('tasks.index') ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}"
+               :title="(!sidebar && !mobileNav) ? 'Tasks' : ''">
                 <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                 </svg>
                 <span x-show="sidebar || mobileNav" class="whitespace-nowrap">Tasks</span>
-                <span x-show="sidebar || mobileNav" class="ml-auto text-xs text-slate-600 whitespace-nowrap">Soon</span>
             </a>
 
             @if(auth()->user()->isAdmin())

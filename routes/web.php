@@ -24,6 +24,7 @@ use App\Http\Controllers\BoardController;
 use App\Http\Controllers\BoardCardController;
 use App\Http\Controllers\CardNoteController;
 use App\Http\Controllers\CardTaskController;
+use App\Http\Controllers\UnifiedTaskController;
 use Illuminate\Support\Facades\Route;
 
 // Meta webhook routes are registered in bootstrap/app.php with no middleware
@@ -37,6 +38,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/inbox', [InboxController::class, 'index'])->name('inbox');
+    Route::get('/tasks', [UnifiedTaskController::class, 'index'])->name('tasks.index');
     Route::get('/', fn () => redirect()->route('dashboard'));
 
     // Boards
