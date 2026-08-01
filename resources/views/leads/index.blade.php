@@ -491,3 +491,13 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @endpush
+
+@push('styles')
+<style>
+.stage-column::-webkit-scrollbar        { width: 3px; }
+.stage-column::-webkit-scrollbar-track  { background: transparent; }
+.stage-column::-webkit-scrollbar-thumb  { background: #d1d5db; border-radius: 9999px; }
+.stage-column::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+.stage-column { scrollbar-width: thin; scrollbar-color: #d1d5db transparent; }
+</style>
+@endpush
