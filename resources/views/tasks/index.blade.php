@@ -33,14 +33,15 @@
             </span>
         </div>
 
-        <div class="grid grid-cols-7 gap-2">
+        <div class="overflow-x-auto pb-2">
+        <div class="flex gap-2" style="min-width: max-content;">
             @foreach($weekDays as $day)
             @php
                 $isToday   = $day['date']->isToday();
                 $isPast    = $day['date']->isPast() && !$isToday;
                 $hasTasks  = $day['tasks']->isNotEmpty();
             @endphp
-            <div class="rounded-xl border {{ $isToday ? 'border-indigo-300 shadow-sm shadow-indigo-50' : 'border-gray-200' }} overflow-hidden bg-white flex flex-col min-h-[120px]">
+            <div class="rounded-xl border {{ $isToday ? 'border-indigo-300 shadow-sm shadow-indigo-50' : 'border-gray-200' }} overflow-hidden bg-white flex flex-col min-h-[140px]" style="width: 180px; flex-shrink: 0;">
                 {{-- Day header --}}
                 <div class="px-2.5 py-2 border-b {{ $isToday ? 'bg-indigo-600 border-indigo-600' : ($isPast ? 'bg-gray-50 border-gray-100' : 'bg-gray-50 border-gray-100') }}">
                     <p class="text-[10px] font-semibold uppercase tracking-wider {{ $isToday ? 'text-indigo-200' : 'text-gray-400' }}">
@@ -80,6 +81,7 @@
                 </div>
             </div>
             @endforeach
+        </div>
         </div>
     </div>
 
