@@ -326,9 +326,11 @@
             <div x-data="{ editing: false }">
                 <div class="flex items-center justify-between mb-1">
                     <p class="text-xs text-gray-400">Internal</p>
+                    @if($canManageAssignment)
                     <button @click="editing = !editing" type="button"
                             class="text-xs text-indigo-600 hover:text-indigo-800"
                             x-text="editing ? 'Cancel' : 'Change'"></button>
+                    @endif
                 </div>
                 <div x-show="!editing">
                     @if($lead->assignedTo)
@@ -337,6 +339,7 @@
                     <p class="text-sm text-gray-400">Not assigned</p>
                     @endif
                 </div>
+                @if($canManageAssignment)
                 <div x-show="editing" x-cloak>
                     <form method="POST" action="{{ route('leads.assign-user', $lead) }}" class="flex gap-2">
                         @csrf @method('PATCH')
@@ -355,13 +358,14 @@
                         </button>
                     </form>
                 </div>
+                @endif
             </div>
 
             {{-- Service Provider --}}
             <div class="border-t border-gray-100 mt-5 pt-4" x-data="{ editing: false }">
                 <div class="flex items-center justify-between mb-1">
                     <p class="text-xs text-gray-400">Service Provider</p>
-                    @if($serviceProviders->isNotEmpty())
+                    @if($canChangeServiceProvider && $serviceProviders->isNotEmpty())
                     <button @click="editing = !editing" type="button"
                             class="text-xs text-indigo-600 hover:text-indigo-800"
                             x-text="editing ? 'Cancel' : 'Change'"></button>
@@ -374,6 +378,7 @@
                     <p class="text-sm text-gray-400">Not set</p>
                     @endif
                 </div>
+                @if($canChangeServiceProvider)
                 <div x-show="editing" x-cloak>
                     <form method="POST" action="{{ route('leads.assign-company', $lead) }}" class="flex gap-2">
                         @csrf @method('PATCH')
@@ -393,13 +398,14 @@
                         </button>
                     </form>
                 </div>
+                @endif
             </div>
 
             {{-- Agent --}}
             <div class="border-t border-gray-100 mt-5 pt-4" x-data="{ editing: false }">
                 <div class="flex items-center justify-between mb-1">
                     <p class="text-xs text-gray-400">Agent</p>
-                    @if($agents->isNotEmpty())
+                    @if($canManageAssignment && $agents->isNotEmpty())
                     <button @click="editing = !editing" type="button"
                             class="text-xs text-indigo-600 hover:text-indigo-800"
                             x-text="editing ? 'Cancel' : 'Change'"></button>
@@ -412,6 +418,7 @@
                     <p class="text-sm text-gray-400">Not set</p>
                     @endif
                 </div>
+                @if($canManageAssignment)
                 <div x-show="editing" x-cloak>
                     <form method="POST" action="{{ route('leads.assign-company', $lead) }}" class="flex gap-2">
                         @csrf @method('PATCH')
@@ -431,6 +438,7 @@
                         </button>
                     </form>
                 </div>
+                @endif
             </div>
         </div>
 

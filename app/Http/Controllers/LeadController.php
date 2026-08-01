@@ -31,7 +31,7 @@ class LeadController extends Controller
 
         $filters = [
             'search'      => trim((string) $request->get('search')),
-            'assigned_to' => $authUser->role === 'user' ? $authUser->id : $request->get('assigned_to'),
+            'assigned_to' => $this->forceOwnLeads($authUser) ? $authUser->id : $request->get('assigned_to'),
             'source'      => $request->get('source'),
             'duplicate'   => $request->boolean('duplicate'),
             'program_id'  => $request->get('program_id'),
@@ -255,6 +255,13 @@ class LeadController extends Controller
 
     public function show(Lead $lead): View
     {
+        $user = auth()->user();
+
+        // Internal non-admin users may only view leads assigned to them
+        if ($this->forceOwnLeads($user)) {
+            abort_unless($lead->assigned_to === $user->id, 403);
+        }
+
         $lead->load([
             'pipeline', 'stage', 'subStage', 'assignedTo',
             'serviceProvider', 'agent',
@@ -352,9 +359,13 @@ class LeadController extends Controller
 
         $waTemplates = \App\Models\WaTemplate::where('is_active', true)->orderBy('display_name')->orderBy('name')->get();
 
+        $canManageAssignment     = $user->isInternalAdmin();
+        $canChangeServiceProvider = $canManageAssignment || $lead->assigned_to === $user->id;
+
         return view('leads.show', compact(
             'lead', 'internalUsers', 'serviceProviders', 'agents', 'allTags', 'availablePrograms',
-            'customFields', 'customValuesByKey', 'timeline', 'waTemplates'
+            'customFields', 'customValuesByKey', 'timeline', 'waTemplates',
+            'canManageAssignment', 'canChangeServiceProvider'
         ));
     }
 
@@ -415,6 +426,8 @@ class LeadController extends Controller
 
     public function assignUser(Request $request, Lead $lead): RedirectResponse
     {
+        abort_unless(auth()->user()->isInternalAdmin(), 403);
+
         $validated = $request->validate([
             'assigned_to' => ['nullable', 'uuid', 'exists:users,id'],
         ]);
@@ -444,6 +457,13 @@ class LeadController extends Controller
 
     public function assignCompany(Request $request, Lead $lead): RedirectResponse
     {
+        $user = auth()->user();
+        if ($request->input('field') === 'agent_id') {
+            abort_unless($user->isInternalAdmin(), 403);
+        } else {
+            abort_unless($user->isInternalAdmin() || $lead->assigned_to === $user->id, 403);
+        }
+
         $validated = $request->validate([
             'field'      => ['required', 'in:service_provider_id,agent_id'],
             'company_id' => ['nullable', 'uuid', 'exists:companies,id'],
@@ -510,5 +530,13 @@ class LeadController extends Controller
         ]);
 
         return response()->json(['ok' => true]);
+    }
+
+    // Internal non-admin users (role=member in an internal company) are restricted to their own leads.
+    private function forceOwnLeads(User $user): bool
+    {
+        if ($user->isInternalAdmin()) return false;
+        $company = $user->relationLoaded('company') ? $user->company : $user->load('company')->company;
+        return $company?->type === 'internal';
     }
 }
