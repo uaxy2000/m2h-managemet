@@ -61,6 +61,6 @@ class CardTaskController extends Controller
 
         $task->delete();
 
-        return back()->with('task_success', 'Task deleted.');
+        return back()->with('task_success', 'Task deleted.')->with('opened_card', $card->id);
     }
 }

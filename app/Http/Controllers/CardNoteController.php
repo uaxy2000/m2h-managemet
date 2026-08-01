@@ -38,6 +38,6 @@ class CardNoteController extends Controller
 
         $note->delete();
 
-        return back()->with('note_success', 'Note deleted.');
+        return back()->with('note_success', 'Note deleted.')->with('opened_card', $card->id);
     }
 }
