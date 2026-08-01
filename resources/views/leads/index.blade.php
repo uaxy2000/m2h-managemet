@@ -56,18 +56,17 @@
                    class="pl-8 pr-3 py-1.5 rounded-lg border border-gray-200 text-sm focus:ring-indigo-500 focus:border-indigo-500 w-40">
         </div>
 
-        {{-- Assigned to (admin/super_admin only) --}}
-        @if(auth()->user()->role !== 'user')
+        {{-- Assigned to filter --}}
         <select name="assigned_to"
-                class="flex-shrink-0 rounded-lg border-gray-200 text-sm py-1.5 pl-2.5 pr-7 focus:ring-indigo-500 focus:border-indigo-500">
+                @disabled($ownOnly)
+                class="flex-shrink-0 rounded-lg border-gray-200 text-sm py-1.5 pl-2.5 pr-7 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed">
+            @if(!$ownOnly)
             <option value="">All users</option>
+            @endif
             @foreach($internalUsers as $u)
-            <option value="{{ $u->id }}" @selected($filters['assigned_to'] == $u->id)>{{ $u->name }}</option>
+            <option value="{{ $u->id }}" @selected($ownOnly || $filters['assigned_to'] == $u->id)>{{ $u->name }}</option>
             @endforeach
         </select>
-        @else
-        <span class="text-xs text-gray-400 italic flex-shrink-0">Your leads only</span>
-        @endif
 
         {{-- Source --}}
         <select name="source"
@@ -209,7 +208,7 @@
         @php
         $activeCount = collect([
             $filters['search'] ?: null,
-            (auth()->user()->role !== 'user' && $filters['assigned_to']) ? $filters['assigned_to'] : null,
+            (!$ownOnly && $filters['assigned_to']) ? $filters['assigned_to'] : null,
             $filters['source'] ?: null,
             $filters['program_id'] ?: null,
             $filters['duplicate'] ? 1 : null,

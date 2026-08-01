@@ -93,21 +93,23 @@ class LeadController extends Controller
         $ungroupedTags = Tag::whereNull('tag_group_id')->orderBy('name')->get();
         $hasTags       = $tagGroups->contains(fn ($g) => $g->tags->isNotEmpty()) || $ungroupedTags->isNotEmpty();
 
-        $internalUsers = $authUser->role !== 'user'
-            ? User::where(function ($q) {
+        $internalUsers = $this->forceOwnLeads($authUser)
+            ? collect([$authUser])
+            : User::where(function ($q) {
                 $q->whereNull('company_id')
                   ->orWhereHas('company', fn ($q) => $q->where('type', 'internal'));
-            })->orderBy('name')->get()
-            : collect();
+            })->orderBy('name')->get();
 
         $programsByCountry = Program::where('is_active', true)
             ->orderBy('country')->orderBy('name')
             ->get()->groupBy('country');
 
+        $ownOnly = $this->forceOwnLeads($authUser);
+
         return view('leads.index', compact(
             'pipelines', 'currentPipeline', 'filters',
             'tagGroups', 'ungroupedTags', 'hasTags',
-            'internalUsers', 'programsByCountry'
+            'internalUsers', 'programsByCountry', 'ownOnly'
         ));
     }
 
