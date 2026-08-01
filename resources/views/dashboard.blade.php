@@ -25,11 +25,19 @@
 </div>
 
 {{-- Stat cards --}}
+@if($ownOnly)
+<div class="flex items-center gap-1.5 text-xs text-indigo-600 font-medium mb-3">
+    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/>
+    </svg>
+    Showing your assigned leads only
+</div>
+@endif
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
     <a href="{{ route('leads.index') }}"
        class="bg-white rounded-xl border border-gray-200 p-5 hover:border-indigo-300 transition-colors">
-        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Leads</p>
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ $ownOnly ? 'My Leads' : 'Total Leads' }}</p>
         <p class="text-3xl font-bold text-gray-900 mt-1">{{ $totalLeads }}</p>
         <p class="text-xs text-indigo-600 mt-1.5">View all →</p>
     </a>
@@ -38,14 +46,15 @@
        class="bg-white rounded-xl border border-gray-200 p-5 hover:border-indigo-300 transition-colors">
         <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Meta Ad Leads</p>
         <p class="text-3xl font-bold text-gray-900 mt-1">{{ $metaLeads }}</p>
-        <p class="text-xs text-gray-400 mt-1.5">{{ $totalLeads > 0 ? round($metaLeads / $totalLeads * 100) : 0 }}% of total</p>
+        <p class="text-xs text-gray-400 mt-1.5">{{ $totalLeads > 0 ? round($metaLeads / $totalLeads * 100) : 0 }}% of {{ $ownOnly ? 'my' : 'total' }}</p>
     </a>
 
-    <div class="bg-white rounded-xl border border-gray-200 p-5">
+    <a href="{{ route('tasks.index') }}"
+       class="bg-white rounded-xl border border-gray-200 p-5 hover:border-indigo-300 transition-colors">
         <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Open Tasks</p>
         <p class="text-3xl font-bold text-gray-900 mt-1">{{ $openTasks }}</p>
-        <p class="text-xs text-gray-400 mt-1.5">Pending across all leads</p>
-    </div>
+        <p class="text-xs text-indigo-600 mt-1.5">View tasks →</p>
+    </a>
 
     <div class="bg-white rounded-xl border border-gray-200 p-5">
         <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">New This Week</p>

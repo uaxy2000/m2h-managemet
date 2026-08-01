@@ -10,23 +10,20 @@ class DashboardController extends Controller
 {
     public function index(): View
     {
-        $authUser = auth()->user();
+        $user     = auth()->user()->loadMissing('company');
+        $ownOnly  = $this->ownLeadsOnly($user);
 
-        $leadQuery = Lead::query();
-        if ($authUser->role === 'user') {
-            $leadQuery->where('assigned_to', $authUser->id);
-        }
+        $leadQuery = Lead::query()
+            ->when($ownOnly, fn ($q) => $q->where('assigned_to', $user->id));
 
-        $totalLeads      = (clone $leadQuery)->count();
-        $metaLeads       = (clone $leadQuery)->where('source', 'meta_ad')->count();
-        $duplicates      = (clone $leadQuery)->where('is_duplicate_flag', true)->count();
-        $newThisWeek     = (clone $leadQuery)->where('created_at', '>=', now()->startOfWeek())->count();
+        $totalLeads  = (clone $leadQuery)->count();
+        $metaLeads   = (clone $leadQuery)->where('source', 'meta_ad')->count();
+        $duplicates  = (clone $leadQuery)->where('is_duplicate_flag', true)->count();
+        $newThisWeek = (clone $leadQuery)->where('created_at', '>=', now()->startOfWeek())->count();
 
-        $taskQuery = Task::where('is_done', false);
-        if ($authUser->role === 'user') {
-            $taskQuery->whereHas('lead', fn ($q) => $q->where('assigned_to', $authUser->id));
-        }
-        $openTasks = $taskQuery->count();
+        $openTasks = Task::where('is_done', false)
+            ->when($ownOnly, fn ($q) => $q->where('assigned_to', $user->id))
+            ->count();
 
         $recentLeads = (clone $leadQuery)
             ->with(['stage', 'assignedTo', 'tags'])
@@ -36,7 +33,16 @@ class DashboardController extends Controller
 
         return view('dashboard', compact(
             'totalLeads', 'metaLeads', 'duplicates', 'newThisWeek',
-            'openTasks', 'recentLeads'
+            'openTasks', 'recentLeads', 'ownOnly'
         ));
+    }
+
+    private function ownLeadsOnly($user): bool
+    {
+        if ($user->isInternalAdmin()) {
+            return false;
+        }
+
+        return $user->company?->type === 'internal';
     }
 }
