@@ -45,14 +45,14 @@ class BoardController extends Controller
 
     public function create(): View
     {
-        abort_unless(auth()->user()->isAdmin(), 403);
+        abort_unless(auth()->user()->isInternalAdmin(), 403);
         $allUsers = $this->selectableUsers();
         return view('boards.create', compact('allUsers'));
     }
 
     public function store(Request $request): RedirectResponse
     {
-        abort_unless(auth()->user()->isAdmin(), 403);
+        abort_unless(auth()->user()->isInternalAdmin(), 403);
 
         $data = $request->validate([
             'title'       => 'required|string|max:191',
@@ -102,7 +102,7 @@ class BoardController extends Controller
 
     public function edit(Board $board): View
     {
-        abort_unless(auth()->user()->isAdmin(), 403);
+        abort_unless(auth()->user()->isInternalAdmin(), 403);
         $board->load('members.user');
         $allUsers = $this->selectableUsers();
         return view('boards.edit', compact('board', 'allUsers'));
@@ -110,7 +110,7 @@ class BoardController extends Controller
 
     public function update(Request $request, Board $board): RedirectResponse
     {
-        abort_unless(auth()->user()->isAdmin(), 403);
+        abort_unless(auth()->user()->isInternalAdmin(), 403);
 
         $request->validate([
             'title'       => 'required|string|max:191',
@@ -131,7 +131,7 @@ class BoardController extends Controller
 
     public function destroy(Board $board): RedirectResponse
     {
-        abort_unless(auth()->user()->isAdmin(), 403);
+        abort_unless(auth()->user()->isInternalAdmin(), 403);
         $board->delete();
         return redirect()->route('boards.index')->with('success', 'Board deleted.');
     }

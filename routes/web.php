@@ -89,6 +89,8 @@ Route::middleware('auth')->group(function () {
         ->name('settings.')
         ->group(function () {
 
+            Route::get('permissions', fn () => view('settings.permissions'))->name('permissions');
+
             // Pipelines
             Route::get('pipelines', [PipelineController::class, 'index'])->name('pipelines.index');
             Route::get('pipelines/create', [PipelineController::class, 'create'])->name('pipelines.create');

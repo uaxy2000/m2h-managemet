@@ -32,7 +32,7 @@ class CardNoteController extends Controller
 
         $user = auth()->user();
         abort_unless(
-            $user->isAdmin() || ($note->created_by === $user->id && $note->created_at->diffInHours(now()) < 24),
+            $user->isInternalAdmin() || ($note->created_by === $user->id && $note->created_at->diffInHours(now()) < 24),
             403
         );
 

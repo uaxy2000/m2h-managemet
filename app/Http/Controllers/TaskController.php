@@ -39,7 +39,7 @@ class TaskController extends Controller
 
     public function destroy(Lead $lead, Task $task): RedirectResponse
     {
-        if ($task->created_by !== auth()->id() && !auth()->user()->isAdmin()) {
+        if ($task->created_by !== auth()->id() && !auth()->user()->isInternalAdmin()) {
             abort(403);
         }
 

@@ -39,7 +39,7 @@ class NoteController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->isAdmin()) {
+        if (!$user->isInternalAdmin()) {
             if ($note->created_by !== $user->id) {
                 abort(403);
             }
