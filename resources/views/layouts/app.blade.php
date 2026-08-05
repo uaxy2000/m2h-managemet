@@ -161,6 +161,17 @@
                 <span x-show="sidebar || mobileNav" class="whitespace-nowrap">Tasks</span>
             </a>
 
+            <a href="{{ route('todo-lists.index') }}"
+               :class="(sidebar || mobileNav) ? 'px-3 gap-3' : 'lg:justify-center lg:px-0 px-3 gap-3'"
+               class="group flex items-center py-2 rounded-lg text-sm font-medium transition-colors
+                      {{ request()->is('todo-lists*') ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}"
+               :title="(!sidebar && !mobileNav) ? 'ToDo Lists' : ''">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"/>
+                </svg>
+                <span x-show="sidebar || mobileNav" class="whitespace-nowrap">ToDo Lists</span>
+            </a>
+
             @if(auth()->user()->isAdmin())
             <div class="pt-4 mt-4 border-t border-slate-700/60 space-y-0.5">
 

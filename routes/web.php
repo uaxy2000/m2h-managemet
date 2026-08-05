@@ -25,6 +25,8 @@ use App\Http\Controllers\BoardCardController;
 use App\Http\Controllers\CardNoteController;
 use App\Http\Controllers\CardTaskController;
 use App\Http\Controllers\UnifiedTaskController;
+use App\Http\Controllers\TodoListController;
+use App\Http\Controllers\TodoListItemController;
 use Illuminate\Support\Facades\Route;
 
 // Meta webhook routes are registered in bootstrap/app.php with no middleware
@@ -39,6 +41,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/inbox', [InboxController::class, 'index'])->name('inbox');
     Route::get('/tasks', [UnifiedTaskController::class, 'index'])->name('tasks.index');
+
+    // ToDo Lists
+    Route::resource('todo-lists', TodoListController::class)->except(['edit']);
+    Route::post('todo-lists/{todoList}/items', [TodoListItemController::class, 'store'])->name('todo-lists.items.store');
+    Route::put('todo-lists/{todoList}/items/{item}', [TodoListItemController::class, 'update'])->name('todo-lists.items.update');
+    Route::post('todo-lists/{todoList}/items/{item}/toggle', [TodoListItemController::class, 'toggle'])->name('todo-lists.items.toggle');
+    Route::delete('todo-lists/{todoList}/items/{item}', [TodoListItemController::class, 'destroy'])->name('todo-lists.items.destroy');
     Route::get('/', fn () => redirect()->route('dashboard'));
 
     // Boards
