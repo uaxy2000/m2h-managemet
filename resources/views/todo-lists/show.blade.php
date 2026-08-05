@@ -337,16 +337,20 @@
     </div>
 </div>
 
+@php
+$itemsForJs = $todoList->items->map(fn ($i) => [
+    'body'         => $i->body,
+    'is_done'      => $i->is_done,
+    'creator'      => $i->creator?->name ?? '—',
+    'created_at'   => $i->created_at->format('d M Y, H:i'),
+    'completer'    => $i->completer?->name,
+    'completed_at' => $i->completed_at?->format('d M Y, H:i'),
+])->values();
+@endphp
+
 <script>
 function todoPage(csrf) {
-    const items = @json($todoList->items->map(fn($i) => [
-        'body'           => $i->body,
-        'is_done'        => $i->is_done,
-        'creator'        => $i->creator?->name ?? '—',
-        'created_at'     => $i->created_at->format('d M Y, H:i'),
-        'completer'      => $i->completer?->name,
-        'completed_at'   => $i->completed_at?->format('d M Y, H:i'),
-    ]));
+    const items = @json($itemsForJs);
 
     return {
         editOpen:  {{ session('edit') ? 'true' : 'false' }},
