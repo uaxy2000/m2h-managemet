@@ -126,6 +126,121 @@
         </div>
     </template>
 
+    {{-- ===================== TODO LISTS ===================== --}}
+    @if($todoLists->isNotEmpty())
+    <div class="space-y-3">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 px-1">ToDo Lists</h3>
+
+        @foreach($todoLists as $list)
+        @php
+            $listDone  = $list->items->where('is_done', true)->count();
+            $listTotal = $list->items->count();
+            $listPct   = $listTotal > 0 ? round($listDone / $listTotal * 100) : 0;
+            $canAddItem = $list->canRead($user);
+        @endphp
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden"
+             x-data="{ addOpen: false, body: '' }">
+
+            {{-- List header --}}
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                <div class="flex items-center gap-3 min-w-0">
+                    <a href="{{ route('todo-lists.show', $list) }}"
+                       class="text-sm font-semibold text-gray-800 hover:text-indigo-600 transition-colors truncate">
+                        {{ $list->title }}
+                    </a>
+                    @if($listTotal > 0)
+                    <span class="text-xs text-gray-400 flex-shrink-0">{{ $listDone }}/{{ $listTotal }}</span>
+                    @endif
+                </div>
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    @if($listTotal > 0)
+                    <div class="w-20 bg-gray-100 rounded-full h-1">
+                        <div class="h-1 rounded-full {{ $listPct === 100 ? 'bg-emerald-500' : 'bg-indigo-500' }}"
+                             style="width: {{ $listPct }}%"></div>
+                    </div>
+                    @endif
+                    @if($canAddItem)
+                    <button type="button" @click="addOpen = !addOpen"
+                            class="text-xs text-gray-400 hover:text-indigo-600 transition-colors flex items-center gap-1"
+                            :class="addOpen ? 'text-indigo-600' : ''">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                        </svg>
+                        Add item
+                    </button>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Items --}}
+            @if($list->items->isNotEmpty())
+            <div class="divide-y divide-gray-50">
+                @foreach($list->items->where('is_done', false) as $item)
+                <div class="flex items-start gap-3 px-4 py-2.5 group">
+                    <form method="POST" action="{{ route('todo-lists.items.toggle', [$list, $item]) }}" class="mt-0.5 flex-shrink-0">
+                        @csrf
+                        <button type="submit"
+                                class="w-4 h-4 rounded border-2 border-gray-300 hover:border-indigo-400 flex items-center justify-center transition-all">
+                        </button>
+                    </form>
+                    <p class="text-sm text-gray-700 flex-1 min-w-0">{!! nl2br(e($item->body)) !!}</p>
+                    <div class="relative group/info flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all">
+                        <button type="button" class="text-gray-300 hover:text-gray-400">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/>
+                            </svg>
+                        </button>
+                        <div class="absolute right-0 top-5 z-20 hidden group-hover/info:block w-44 bg-gray-800 text-white text-xs rounded-lg p-2.5 shadow-lg">
+                            <p>{{ $item->creator->name }}</p>
+                            <p class="text-gray-300">{{ $item->created_at->format('d M, H:i') }}</p>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+
+                @if($list->items->where('is_done', true)->count() > 0)
+                <div class="px-4 py-2 text-xs text-gray-400 border-t border-gray-50">
+                    <span class="opacity-60">{{ $list->items->where('is_done', true)->count() }} completed</span>
+                    <a href="{{ route('todo-lists.show', $list) }}" class="ml-2 text-indigo-400 hover:text-indigo-600">View all →</a>
+                </div>
+                @endif
+            </div>
+            @elseif($listTotal === 0)
+            <p class="px-4 py-3 text-xs text-gray-400">No items yet.</p>
+            @endif
+
+            {{-- Add item form (inline, toggled) --}}
+            @if($canAddItem)
+            <div x-show="addOpen" x-cloak class="border-t border-gray-100 px-4 py-3 bg-gray-50">
+                <form method="POST" action="{{ route('todo-lists.items.store', $list) }}"
+                      x-data="{ rows: 1 }"
+                      @submit="addOpen = false; body = ''">
+                    @csrf
+                    <textarea name="body" x-model="body"
+                              @input="rows = Math.min(4, body.split('\n').length || 1)"
+                              :rows="rows"
+                              @keydown.enter="if (!$event.shiftKey) { $event.preventDefault(); $el.closest('form').submit() }"
+                              placeholder="New item… (Enter to add)"
+                              required
+                              autofocus
+                              class="w-full rounded-lg border-gray-200 text-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white resize-none"></textarea>
+                    <div class="flex items-center justify-between mt-2">
+                        <button type="button" @click="addOpen = false; body = ''"
+                                class="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
+                        <button type="submit"
+                                class="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+                            Add item
+                        </button>
+                    </div>
+                </form>
+            </div>
+            @endif
+
+        </div>
+        @endforeach
+    </div>
+    @endif
+
     {{-- ===================== CARD MODAL ===================== --}}
     <div x-show="activeCard !== null" x-cloak
          class="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 pt-10 overflow-y-auto"

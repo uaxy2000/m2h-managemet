@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Board;
 use App\Models\BoardMember;
+use App\Models\TodoList;
 use App\Models\BoardUserRead;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -84,6 +85,9 @@ class BoardController extends Controller
             'cards.permissions',
             'creator',
             'userReads',
+            'todoLists.items.creator',
+            'todoLists.items.completer',
+            'todoLists.members',
         ]);
 
         $allUsers = $this->selectableUsers();
@@ -97,7 +101,9 @@ class BoardController extends Controller
           ->orderBy('name')
           ->get();
 
-        return view('boards.show', compact('board', 'user', 'allUsers', 'assignableUsers'));
+        $todoLists = $board->todoLists->filter(fn ($l) => $l->canRead($user))->values();
+
+        return view('boards.show', compact('board', 'user', 'allUsers', 'assignableUsers', 'todoLists'));
     }
 
     public function edit(Board $board): View

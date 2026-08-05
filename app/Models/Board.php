@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Board extends Model
@@ -28,6 +29,11 @@ class Board extends Model
     public function userReads(): HasMany
     {
         return $this->hasMany(BoardUserRead::class);
+    }
+
+    public function todoLists(): BelongsToMany
+    {
+        return $this->belongsToMany(TodoList::class, 'todo_list_boards');
     }
 
     public function canRead(User $user): bool
