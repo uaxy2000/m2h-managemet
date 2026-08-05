@@ -27,6 +27,7 @@ use App\Http\Controllers\CardTaskController;
 use App\Http\Controllers\UnifiedTaskController;
 use App\Http\Controllers\TodoListController;
 use App\Http\Controllers\TodoListItemController;
+use App\Http\Controllers\ReportsController;
 use Illuminate\Support\Facades\Route;
 
 // Meta webhook routes are registered in bootstrap/app.php with no middleware
@@ -48,6 +49,10 @@ Route::middleware('auth')->group(function () {
     Route::put('todo-lists/{todoList}/items/{item}', [TodoListItemController::class, 'update'])->name('todo-lists.items.update');
     Route::post('todo-lists/{todoList}/items/{item}/toggle', [TodoListItemController::class, 'toggle'])->name('todo-lists.items.toggle');
     Route::delete('todo-lists/{todoList}/items/{item}', [TodoListItemController::class, 'destroy'])->name('todo-lists.items.destroy');
+
+    // Reports
+    Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
+
     Route::get('/', fn () => redirect()->route('dashboard'));
 
     // Boards
