@@ -191,6 +191,17 @@
         </div>
         @endif
 
+        {{-- Custom field filters (select / multi_select) --}}
+        @foreach($filterableFields as $cf)
+        <select name="cf[{{ $cf->key }}]"
+                class="flex-shrink-0 rounded-lg border-gray-200 text-sm py-1.5 pl-2.5 pr-7 focus:ring-indigo-500 focus:border-indigo-500">
+            <option value="">All {{ $cf->label }}</option>
+            @foreach($cf->options as $opt)
+            <option value="{{ $opt->value }}" @selected(($filters['cf'][$cf->key] ?? '') === $opt->value)>{{ $opt->label }}</option>
+            @endforeach
+        </select>
+        @endforeach
+
         {{-- Duplicate toggle --}}
         <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none flex-shrink-0">
             <input type="checkbox" name="duplicate" value="1" @checked($filters['duplicate'])
@@ -213,6 +224,7 @@
             $filters['program_id'] ?: null,
             $filters['duplicate'] ? 1 : null,
             count($filters['tags']) > 0 ? 1 : null,
+            count($filters['cf']) > 0 ? 1 : null,
         ])->filter()->count();
         @endphp
         @if($activeCount > 0)

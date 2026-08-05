@@ -29,6 +29,15 @@ class LeadController extends Controller
         $currentPipelineId = $request->get('pipeline', $pipelines->first()?->id);
         $authUser          = auth()->user();
 
+        $filterableFields = CustomField::where('is_active', true)
+            ->whereIn('type', ['select', 'multi_select'])
+            ->with('options')
+            ->orderBy('sort_order')
+            ->get();
+
+        $rawCf = (array) $request->get('cf', []);
+        $cfFilters = array_filter($rawCf, fn ($v) => $v !== '' && $v !== null);
+
         $filters = [
             'search'      => trim((string) $request->get('search')),
             'assigned_to' => $this->forceOwnLeads($authUser) ? $authUser->id : $request->get('assigned_to'),
@@ -36,12 +45,13 @@ class LeadController extends Controller
             'duplicate'   => $request->boolean('duplicate'),
             'program_id'  => $request->get('program_id'),
             'tags'        => array_values(array_filter((array) $request->get('tags', []))),
+            'cf'          => $cfFilters,
         ];
 
         $currentPipeline = $currentPipelineId
             ? Pipeline::with([
                 'stages'       => fn ($q) => $q->orderBy('sort_order'),
-                'stages.leads' => function ($q) use ($filters) {
+                'stages.leads' => function ($q) use ($filters, $filterableFields) {
                     $q->when($filters['tags'], fn ($q, $ids) =>
                             $q->whereHas('tags', fn ($q) => $q->whereIn('tags.id', $ids))
                         )
@@ -71,6 +81,23 @@ class LeadController extends Controller
                                 ? $q->whereHas('programs', fn ($q) => $q->where('country', substr($progId, 8)))
                                 : $q->whereHas('programs', fn ($q) => $q->where('programs.id', $progId))
                         )
+                        ->when($filters['cf'], function ($q) use ($filters, $filterableFields) {
+                            foreach ($filters['cf'] as $key => $value) {
+                                $field = $filterableFields->firstWhere('key', $key);
+                                if (!$field) continue;
+                                if ($field->type === 'multi_select') {
+                                    $q->whereHas('customValues', fn ($q2) =>
+                                        $q2->where('custom_field_id', $field->id)
+                                           ->where('value', 'like', '%"' . $value . '"%')
+                                    );
+                                } else {
+                                    $q->whereHas('customValues', fn ($q2) =>
+                                        $q2->where('custom_field_id', $field->id)
+                                           ->where('value', $value)
+                                    );
+                                }
+                            }
+                        })
                         ->withCount(['tasks as overdue_count' => fn ($q) => $q
                             ->where('is_done', false)
                             ->whereNotNull('due_at')
@@ -109,7 +136,8 @@ class LeadController extends Controller
         return view('leads.index', compact(
             'pipelines', 'currentPipeline', 'filters',
             'tagGroups', 'ungroupedTags', 'hasTags',
-            'internalUsers', 'programsByCountry', 'ownOnly'
+            'internalUsers', 'programsByCountry', 'ownOnly',
+            'filterableFields'
         ));
     }
 
