@@ -108,25 +108,27 @@
                 @endif
             </div>
 
-            <div class="flex items-center justify-between mt-4 pt-4 border-t border-amber-200">
-                <form method="POST" action="{{ route('todo-lists.destroy', $todoList) }}" id="todo-delete-form"
-                      onsubmit="return confirm('Delete this ToDo list and all its items?')">
-                    @csrf @method('DELETE')
-                </form>
-                <button type="submit" form="todo-delete-form"
-                        class="text-xs text-red-500 hover:text-red-700 font-medium">Delete list</button>
+        </div>
+    </form>
 
-                <div class="flex items-center gap-2">
-                    <button type="button" @click="editOpen = false" class="text-sm text-gray-500 hover:text-gray-700">Cancel</button>
-                    <button type="submit" form="todo-edit-form"
-                            class="px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
-                        Save
-                    </button>
-                </div>
-            </div>
-        </form>
+    <form method="POST" action="{{ route('todo-lists.destroy', $todoList) }}" id="todo-delete-form"
+          onsubmit="return confirm('Delete this ToDo list and all its items?')">
+        @csrf @method('DELETE')
+    </form>
+
+    <div class="flex items-center justify-between mt-4 pt-4 border-t border-amber-200">
+        <button type="submit" form="todo-delete-form"
+                class="text-xs text-red-500 hover:text-red-700 font-medium">Delete list</button>
+        <div class="flex items-center gap-2">
+            <button type="button" @click="editOpen = false" class="text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+            <button type="submit" form="todo-edit-form"
+                    class="px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+                Save
+            </button>
+        </div>
     </div>
-    @endif
+</div>
+@endif
 
     {{-- Linked boards --}}
     @if($todoList->boards->isNotEmpty())
@@ -274,7 +276,7 @@
                           @input="rows = Math.min(5, body.split('\n').length || 1)"
                           :rows="rows"
                           placeholder="Add a new item… (Enter to submit, Shift+Enter for new line)"
-                          @keydown.enter.prevent="if (!$event.shiftKey) { $el.closest('form').submit() } else { body += '\n'; rows = Math.min(5, rows + 1) }"
+                          @keydown.enter="if (!$event.shiftKey) { $event.preventDefault(); $el.closest('form').submit() }"
                           required
                           class="w-full rounded-lg border-gray-200 text-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white resize-none"></textarea>
                 <div class="flex justify-end mt-2">
