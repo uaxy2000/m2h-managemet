@@ -191,16 +191,54 @@
         </div>
         @endif
 
-        {{-- Custom field filters (select / multi_select) --}}
-        @foreach($filterableFields as $cf)
-        <select name="cf[{{ $cf->key }}]"
-                class="flex-shrink-0 rounded-lg border-gray-200 text-sm py-1.5 pl-2.5 pr-7 focus:ring-indigo-500 focus:border-indigo-500">
-            <option value="">All {{ $cf->label }}</option>
-            @foreach($cf->options as $opt)
-            <option value="{{ $opt->value }}" @selected(($filters['cf'][$cf->key] ?? '') === $opt->value)>{{ $opt->label }}</option>
-            @endforeach
-        </select>
-        @endforeach
+        {{-- All filters (custom fields) --}}
+        @if($filterableFields->isNotEmpty())
+        @php $activeCfCount = count($filters['cf']); @endphp
+        <div x-data="{ open: false }" class="relative flex-shrink-0" @click.outside="open = false">
+
+            <button type="button" @click="open = !open"
+                    class="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border transition-colors
+                           {{ $activeCfCount ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50' }}">
+                <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"/>
+                </svg>
+                All filters
+                @if($activeCfCount)
+                <span class="text-xs font-semibold bg-indigo-200 text-indigo-800 rounded-full px-1.5 py-0.5 leading-none">{{ $activeCfCount }}</span>
+                @endif
+                <svg class="w-3 h-3 ml-0.5 flex-shrink-0 text-gray-400 transition-transform" :class="open ? 'rotate-180' : ''"
+                     fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
+                </svg>
+            </button>
+
+            <div x-show="open" x-cloak
+                 x-transition:enter="transition ease-out duration-100"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-75"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="absolute left-0 top-full mt-1 bg-white rounded-xl border border-gray-200 shadow-lg z-50 p-4 min-w-56"
+                 style="width: max-content; max-width: 22rem;">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Filter by field</p>
+                <div class="grid gap-3 {{ $filterableFields->count() > 2 ? 'grid-cols-2' : 'grid-cols-1' }}">
+                    @foreach($filterableFields as $cf)
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">{{ $cf->label }}</label>
+                        <select name="cf[{{ $cf->key }}]"
+                                class="w-full rounded-lg border-gray-200 text-sm py-1.5 pl-2.5 pr-7 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">All</option>
+                            @foreach($cf->options as $opt)
+                            <option value="{{ $opt->value }}" @selected(($filters['cf'][$cf->key] ?? '') === $opt->value)>{{ $opt->label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        @endif
 
         {{-- Duplicate toggle --}}
         <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none flex-shrink-0">
