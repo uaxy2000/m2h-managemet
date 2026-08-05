@@ -374,10 +374,23 @@ function todoPage(csrf) {
         },
 
         copyToClipboard() {
-            navigator.clipboard.writeText(this.buildCopyText()).then(() => {
+            const text = this.buildCopyText();
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    this.copied = true;
+                    setTimeout(() => { this.copied = false; }, 2000);
+                });
+            } else {
+                const el = document.createElement('textarea');
+                el.value = text;
+                el.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
                 this.copied = true;
                 setTimeout(() => { this.copied = false; }, 2000);
-            });
+            }
         },
     };
 }
