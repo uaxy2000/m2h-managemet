@@ -203,7 +203,7 @@ $phases = [
             ['label' => 'In-app notifications',                                           'complete' => false],
             ['label' => 'Email notifications (lead assigned, stage changed)',              'complete' => false],
             ['label' => 'Lead bulk actions (assign, tag, move stage)',                    'complete' => false],
-            ['label' => 'Reporting & analytics (leads by source, stage, period)',         'complete' => false],
+            ['label' => 'Reporting & analytics — stage, source, assignee, monthly trend (initial)', 'complete' => true],
             ['label' => 'Dashboard stat cards (live messages, sync status)',              'complete' => false],
         ],
     ],
