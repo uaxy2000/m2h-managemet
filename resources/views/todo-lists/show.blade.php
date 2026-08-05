@@ -3,10 +3,27 @@
 @section('heading', $todoList->title)
 
 @section('content')
+
+@php
+$done  = $todoList->items->where('is_done', true)->count();
+$total = $todoList->items->count();
+$pct   = $total > 0 ? round($done / $total * 100) : 0;
+$openItems = $todoList->items->where('is_done', false);
+$doneItems = $todoList->items->where('is_done', true);
+$itemsForJs = $todoList->items->map(fn ($i) => [
+    'body'         => $i->body,
+    'is_done'      => $i->is_done,
+    'creator'      => $i->creator?->name ?? '—',
+    'created_at'   => $i->created_at->format('d M Y, H:i'),
+    'completer'    => $i->completer?->name,
+    'completed_at' => $i->completed_at?->format('d M Y, H:i'),
+])->values();
+@endphp
+
 <div class="max-w-3xl mx-auto px-4 py-6 space-y-5"
      x-data="todoPage('{{ csrf_token() }}')">
 
-    {{-- Header bar --}}
+    {{-- ── Header ── --}}
     <div class="flex items-center justify-between">
         <div>
             <a href="{{ route('todo-lists.index') }}" class="text-xs text-gray-400 hover:text-gray-600">← ToDo Lists</a>
@@ -15,7 +32,6 @@
             @endif
         </div>
         <div class="flex items-center gap-2">
-            {{-- Export modal trigger --}}
             <button type="button" @click="copyOpen = true"
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -23,12 +39,10 @@
                 </svg>
                 Export as text
             </button>
-
             @if($user->isInternalAdmin())
-            {{-- Edit toggle --}}
             <button type="button" @click="editOpen = !editOpen"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                    :class="editOpen ? 'bg-indigo-50 border-indigo-300 text-indigo-600' : ''">
+                    :class="editOpen ? 'bg-indigo-50 border-indigo-300 text-indigo-600' : 'bg-white border-gray-200 text-gray-600'"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg hover:bg-gray-50 transition-colors">
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"/>
                 </svg>
@@ -38,12 +52,7 @@
         </div>
     </div>
 
-    {{-- Progress bar --}}
-    @php
-        $done  = $todoList->items->where('is_done', true)->count();
-        $total = $todoList->items->count();
-        $pct   = $total > 0 ? round($done / $total * 100) : 0;
-    @endphp
+    {{-- ── Progress bar ── --}}
     @if($total > 0)
     <div class="flex items-center gap-3">
         <div class="flex-1 bg-gray-100 rounded-full h-1.5">
@@ -54,9 +63,12 @@
     </div>
     @endif
 
-    {{-- Edit panel (admin only) --}}
+    {{-- ── Edit panel (admin only) ── --}}
     @if($user->isInternalAdmin())
-    <div x-show="editOpen" x-cloak class="bg-amber-50 border border-amber-200 rounded-xl p-5">
+    <div x-show="editOpen" x-cloak
+         class="bg-amber-50 border border-amber-200 rounded-xl p-5 space-y-4">
+
+        {{-- Update form --}}
         <form method="POST" action="{{ route('todo-lists.update', $todoList) }}" id="todo-edit-form">
             @csrf @method('PUT')
             <div class="space-y-4">
@@ -70,7 +82,6 @@
                     <textarea name="description" rows="2"
                               class="w-full rounded-lg border-gray-200 text-sm focus:ring-indigo-500 focus:border-indigo-500">{{ old('description', $todoList->description) }}</textarea>
                 </div>
-
                 {{-- Members --}}
                 <div x-data="{ search: '' }">
                     <label class="block text-xs font-semibold text-gray-600 mb-2">Members</label>
@@ -89,7 +100,6 @@
                         @endforeach
                     </div>
                 </div>
-
                 {{-- Boards --}}
                 @if($allBoards->isNotEmpty())
                 <div>
@@ -107,30 +117,32 @@
                 </div>
                 @endif
             </div>
+        </form>
 
+        {{-- Delete form (sibling — NOT inside update form) --}}
+        <form method="POST" action="{{ route('todo-lists.destroy', $todoList) }}" id="todo-delete-form"
+              onsubmit="return confirm('Delete this ToDo list and all its items?')">
+            @csrf @method('DELETE')
+        </form>
+
+        {{-- Action bar --}}
+        <div class="flex items-center justify-between pt-4 border-t border-amber-200">
+            <button type="submit" form="todo-delete-form"
+                    class="text-xs text-red-500 hover:text-red-700 font-medium">Delete list</button>
+            <div class="flex items-center gap-2">
+                <button type="button" @click="editOpen = false"
+                        class="text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+                <button type="submit" form="todo-edit-form"
+                        class="px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+                    Save
+                </button>
+            </div>
         </div>
-    </form>
 
-    <form method="POST" action="{{ route('todo-lists.destroy', $todoList) }}" id="todo-delete-form"
-          onsubmit="return confirm('Delete this ToDo list and all its items?')">
-        @csrf @method('DELETE')
-    </form>
+    </div>{{-- /editOpen --}}
+    @endif
 
-    <div class="flex items-center justify-between mt-4 pt-4 border-t border-amber-200">
-        <button type="submit" form="todo-delete-form"
-                class="text-xs text-red-500 hover:text-red-700 font-medium">Delete list</button>
-        <div class="flex items-center gap-2">
-            <button type="button" @click="editOpen = false" class="text-sm text-gray-500 hover:text-gray-700">Cancel</button>
-            <button type="submit" form="todo-edit-form"
-                    class="px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
-                Save
-            </button>
-        </div>
-    </div>
-</div>
-@endif
-
-    {{-- Linked boards --}}
+    {{-- ── Linked boards ── --}}
     @if($todoList->boards->isNotEmpty())
     <div class="flex items-center gap-2 flex-wrap">
         <span class="text-xs text-gray-400 font-medium">Linked boards:</span>
@@ -146,25 +158,23 @@
     </div>
     @endif
 
-    {{-- Items list --}}
+    {{-- ── Items list ── --}}
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
 
         {{-- Open items --}}
-        @php $openItems = $todoList->items->where('is_done', false); @endphp
         @forelse($openItems as $item)
         <div class="flex items-start gap-3 px-4 py-3 border-b border-gray-50 group"
              x-data="{ editing: false, body: {{ json_encode($item->body) }} }">
 
-            {{-- Checkbox --}}
-            <form method="POST" action="{{ route('todo-lists.items.toggle', [$todoList, $item]) }}" class="mt-0.5">
+            <form method="POST" action="{{ route('todo-lists.items.toggle', [$todoList, $item]) }}" class="mt-0.5 flex-shrink-0">
                 @csrf
                 <button type="submit"
-                        class="w-4 h-4 flex-shrink-0 rounded border-2 border-gray-300 hover:border-indigo-400 flex items-center justify-center transition-all">
+                        class="w-4 h-4 rounded border-2 border-gray-300 hover:border-indigo-400 flex items-center justify-center transition-all">
                 </button>
             </form>
 
-            {{-- Body --}}
             <div class="flex-1 min-w-0">
+                {{-- Display mode --}}
                 <div x-show="!editing">
                     <p class="text-sm text-gray-700">{!! nl2br(e($item->body)) !!}</p>
                     <div class="flex items-center gap-2 mt-1">
@@ -180,25 +190,22 @@
                                 <p class="text-gray-300">{{ $item->created_at->format('d M Y, H:i') }}</p>
                             </div>
                         </div>
-                        {{-- Edit button --}}
                         <button type="button" @click="editing = true"
-                                class="text-xs text-gray-300 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-all">
-                            Edit
-                        </button>
-                        {{-- Delete --}}
+                                class="text-xs text-gray-300 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-all">Edit</button>
                         <form method="POST" action="{{ route('todo-lists.items.destroy', [$todoList, $item]) }}"
-                              onsubmit="return confirm('Remove this item?')" class="opacity-0 group-hover:opacity-100 transition-all">
+                              onsubmit="return confirm('Remove this item?')"
+                              class="opacity-0 group-hover:opacity-100 transition-all">
                             @csrf @method('DELETE')
                             <button type="submit" class="text-xs text-red-400 hover:text-red-600">Delete</button>
                         </form>
                     </div>
                 </div>
 
-                {{-- Inline edit form --}}
+                {{-- Edit mode --}}
                 <div x-show="editing" x-cloak>
-                    <form method="POST" action="{{ route('todo-lists.items.update', [$todoList, $item]) }}" :id="`item-edit-{{ $item->id }}`">
+                    <form method="POST" action="{{ route('todo-lists.items.update', [$todoList, $item]) }}">
                         @csrf @method('PUT')
-                        <textarea name="body" rows="2" x-model="body" required
+                        <textarea name="body" rows="3" x-model="body" required
                                   class="w-full rounded-lg border-gray-200 text-sm focus:ring-indigo-500 focus:border-indigo-500 mt-1"></textarea>
                         <div class="flex items-center gap-2 mt-1">
                             <button type="submit" class="text-xs font-medium text-indigo-600 hover:text-indigo-800">Save</button>
@@ -210,13 +217,10 @@
             </div>
         </div>
         @empty
-        @if($todoList->items->isEmpty())
         <div class="px-4 py-8 text-center text-gray-400 text-sm">No items yet. Add the first one below.</div>
-        @endif
         @endforelse
 
         {{-- Done items (collapsible) --}}
-        @php $doneItems = $todoList->items->where('is_done', true); @endphp
         @if($doneItems->isNotEmpty())
         <div x-data="{ open: false }">
             <button @click="open = !open" type="button"
@@ -229,17 +233,17 @@
             <div x-show="open" x-cloak>
                 @foreach($doneItems as $item)
                 <div class="flex items-start gap-3 px-4 py-3 border-t border-gray-50 group opacity-60">
-                    <form method="POST" action="{{ route('todo-lists.items.toggle', [$todoList, $item]) }}" class="mt-0.5">
+                    <form method="POST" action="{{ route('todo-lists.items.toggle', [$todoList, $item]) }}" class="mt-0.5 flex-shrink-0">
                         @csrf
                         <button type="submit"
-                                class="w-4 h-4 flex-shrink-0 rounded border-2 bg-emerald-500 border-emerald-500 flex items-center justify-center transition-all">
+                                class="w-4 h-4 rounded border-2 bg-emerald-500 border-emerald-500 flex items-center justify-center transition-all">
                             <svg class="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
                             </svg>
                         </button>
                     </form>
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm text-gray-400 line-through whitespace-pre-line">{{ $item->body }}</p>
+                        <p class="text-sm text-gray-400 line-through">{!! nl2br(e($item->body)) !!}</p>
                         <div class="relative group/info inline-block mt-0.5">
                             <button type="button" class="text-gray-300 hover:text-gray-400 transition-colors">
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -257,9 +261,9 @@
                         </div>
                     </div>
                     <form method="POST" action="{{ route('todo-lists.items.destroy', [$todoList, $item]) }}"
-                          onsubmit="return confirm('Remove?')" class="opacity-0 group-hover:opacity-100">
+                          onsubmit="return confirm('Remove?')" class="opacity-0 group-hover:opacity-100 flex-shrink-0">
                         @csrf @method('DELETE')
-                        <button type="submit" class="text-xs text-red-400 hover:text-red-600 mt-0.5">×</button>
+                        <button type="submit" class="text-xs text-red-400 hover:text-red-600">×</button>
                     </form>
                 </div>
                 @endforeach
@@ -301,13 +305,12 @@
     </div>
     @endif
 
-    {{-- ===== Export Modal ===== --}}
+    {{-- ── Export Modal ── --}}
     <div x-show="copyOpen" x-cloak
          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
          @click.self="copyOpen = false">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" @click.stop>
             <h3 class="text-sm font-semibold text-gray-800 mb-4">Export list as text</h3>
-
             <div class="space-y-2 mb-4">
                 <label class="flex items-center gap-2.5 text-sm text-gray-700 cursor-pointer">
                     <input type="checkbox" x-model="copyOpts.showDone" class="rounded border-gray-300 text-indigo-600">
@@ -322,53 +325,39 @@
                     Show dates
                 </label>
             </div>
-
             <textarea readonly :value="buildCopyText()"
                       class="w-full rounded-lg border-gray-200 text-sm bg-gray-50 resize-none focus:ring-indigo-500 focus:border-indigo-500"
                       rows="8"></textarea>
-
             <div class="flex justify-between mt-4">
-                <button type="button" @click="copyOpen = false" class="text-sm text-gray-500 hover:text-gray-700">Close</button>
+                <button type="button" @click="copyOpen = false"
+                        class="text-sm text-gray-500 hover:text-gray-700">Close</button>
                 <button type="button" @click="copyToClipboard()"
                         class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
-                        x-text="copied ? '✓ Copied!' : 'Copy to clipboard'">
-                </button>
+                        x-text="copied ? '✓ Copied!' : 'Copy to clipboard'"></button>
             </div>
         </div>
     </div>
 
-</div>
-
-@php
-$itemsForJs = $todoList->items->map(fn ($i) => [
-    'body'         => $i->body,
-    'is_done'      => $i->is_done,
-    'creator'      => $i->creator?->name ?? '—',
-    'created_at'   => $i->created_at->format('d M Y, H:i'),
-    'completer'    => $i->completer?->name,
-    'completed_at' => $i->completed_at?->format('d M Y, H:i'),
-])->values();
-@endphp
+</div>{{-- /x-data --}}
 
 <script>
 function todoPage(csrf) {
     const items = @json($itemsForJs);
 
     return {
-        editOpen:  {{ session('edit') ? 'true' : 'false' }},
+        editOpen:  false,
         copyOpen:  false,
         copied:    false,
         copyOpts: { showDone: true, showWho: true, showDate: true },
 
         buildCopyText() {
-            const title = '{{ addslashes($todoList->title) }}';
-            let lines = [title, '─'.repeat(title.length), ''];
+            const title = @json($todoList->title);
+            const sep   = '─'.repeat(title.length);
+            let lines   = [title, sep, ''];
 
             items.forEach(item => {
                 if (item.is_done && !this.copyOpts.showDone) return;
-
-                const prefix = item.is_done ? '☑ ' : '☐ ';
-                lines.push(prefix + item.body);
+                lines.push((item.is_done ? '☑ ' : '☐ ') + item.body);
 
                 const meta = [];
                 if (this.copyOpts.showWho)  meta.push('Added by: ' + item.creator);
@@ -377,7 +366,6 @@ function todoPage(csrf) {
                     meta.push('Completed by: ' + item.completer);
                 if (item.is_done && this.copyOpts.showDate && item.completed_at)
                     meta.push(item.completed_at);
-
                 if (meta.length) lines.push('   ' + meta.join(' · '));
                 lines.push('');
             });
