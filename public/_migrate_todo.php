@@ -1,14 +1,14 @@
 <?php
 /**
  * Geçici migration scripti — todo_lists tablolarını oluşturur.
- * Çalıştırdıktan sonra bu dosyayı sil.
- * Kullanım: php _migrate_todo.php
+ * Kullanım: https://domain.com/_migrate_todo.php
+ * Çalıştırdıktan sonra bu dosyayı sil veya git rm public/_migrate_todo.php
  */
 
-chdir(__DIR__);
-require_once __DIR__ . '/vendor/autoload.php';
+chdir(dirname(__DIR__));
+require_once dirname(__DIR__) . '/vendor/autoload.php';
 
-$app = require_once __DIR__ . '/bootstrap/app.php';
+$app = require_once dirname(__DIR__) . '/bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
@@ -16,9 +16,10 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Schema\Blueprint;
 
+header('Content-Type: text/plain; charset=utf-8');
+
 $migrationName = '2026_08_05_083136_create_todo_lists_tables';
 
-// Zaten çalıştırılmış mı kontrol et
 if (Schema::hasTable('todo_lists')) {
     echo "SKIP: todo_lists tablosu zaten mevcut.\n";
     exit(0);
@@ -39,7 +40,7 @@ Schema::create('todo_lists', function (Blueprint $table) {
     $table->foreign('created_by')->references('id')->on('users')->cascadeOnDelete();
     $table->timestamps();
 });
-echo "  [OK] todo_lists\n";
+echo "[OK] todo_lists\n";
 
 Schema::create('todo_list_members', function (Blueprint $table) {
     $table->foreignId('todo_list_id')->constrained()->cascadeOnDelete();
@@ -47,7 +48,7 @@ Schema::create('todo_list_members', function (Blueprint $table) {
     $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
     $table->primary(['todo_list_id', 'user_id']);
 });
-echo "  [OK] todo_list_members\n";
+echo "[OK] todo_list_members\n";
 
 Schema::create('todo_list_items', function (Blueprint $table) {
     $table->id();
@@ -62,21 +63,20 @@ Schema::create('todo_list_items', function (Blueprint $table) {
     $table->datetime('completed_at')->nullable();
     $table->timestamps();
 });
-echo "  [OK] todo_list_items\n";
+echo "[OK] todo_list_items\n";
 
 Schema::create('todo_list_boards', function (Blueprint $table) {
     $table->foreignId('todo_list_id')->constrained()->cascadeOnDelete();
     $table->foreignId('board_id')->constrained()->cascadeOnDelete();
     $table->primary(['todo_list_id', 'board_id']);
 });
-echo "  [OK] todo_list_boards\n";
+echo "[OK] todo_list_boards\n";
 
-// migrations tablosuna kaydet
 $maxBatch = DB::table('migrations')->max('batch') ?? 0;
 DB::table('migrations')->insert([
     'migration' => $migrationName,
     'batch'     => $maxBatch + 1,
 ]);
-echo "  [OK] migrations tablosuna kaydedildi (batch " . ($maxBatch + 1) . ")\n";
+echo "[OK] migrations tablosuna kaydedildi (batch " . ($maxBatch + 1) . ")\n";
 
-echo "\nMigration tamamlandı! Bu dosyayı sil: _migrate_todo.php\n";
+echo "\nTamamlandı! Bu dosyayı sil: public/_migrate_todo.php\n";
