@@ -15,13 +15,13 @@
             @endif
         </div>
         <div class="flex items-center gap-2">
-            {{-- Copy modal trigger --}}
+            {{-- Export modal trigger --}}
             <button type="button" @click="copyOpen = true"
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/>
                 </svg>
-                Copy list
+                Export as text
             </button>
 
             @if($user->isInternalAdmin())
@@ -166,7 +166,7 @@
             {{-- Body --}}
             <div class="flex-1 min-w-0">
                 <div x-show="!editing">
-                    <p class="text-sm text-gray-700 whitespace-pre-line">{{ $item->body }}</p>
+                    <p class="text-sm text-gray-700">{!! nl2br(e($item->body)) !!}</p>
                     <div class="flex items-center gap-2 mt-1">
                         {{-- Info tooltip --}}
                         <div class="relative group/info">
@@ -301,42 +301,42 @@
     </div>
     @endif
 
-</div>
+    {{-- ===== Export Modal ===== --}}
+    <div x-show="copyOpen" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+         @click.self="copyOpen = false">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" @click.stop>
+            <h3 class="text-sm font-semibold text-gray-800 mb-4">Export list as text</h3>
 
-{{-- ===== Copy Modal ===== --}}
-<div x-show="copyOpen" x-cloak
-     class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-     @click.self="copyOpen = false">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" @click.stop>
-        <h3 class="text-sm font-semibold text-gray-800 mb-4">Copy list as plain text</h3>
+            <div class="space-y-2 mb-4">
+                <label class="flex items-center gap-2.5 text-sm text-gray-700 cursor-pointer">
+                    <input type="checkbox" x-model="copyOpts.showDone" class="rounded border-gray-300 text-indigo-600">
+                    Include completed items
+                </label>
+                <label class="flex items-center gap-2.5 text-sm text-gray-700 cursor-pointer">
+                    <input type="checkbox" x-model="copyOpts.showWho" class="rounded border-gray-300 text-indigo-600">
+                    Show who added / completed
+                </label>
+                <label class="flex items-center gap-2.5 text-sm text-gray-700 cursor-pointer">
+                    <input type="checkbox" x-model="copyOpts.showDate" class="rounded border-gray-300 text-indigo-600">
+                    Show dates
+                </label>
+            </div>
 
-        <div class="space-y-2 mb-4">
-            <label class="flex items-center gap-2.5 text-sm text-gray-700 cursor-pointer">
-                <input type="checkbox" x-model="copyOpts.showDone" class="rounded border-gray-300 text-indigo-600">
-                Include completed items
-            </label>
-            <label class="flex items-center gap-2.5 text-sm text-gray-700 cursor-pointer">
-                <input type="checkbox" x-model="copyOpts.showWho" class="rounded border-gray-300 text-indigo-600">
-                Show who added / completed
-            </label>
-            <label class="flex items-center gap-2.5 text-sm text-gray-700 cursor-pointer">
-                <input type="checkbox" x-model="copyOpts.showDate" class="rounded border-gray-300 text-indigo-600">
-                Show dates
-            </label>
-        </div>
+            <textarea readonly :value="buildCopyText()"
+                      class="w-full rounded-lg border-gray-200 text-sm bg-gray-50 resize-none focus:ring-indigo-500 focus:border-indigo-500"
+                      rows="8"></textarea>
 
-        <textarea readonly :value="buildCopyText()"
-                  class="w-full rounded-lg border-gray-200 text-sm bg-gray-50 resize-none focus:ring-indigo-500 focus:border-indigo-500"
-                  rows="8"></textarea>
-
-        <div class="flex justify-between mt-4">
-            <button type="button" @click="copyOpen = false" class="text-sm text-gray-500 hover:text-gray-700">Close</button>
-            <button type="button" @click="copyToClipboard()"
-                    class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
-                    x-text="copied ? '✓ Copied!' : 'Copy to clipboard'">
-            </button>
+            <div class="flex justify-between mt-4">
+                <button type="button" @click="copyOpen = false" class="text-sm text-gray-500 hover:text-gray-700">Close</button>
+                <button type="button" @click="copyToClipboard()"
+                        class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                        x-text="copied ? '✓ Copied!' : 'Copy to clipboard'">
+                </button>
+            </div>
         </div>
     </div>
+
 </div>
 
 @php
