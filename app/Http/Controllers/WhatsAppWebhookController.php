@@ -43,15 +43,8 @@ class WhatsAppWebhookController extends Controller
 
                 $value = $change['value'] ?? [];
 
-                // Only process messages addressed to our configured phone number
                 $incomingPhoneId = $value['metadata']['phone_number_id'] ?? null;
-                if ($incomingPhoneId !== config('services.whatsapp.phone_number_id')) {
-                    Log::info('WhatsApp webhook: ignored message for different phone_number_id', [
-                        'incoming' => $incomingPhoneId,
-                        'expected' => config('services.whatsapp.phone_number_id'),
-                    ]);
-                    continue;
-                }
+                Log::info('WhatsApp webhook: processing messages', ['phone_number_id' => $incomingPhoneId]);
 
                 foreach ($value['messages'] ?? [] as $message) {
                     if (($message['type'] ?? '') !== 'text') {
