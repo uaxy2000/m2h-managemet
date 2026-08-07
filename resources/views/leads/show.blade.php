@@ -768,20 +768,39 @@
                             $canDeleteNote = auth()->user()->isAdmin()
                                 || ($item->created_by === auth()->id() && $item->created_at->diffInHours(now()) < 12);
                         @endphp
+                        <div class="flex items-center gap-3 mt-1">
                         @if($canDeleteNote)
                         <form method="POST" action="{{ route('leads.notes.destroy', [$lead, $item]) }}"
-                              onsubmit="return confirm('Delete this note?')" class="mt-1">
+                              onsubmit="return confirm('Delete this note?')">
                             @csrf @method('DELETE')
                             <button type="submit"
                                     class="text-xs text-gray-300 hover:text-red-500 transition-colors">Delete</button>
                         </form>
                         @elseif($item->created_by === auth()->id())
-                        <span class="text-xs text-gray-300 mt-1 inline-block" title="Can only delete within 12 hours">
+                        <span class="text-xs text-gray-300 inline-block" title="Can only delete within 12 hours">
                             <svg class="w-3 h-3 inline" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>
                             </svg>
                         </span>
                         @endif
+                        @php
+                            $formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLScugMTauTcWVP6A7C5THzkVW-vhzcir8QfytkcBGO1az9XBOw/viewform'
+                                . '?usp=pp_url'
+                                . '&entry.1910425423=' . urlencode(auth()->user()->email)
+                                . '&entry.1909848528=' . urlencode($lead->first_name ?? '')
+                                . '&entry.2037197163=' . urlencode($lead->last_name ?? '')
+                                . '&entry.1332109165=' . urlencode($lead->email ?? '')
+                                . '&entry.118955804='  . urlencode($lead->phone ?? '')
+                                . '&entry.1056573155=' . urlencode($item->content);
+                        @endphp
+                        <a href="{{ $formUrl }}" target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-1 text-xs text-indigo-300 hover:text-indigo-500 transition-colors">
+                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/>
+                            </svg>
+                            Formu Aç
+                        </a>
+                        </div>
                     </div>
                 </div>
 
