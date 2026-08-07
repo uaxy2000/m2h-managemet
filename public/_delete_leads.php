@@ -14,18 +14,17 @@ $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 header('Content-Type: text/plain; charset=utf-8');
 
 use Illuminate\Support\Facades\DB;
-use App\Models\Lead;
 
 // Sayıları önce göster
 $counts = [
-    'leads'               => DB::table('leads')->count(),
-    'lead_activities'     => DB::table('lead_activities')->count(),
-    'notes'               => DB::table('notes')->count(),
-    'tasks'               => DB::table('tasks')->count(),
-    'lead_custom_values'  => DB::table('lead_custom_values')->count(),
+    'leads'                 => DB::table('leads')->count(),
+    'lead_activities'       => DB::table('lead_activities')->count(),
+    'notes'                 => DB::table('notes')->count(),
+    'tasks'                 => DB::table('tasks')->count(),
+    'lead_custom_values'    => DB::table('lead_custom_values')->count(),
     'lead_status_histories' => DB::table('lead_status_histories')->count(),
-    'lead_tag'            => DB::table('lead_tag')->count(),
-    'lead_program'        => DB::table('lead_program')->count(),
+    'lead_tags'             => DB::table('lead_tags')->count(),
+    'lead_program'          => DB::table('lead_program')->count(),
 ];
 
 echo "=== SİLİNECEK KAYITLAR ===\n";
@@ -50,8 +49,8 @@ if (($_GET['confirm'] ?? '') !== 'yes') {
 echo "Siliniyor...\n";
 
 // Bağlı tablolar önce (foreign key sırası)
-DB::table('lead_tag')->delete();
-echo "[OK] lead_tag\n";
+DB::table('lead_tags')->delete();
+echo "[OK] lead_tags\n";
 
 DB::table('lead_program')->delete();
 echo "[OK] lead_program\n";
