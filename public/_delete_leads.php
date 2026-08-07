@@ -22,7 +22,7 @@ $counts = [
     'notes'                 => DB::table('notes')->count(),
     'tasks'                 => DB::table('tasks')->count(),
     'lead_custom_values'    => DB::table('lead_custom_values')->count(),
-    'lead_status_histories' => DB::table('lead_status_histories')->count(),
+    'lead_status_history'   => DB::table('lead_status_history')->count(),
     'lead_tags'             => DB::table('lead_tags')->count(),
     'lead_program'          => DB::table('lead_program')->count(),
 ];
@@ -58,8 +58,8 @@ echo "[OK] lead_program\n";
 DB::table('lead_custom_values')->delete();
 echo "[OK] lead_custom_values\n";
 
-DB::table('lead_status_histories')->delete();
-echo "[OK] lead_status_histories\n";
+DB::table('lead_status_history')->delete();
+echo "[OK] lead_status_history\n";
 
 DB::table('lead_activities')->delete();
 echo "[OK] lead_activities\n";
