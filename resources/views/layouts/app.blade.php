@@ -173,6 +173,29 @@
                     </svg>
                     <span x-show="sidebar || mobileNav" class="whitespace-nowrap">Reports</span>
                 </a>
+                <a href="{{ route('performance.index') }}"
+                   :class="(sidebar || mobileNav) ? 'px-3 gap-3' : 'lg:justify-center lg:px-0 px-3 gap-3'"
+                   class="group flex items-center py-2 rounded-lg text-sm font-medium transition-colors
+                          {{ request()->is('performance*') ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}"
+                   :title="(!sidebar && !mobileNav) ? 'Performance' : ''">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 8v8m-8-5v5m4-9v9M4.5 19.5h15a.75.75 0 0 0 .75-.75V5.25a.75.75 0 0 0-.75-.75h-15a.75.75 0 0 0-.75.75v13.5c0 .414.336.75.75.75Z"/>
+                    </svg>
+                    <span x-show="sidebar || mobileNav" class="whitespace-nowrap">Performance</span>
+                </a>
+            </div>
+            @elseif(auth()->user()->isInternal())
+            <div class="pt-4 mt-4 border-t border-slate-700/60 space-y-0.5">
+                <a href="{{ route('performance.index') }}"
+                   :class="(sidebar || mobileNav) ? 'px-3 gap-3' : 'lg:justify-center lg:px-0 px-3 gap-3'"
+                   class="group flex items-center py-2 rounded-lg text-sm font-medium transition-colors
+                          {{ request()->is('performance*') ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}"
+                   :title="(!sidebar && !mobileNav) ? 'Performance' : ''">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 8v8m-8-5v5m4-9v9M4.5 19.5h15a.75.75 0 0 0 .75-.75V5.25a.75.75 0 0 0-.75-.75h-15a.75.75 0 0 0-.75.75v13.5c0 .414.336.75.75.75Z"/>
+                    </svg>
+                    <span x-show="sidebar || mobileNav" class="whitespace-nowrap">Performance</span>
+                </a>
             </div>
             @endif
 

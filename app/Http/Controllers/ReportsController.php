@@ -6,6 +6,7 @@ use App\Models\Lead;
 use App\Models\Pipeline;
 use App\Models\Stage;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -90,5 +91,109 @@ class ReportsController extends Controller
             'stageDistribution', 'sourceBreakdown', 'assigneeBreakdown',
             'trendData', 'totalLeads', 'thisMonthLeads', 'lastMonthLeads'
         ));
+    }
+
+    public function performance(): View
+    {
+        $authUser = auth()->user();
+        abort_unless($authUser->isInternal(), 403);
+
+        $isAdmin          = $authUser->isInternalAdmin();
+        $REGISTERED_STAGE = 'a2663266-e3b6-42cd-b998-a479287c5256';
+
+        $users = User::with('company')
+            ->when(!$isAdmin, fn ($q) => $q->where('id', $authUser->id))
+            ->orderBy('name')
+            ->get()
+            ->filter(fn ($u) => $u->isInternal());
+
+        $userIds = $users->pluck('id');
+
+        // Total leads assigned per user
+        $assignedCounts = DB::table('leads')
+            ->whereIn('assigned_to', $userIds)
+            ->select('assigned_to', DB::raw('COUNT(*) as total'))
+            ->groupBy('assigned_to')
+            ->pluck('total', 'assigned_to');
+
+        // Leads that have ever reached LEAD REGISTERED (grouped by assigned_to)
+        $registeredCounts = DB::table('lead_status_history')
+            ->join('leads', 'leads.id', '=', 'lead_status_history.lead_id')
+            ->where('lead_status_history.to_stage_id', $REGISTERED_STAGE)
+            ->whereIn('leads.assigned_to', $userIds)
+            ->select('leads.assigned_to', DB::raw('COUNT(DISTINCT leads.id) as cnt'))
+            ->groupBy('leads.assigned_to')
+            ->pluck('cnt', 'assigned_to');
+
+        // Average days from lead creation → LEAD REGISTERED
+        $avgDaysMap = DB::table('lead_status_history')
+            ->join('leads', 'leads.id', '=', 'lead_status_history.lead_id')
+            ->where('lead_status_history.to_stage_id', $REGISTERED_STAGE)
+            ->whereIn('leads.assigned_to', $userIds)
+            ->select(
+                'leads.assigned_to',
+                DB::raw('ROUND(AVG(TIMESTAMPDIFF(DAY, leads.created_at, lead_status_history.changed_at)), 1) as avg_days')
+            )
+            ->groupBy('leads.assigned_to')
+            ->pluck('avg_days', 'assigned_to');
+
+        // Stage distribution per user
+        $stageDistRaw = DB::table('leads')
+            ->whereIn('assigned_to', $userIds)
+            ->select('assigned_to', 'stage_id', DB::raw('COUNT(*) as cnt'))
+            ->groupBy('assigned_to', 'stage_id')
+            ->get()
+            ->groupBy('assigned_to');
+
+        $stageIds = $stageDistRaw->flatten()->pluck('stage_id')->unique();
+        $stageMap = Stage::with('pipeline')->whereIn('id', $stageIds)->get()->keyBy('id');
+
+        // Monthly registrations — last 6 months
+        $months = collect();
+        for ($i = 5; $i >= 0; $i--) {
+            $months->push(now()->subMonths($i)->format('Y-m'));
+        }
+
+        $monthlyRaw = DB::table('lead_status_history')
+            ->join('leads', 'leads.id', '=', 'lead_status_history.lead_id')
+            ->where('lead_status_history.to_stage_id', $REGISTERED_STAGE)
+            ->where('lead_status_history.changed_at', '>=', now()->subMonths(5)->startOfMonth())
+            ->whereIn('leads.assigned_to', $userIds)
+            ->select(
+                'leads.assigned_to',
+                DB::raw("DATE_FORMAT(lead_status_history.changed_at, '%Y-%m') as month"),
+                DB::raw('COUNT(DISTINCT leads.id) as cnt')
+            )
+            ->groupBy('leads.assigned_to', 'month')
+            ->get()
+            ->groupBy('assigned_to');
+
+        $userStats = $users->map(function ($u) use (
+            $assignedCounts, $registeredCounts, $avgDaysMap,
+            $stageDistRaw, $stageMap, $monthlyRaw, $months
+        ) {
+            $total      = (int) ($assignedCounts[$u->id]   ?? 0);
+            $registered = (int) ($registeredCounts[$u->id] ?? 0);
+            $uMonthly   = ($monthlyRaw[$u->id] ?? collect())->keyBy('month');
+
+            return [
+                'user'       => $u,
+                'total'      => $total,
+                'registered' => $registered,
+                'conversion' => $total > 0 ? round($registered / $total * 100, 1) : 0,
+                'avg_days'   => $avgDaysMap[$u->id] ?? null,
+                'stage_dist' => ($stageDistRaw[$u->id] ?? collect())
+                    ->map(fn ($r) => ['stage' => $stageMap[$r->stage_id] ?? null, 'count' => (int) $r->cnt])
+                    ->filter(fn ($r) => $r['stage'] !== null)
+                    ->sortByDesc('count')
+                    ->values(),
+                'monthly'    => $months->map(fn ($m) => [
+                    'label' => Carbon::createFromFormat('Y-m', $m)->format('M y'),
+                    'count' => (int) ($uMonthly[$m]?->cnt ?? 0),
+                ]),
+            ];
+        })->values();
+
+        return view('performance.index', compact('userStats', 'isAdmin', 'months'));
     }
 }

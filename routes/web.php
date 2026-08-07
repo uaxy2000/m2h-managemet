@@ -52,6 +52,7 @@ Route::middleware('auth')->group(function () {
 
     // Reports
     Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
+    Route::get('performance', [ReportsController::class, 'performance'])->name('performance.index');
 
     Route::get('/', fn () => redirect()->route('dashboard'));
 
