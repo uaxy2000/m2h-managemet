@@ -1,13 +1,19 @@
 <?php
 /**
- * Kommo → M2H CRM Migration
- * Imports leads, contacts, tags, notes.
- * URL: https://management.m2h.ge/_kommo_import.php
+ * Kommo → M2H CRM Migration (sayfa sayfa çalışır)
+ *
+ * Adımlar:
+ *   ?page=1        → ilk 250 lead
+ *   ?page=2        → sonraki 250 lead
+ *   ?page=3/4      → devamı
+ *   ?step=notes    → notları import et
+ *
+ * Lead map storage/app/kommo_leadmap.json dosyasına kaydedilir.
  * Delete after use: git rm public/_kommo_import.php
  */
 
-set_time_limit(600);
-ini_set('max_execution_time', 600);
+set_time_limit(120);
+ini_set('max_execution_time', 120);
 
 chdir(dirname(__DIR__));
 require_once dirname(__DIR__) . '/vendor/autoload.php';
@@ -19,33 +25,34 @@ use Illuminate\Support\Str;
 
 header('Content-Type: text/plain; charset=utf-8');
 
-$token = env('KOMMO_TOKEN');
-$sub   = env('KOMMO_SUBDOMAIN');
-$base  = "https://{$sub}.kommo.com/api/v4";
+$token   = env('KOMMO_TOKEN');
+$sub     = env('KOMMO_SUBDOMAIN');
+$base    = "https://{$sub}.kommo.com/api/v4";
+$mapFile = storage_path('app/kommo_leadmap.json');
 
-// ── Stage mapping: [kommo_pipeline_id][kommo_status_id] → [our_pipeline_id, our_stage_id] ──
+// ── Stage mapping ────────────────────────────────────────────────────────
 $MAIN = 'a2231030-9124-4a1d-a647-84cf4fb7f277';
 $COLD = 'a25182a1-4b78-4249-8c46-17ee529c7fb6';
 $stageMap = [
-    13154123 => [ // MainLine
-        101431363 => [$MAIN, 'a2231044-686e-4aa0-ae83-562cc4244266'], // Gelen müşteriler → LEAD RECEIVED
-        101792603 => [$MAIN, 'a223394e-b26a-4d3a-b95b-e98014f0d8db'], // NO CONTACT YET → NO CONTACT
-        101431367 => [$MAIN, 'a25fb42f-ea73-46ac-b457-7e7816537170'], // FIRST CONTACT
-        102333639 => [$MAIN, 'a2663250-d9b6-4bf4-abc8-5cacf738486e'], // DISCOVERY CALL
-        104144407 => [$MAIN, 'a2663266-e3b6-42cd-b998-a479287c5256'], // LEAD REGISTERED
-        101431371 => [$MAIN, 'a2719f21-6735-413d-8dae-261dc2a5f964'], // MEETING SET → MEETING 1
-        101431375 => [$MAIN, 'a2719f21-6735-413d-8dae-261dc2a5f964'], // MEETING 1 DONE → MEETING 1
-        101431379 => [$MAIN, 'a2719f9f-9895-497a-8bce-12d9ab5e38a7'], // CONTRACT NEGOTIATIONS
-        142       => [$MAIN, 'a2719fc4-f25b-4f9f-806f-d01e101496c8'], // Closed-won → WON
-        143       => [$MAIN, 'a2719fef-6e4d-432f-a5da-c7cfdca41d5d'], // Closed-lost → LOST
+    13154123 => [
+        101431363 => [$MAIN, 'a2231044-686e-4aa0-ae83-562cc4244266'],
+        101792603 => [$MAIN, 'a223394e-b26a-4d3a-b95b-e98014f0d8db'],
+        101431367 => [$MAIN, 'a25fb42f-ea73-46ac-b457-7e7816537170'],
+        102333639 => [$MAIN, 'a2663250-d9b6-4bf4-abc8-5cacf738486e'],
+        104144407 => [$MAIN, 'a2663266-e3b6-42cd-b998-a479287c5256'],
+        101431371 => [$MAIN, 'a2719f21-6735-413d-8dae-261dc2a5f964'],
+        101431375 => [$MAIN, 'a2719f21-6735-413d-8dae-261dc2a5f964'],
+        101431379 => [$MAIN, 'a2719f9f-9895-497a-8bce-12d9ab5e38a7'],
+        142       => [$MAIN, 'a2719fc4-f25b-4f9f-806f-d01e101496c8'],
+        143       => [$MAIN, 'a2719fef-6e4d-432f-a5da-c7cfdca41d5d'],
     ],
-    13270595 => [ // ColdLead
-        102332047 => [$COLD, 'a271a00e-b07f-4180-8aaa-a01cab86b597'], // Incoming leads → Cold Start
-        102332051 => [$COLD, 'a271a00e-b07f-4180-8aaa-a01cab86b597'], // COLD START
-        102332055 => [$COLD, 'a271a00e-b07f-4180-8aaa-a01cab86b597'], // Offer made
-        102332059 => [$COLD, 'a271a00e-b07f-4180-8aaa-a01cab86b597'], // Negotiation
-        142       => [$MAIN, 'a2719fc4-f25b-4f9f-806f-d01e101496c8'], // Won → Main Line WON
-        143       => [$MAIN, 'a2719fef-6e4d-432f-a5da-c7cfdca41d5d'], // Lost → Main Line LOST
+    13270595 => [
+        102332047 => [$COLD, 'a271a00e-b07f-4180-8aaa-a01cab86b597'],
+        102332051 => [$COLD, 'a271a00e-b07f-4180-8aaa-a01cab86b597'],
+        102332055 => [$COLD, 'a271a00e-b07f-4180-8aaa-a01cab86b597'],
+        102332059 => [$COLD, 'a271a00e-b07f-4180-8aaa-a01cab86b597'],
+        142       => [$MAIN, 'a2719fc4-f25b-4f9f-806f-d01e101496c8'],
+        143       => [$MAIN, 'a2719fef-6e4d-432f-a5da-c7cfdca41d5d'],
     ],
 ];
 
@@ -61,7 +68,7 @@ function kommoGet(string $url, string $token): array {
     $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
     if ($code === 204) return [];
-    if ($code !== 200) return ['_error' => "HTTP {$code}: " . substr($body, 0, 100)];
+    if ($code !== 200) return ['_error' => "HTTP {$code}: " . substr($body ?? '', 0, 200)];
     return json_decode($body, true) ?? [];
 }
 
@@ -73,98 +80,122 @@ function getOrCreateTag(string $name, string $groupId, array &$cache): string {
     $existing = DB::table('tags')->whereRaw('LOWER(name) = ?', [$key])->value('id');
     if ($existing) { $cache[$key] = $existing; return $existing; }
     $id = (string) Str::uuid();
-    DB::table('tags')->insert([
-        'id' => $id, 'name' => trim($name), 'color' => '#64748b', 'tag_group_id' => $groupId,
-    ]);
+    DB::table('tags')->insert(['id' => $id, 'name' => trim($name), 'color' => '#64748b', 'tag_group_id' => $groupId]);
     $cache[$key] = $id;
     return $id;
 }
 
-// ════════════════════════════════════════════════════════
-say("=== KOMMO → M2H IMPORT ===");
-say("Başlangıç: " . date('Y-m-d H:i:s'));
-say("");
+function loadLeadMap(string $mapFile): array {
+    return file_exists($mapFile) ? (json_decode(file_get_contents($mapFile), true) ?? []) : [];
+}
 
-// ── Phase 1: Kurulum ─────────────────────────────────────────────────────
-say("--- Phase 1: Kurulum ---");
+function saveLeadMap(array $map, string $mapFile): void {
+    file_put_contents($mapFile, json_encode($map));
+}
 
-$internalCompanyId = DB::table('companies')->where('type', 'internal')->orderBy('created_at')->value('id');
-say("Internal company: {$internalCompanyId}");
+// ── Routing ──────────────────────────────────────────────────────────────
+$step = $_GET['step'] ?? null;
+$page = isset($_GET['page']) ? (int)$_GET['page'] : null;
 
-$ourUsers = DB::table('users')->select('id', 'email', 'name')->get()->keyBy('email');
-say("Sistemdeki kullanıcılar:");
-foreach ($ourUsers as $u) { say("  {$u->id} | {$u->name} | {$u->email}"); }
+if (!$page && $step !== 'notes') {
+    say("Kullanım:");
+    say("  ?page=1        → lead'ler sayfa 1 (250 lead)");
+    say("  ?page=2        → lead'ler sayfa 2");
+    say("  ?page=3        → lead'ler sayfa 3");
+    say("  ?page=4        → lead'ler sayfa 4");
+    say("  ?step=notes    → notları import et");
+    say("");
+    $existing = loadLeadMap($mapFile);
+    say("Şu ana kadar map'lenen lead: " . count($existing));
+    exit;
+}
 
-// Burak: dene info@m2h.ge, sonra bzorer@gmail.com, sonra ilk super_admin/admin
-$burakId = $ourUsers['info@m2h.ge']?->id
+// ── Ortak kurulum ────────────────────────────────────────────────────────
+$ourUsers    = DB::table('users')->select('id', 'email', 'name')->get()->keyBy('email');
+$burakId     = $ourUsers['burak@m2h.ge']?->id
+    ?? $ourUsers['info@m2h.ge']?->id
     ?? $ourUsers['bzorer@gmail.com']?->id
     ?? DB::table('users')->whereIn('role', ['super_admin', 'admin'])->orderBy('created_at')->value('id');
-
-$userMap  = [
+$defaultUser = $burakId;
+$userMap     = [
     14808127 => $burakId,
     15069907 => $ourUsers['can@m2h.ge']?->id ?? null,
 ];
-foreach ($userMap as $kId => $oId) {
-    say("  Kommo user {$kId} → " . ($oId ? $oId : 'BULUNAMADI'));
-}
-$defaultUser = $burakId;
-if (!$defaultUser) { say("HATA: Default user bulunamadı!"); exit(1); }
+
+$internalCompanyId = DB::table('companies')->where('type', 'internal')->orderBy('created_at')->value('id');
 
 // Kommo Tags grubu
 $kommoGroup = DB::table('tag_groups')->where('name', 'Kommo Tags')->first();
 if (!$kommoGroup) {
     $kommoGroupId = (string) Str::uuid();
     DB::table('tag_groups')->insert(['id' => $kommoGroupId, 'name' => 'Kommo Tags']);
-    say("'Kommo Tags' grubu oluşturuldu.");
 } else {
     $kommoGroupId = $kommoGroup->id;
-    say("'Kommo Tags' grubu mevcut.");
 }
 
-$tagCache      = DB::table('tags')->select('id', 'name')->get()->keyBy(fn($t) => mb_strtolower($t->name))->map(fn($t) => $t->id)->toArray();
+$tagCache       = DB::table('tags')->select('id', 'name')->get()->keyBy(fn($t) => mb_strtolower($t->name))->map(fn($t) => $t->id)->toArray();
 $existingPhones = DB::table('leads')->whereNotNull('phone')->pluck('id', 'phone')->toArray();
 
-$stats    = ['created' => 0, 'skipped' => 0, 'notes' => 0, 'tags' => 0, 'errors' => 0];
-$leadMap  = []; // kommo lead ID → our lead UUID
+// ════════════════════════════════════════════════════════
+// ADIM: Lead sayfası
+// ════════════════════════════════════════════════════════
+if ($page) {
+    say("=== SAYFA {$page} ===");
+    say("Başlangıç: " . date('Y-m-d H:i:s'));
+    say("Default user: {$defaultUser}");
+    say("");
 
-say("");
+    $leadMap = loadLeadMap($mapFile);
+    $stats   = ['created' => 0, 'skipped' => 0, 'tags' => 0, 'errors' => 0];
 
-// ── Phase 2: Lead'ler ────────────────────────────────────────────────────
-say("--- Phase 2: Lead'ler ---");
-
-$page = 1;
-do {
-    say("\n[Sayfa {$page}] Yükleniyor...");
+    say("Kommo'dan sayfa {$page} çekiliyor...");
     $resp = kommoGet("{$base}/leads?with=contacts,tags&limit=250&page={$page}", $token);
-    usleep(200000);
 
     if (isset($resp['_error'])) {
         say("HATA: " . $resp['_error']);
-        $stats['errors']++;
-        break;
+        exit(1);
     }
 
-    $kLeads  = $resp['_embedded']['leads'] ?? [];
-    $hasNext = isset($resp['_links']['next']);
+    $kLeads = $resp['_embedded']['leads'] ?? [];
     say(count($kLeads) . " lead alındı.");
 
-    // Batch contact fetch (20'li gruplar)
-    $contactIdToLeadId = [];
+    if (empty($kLeads)) {
+        say("Bu sayfada lead yok, duruluyor.");
+        exit;
+    }
+
+    // Batch contact fetch
+    $contactIdMap = [];
     foreach ($kLeads as $kl) {
         foreach ($kl['_embedded']['contacts'] ?? [] as $c) {
-            if ($c['is_main'] ?? false) { $contactIdToLeadId[$c['id']] = $kl['id']; break; }
+            if ($c['is_main'] ?? false) { $contactIdMap[$c['id']] = true; break; }
         }
-        if (!isset($contactIdToLeadId) || !array_key_exists($kl['id'], array_flip($contactIdToLeadId))) {
+        if (empty($contactIdMap)) {
             $first = $kl['_embedded']['contacts'][0]['id'] ?? null;
-            if ($first) $contactIdToLeadId[$first] = $kl['id'];
+            if ($first) $contactIdMap[$first] = true;
         }
     }
 
+    // Her lead'in main contact ID'sini al
+    $leadToContactId = [];
+    foreach ($kLeads as $kl) {
+        $cId = null;
+        foreach ($kl['_embedded']['contacts'] ?? [] as $c) {
+            if ($c['is_main'] ?? false) { $cId = $c['id']; break; }
+        }
+        if (!$cId) $cId = $kl['_embedded']['contacts'][0]['id'] ?? null;
+        $leadToContactId[$kl['id']] = $cId;
+    }
+
+    $allContactIds  = array_values(array_filter(array_unique($leadToContactId)));
     $contactDetails = [];
-    foreach (array_chunk(array_keys($contactIdToLeadId), 20) as $cChunk) {
+
+    say("Contact batch fetch (" . count($allContactIds) . " contact)...");
+    foreach (array_chunk($allContactIds, 20) as $cChunk) {
         $qs   = implode('&', array_map(fn($id) => "filter[id][]={$id}", $cChunk));
         $cRes = kommoGet("{$base}/contacts?{$qs}&with=custom_fields_values", $token);
-        usleep(150000);
+        usleep(200000);
+        if (isset($cRes['_error'])) { say("Contact fetch HATA: " . $cRes['_error']); continue; }
         foreach ($cRes['_embedded']['contacts'] ?? [] as $c) {
             $phone = $email = null;
             foreach ($c['custom_fields_values'] ?? [] as $cf) {
@@ -176,37 +207,26 @@ do {
         }
     }
 
-    // Import each lead
+    say("Lead'ler işleniyor...");
     foreach ($kLeads as $kl) {
-        $kId = $kl['id'];
+        $kId    = $kl['id'];
+        $cId    = $leadToContactId[$kId] ?? null;
+        $contact = $cId ? ($contactDetails[$cId] ?? []) : [];
 
-        // Find contact
-        $cId      = null;
-        foreach ($kl['_embedded']['contacts'] ?? [] as $c) {
-            if ($c['is_main'] ?? false) { $cId = $c['id']; break; }
-        }
-        if (!$cId) $cId = $kl['_embedded']['contacts'][0]['id'] ?? null;
-
-        $contact   = $cId ? ($contactDetails[$cId] ?? []) : [];
         $fullName  = trim($contact['name'] ?? "Kommo #{$kId}");
         $phone     = isset($contact['phone']) ? preg_replace('/\s+/', '', $contact['phone']) : null;
         $email     = $contact['email'] ?? null;
 
-        // Name split
         $parts     = explode(' ', $fullName, 2);
         $firstName = $parts[0] ?: 'Unknown';
         $lastName  = $parts[1] ?? null;
 
-        // Stage
-        $kPipeline = $kl['pipeline_id'];
-        $kStage    = $kl['status_id'];
-        $mapped    = $stageMap[$kPipeline][$kStage] ?? [$MAIN, 'a2231044-686e-4aa0-ae83-562cc4244266'];
+        $kPipeline  = $kl['pipeline_id'];
+        $kStage     = $kl['status_id'];
+        $mapped     = $stageMap[$kPipeline][$kStage] ?? [$MAIN, 'a2231044-686e-4aa0-ae83-562cc4244266'];
         [$ourPipeline, $ourStage] = $mapped;
 
-        // User
-        $ourUser = $userMap[$kl['responsible_user_id'] ?? 0] ?? $defaultUser;
-
-        // Source
+        $ourUser  = $userMap[$kl['responsible_user_id'] ?? 0] ?? $defaultUser;
         $tagNames = array_column($kl['_embedded']['tags'] ?? [], 'name');
         $source   = in_array('Meta Campaign', $tagNames) ? 'meta_ad' : 'manual';
 
@@ -216,87 +236,129 @@ do {
             $stats['skipped']++;
             continue;
         }
+        // Deduplicate by kommo ID (re-run safety)
+        if (isset($leadMap[$kId])) {
+            $stats['skipped']++;
+            continue;
+        }
 
         $ourLeadId = (string) Str::uuid();
         $createdAt = $kl['created_at'] ? date('Y-m-d H:i:s', $kl['created_at']) : now()->toDateTimeString();
 
-        DB::table('leads')->insert([
-            'id'          => $ourLeadId,
-            'first_name'  => $firstName,
-            'last_name'   => $lastName,
-            'phone'       => $phone,
-            'email'       => $email,
-            'source'      => $source,
-            'pipeline_id' => $ourPipeline,
-            'stage_id'    => $ourStage,
-            'assigned_to' => $ourUser,
-            'company_id'  => $internalCompanyId,
-            'created_at'  => $createdAt,
-            'updated_at'  => $createdAt,
-        ]);
+        try {
+            DB::table('leads')->insert([
+                'id'          => $ourLeadId,
+                'first_name'  => $firstName,
+                'last_name'   => $lastName,
+                'phone'       => $phone,
+                'email'       => $email,
+                'source'      => $source,
+                'pipeline_id' => $ourPipeline,
+                'stage_id'    => $ourStage,
+                'assigned_to' => $ourUser,
+                'company_id'  => $internalCompanyId,
+                'created_at'  => $createdAt,
+                'updated_at'  => $createdAt,
+            ]);
+        } catch (\Throwable $e) {
+            say("INSERT HATA [{$kId}] {$fullName}: " . $e->getMessage());
+            $stats['errors']++;
+            continue;
+        }
 
         if ($phone) $existingPhones[$phone] = $ourLeadId;
         $leadMap[$kId] = $ourLeadId;
         $stats['created']++;
 
-        // Tags
         foreach ($tagNames as $tn) {
             if (!trim($tn)) continue;
-            $tagId = getOrCreateTag($tn, $kommoGroupId, $tagCache);
-            DB::table('lead_tags')->insertOrIgnore(['lead_id' => $ourLeadId, 'tag_id' => $tagId]);
-            $stats['tags']++;
+            try {
+                $tagId = getOrCreateTag($tn, $kommoGroupId, $tagCache);
+                DB::table('lead_tags')->insertOrIgnore(['lead_id' => $ourLeadId, 'tag_id' => $tagId]);
+                $stats['tags']++;
+            } catch (\Throwable $e) {
+                say("TAG HATA [{$tn}]: " . $e->getMessage());
+            }
         }
     }
 
-    $page++;
-} while ($hasNext && $page <= 20);
+    saveLeadMap($leadMap, $mapFile);
 
-say("\nLead: {$stats['created']} oluşturuldu, {$stats['skipped']} atlandı.");
-
-// ── Phase 3: Notlar ──────────────────────────────────────────────────────
-say("\n--- Phase 3: Notlar ---");
-
-$kommoLeadIds = array_keys($leadMap);
-
-foreach (array_chunk($kommoLeadIds, 20) as $chunk) {
-    $qs   = implode('&', array_map(fn($id) => "filter[entity_id][]={$id}", $chunk));
-    $nRes = kommoGet("{$base}/leads/notes?{$qs}&limit=250", $token);
-    usleep(200000);
-
-    if (isset($nRes['_error'])) { $stats['errors']++; continue; }
-
-    foreach ($nRes['_embedded']['notes'] ?? [] as $note) {
-        if ($note['note_type'] !== 'common') continue;
-
-        $text = trim($note['params']['text'] ?? '');
-        if ($text === '') continue;
-
-        $ourLeadId = $leadMap[$note['entity_id']] ?? null;
-        if (!$ourLeadId) continue;
-
-        $noteUser = $userMap[$note['created_by'] ?? 0] ?? $defaultUser;
-        $noteAt   = $note['created_at'] ? date('Y-m-d H:i:s', $note['created_at']) : now()->toDateTimeString();
-
-        DB::table('notes')->insert([
-            'id'         => (string) Str::uuid(),
-            'lead_id'    => $ourLeadId,
-            'created_by' => $noteUser,
-            'content'    => $text,
-            'visibility' => 'internal',
-            'created_at' => $noteAt,
-        ]);
-        $stats['notes']++;
-    }
+    say("");
+    say("=== SAYFA {$page} TAMAMLANDI ===");
+    say("Oluşturuldu : {$stats['created']}");
+    say("Atlandı     : {$stats['skipped']}");
+    say("Tag         : {$stats['tags']}");
+    say("Hata        : {$stats['errors']}");
+    say("Toplam map  : " . count($leadMap));
+    $hasNext = isset($resp['_links']['next']);
+    say($hasNext ? "\nSonraki adım: ?page=" . ($page + 1) : "\nTüm sayfalar bitti! Sonraki: ?step=notes");
+    exit;
 }
 
-say("Not: {$stats['notes']} oluşturuldu.");
+// ════════════════════════════════════════════════════════
+// ADIM: Notlar
+// ════════════════════════════════════════════════════════
+if ($step === 'notes') {
+    say("=== NOTLAR ===");
+    say("Başlangıç: " . date('Y-m-d H:i:s'));
 
-// ── Özet ─────────────────────────────────────────────────────────────────
-say("\n=== ÖZET ===");
-say("Lead oluşturuldu : {$stats['created']}");
-say("Lead atlandı     : {$stats['skipped']} (telefon çakışması)");
-say("Tag işlendi      : {$stats['tags']}");
-say("Not oluşturuldu  : {$stats['notes']}");
-say("Hata             : {$stats['errors']}");
-say("Bitiş            : " . date('Y-m-d H:i:s'));
-say("\nBu dosyayı sil: public/_kommo_import.php");
+    $leadMap = loadLeadMap($mapFile);
+    if (empty($leadMap)) {
+        say("Lead map boş! Önce ?page=1 vb. adımları çalıştır.");
+        exit(1);
+    }
+    say("Lead map: " . count($leadMap) . " kayıt");
+
+    $stats        = ['notes' => 0, 'errors' => 0];
+    $kommoLeadIds = array_keys($leadMap);
+
+    foreach (array_chunk($kommoLeadIds, 20) as $i => $chunk) {
+        say("Chunk " . ($i + 1) . "/" . ceil(count($kommoLeadIds) / 20) . "...");
+        $qs   = implode('&', array_map(fn($id) => "filter[entity_id][]={$id}", $chunk));
+        $nRes = kommoGet("{$base}/leads/notes?{$qs}&limit=250", $token);
+        usleep(200000);
+
+        if (isset($nRes['_error'])) {
+            say("HATA: " . $nRes['_error']);
+            $stats['errors']++;
+            continue;
+        }
+
+        foreach ($nRes['_embedded']['notes'] ?? [] as $note) {
+            if ($note['note_type'] !== 'common') continue;
+            $text = trim($note['params']['text'] ?? '');
+            if ($text === '') continue;
+
+            $ourLeadId = $leadMap[$note['entity_id']] ?? null;
+            if (!$ourLeadId) continue;
+
+            $noteUser = $userMap[$note['created_by'] ?? 0] ?? $defaultUser;
+            $noteAt   = $note['created_at'] ? date('Y-m-d H:i:s', $note['created_at']) : now()->toDateTimeString();
+
+            try {
+                DB::table('notes')->insert([
+                    'id'         => (string) Str::uuid(),
+                    'lead_id'    => $ourLeadId,
+                    'created_by' => $noteUser,
+                    'content'    => $text,
+                    'visibility' => 'internal',
+                    'created_at' => $noteAt,
+                ]);
+                $stats['notes']++;
+            } catch (\Throwable $e) {
+                say("NOT HATA: " . $e->getMessage());
+                $stats['errors']++;
+            }
+        }
+    }
+
+    say("");
+    say("=== NOTLAR TAMAMLANDI ===");
+    say("Not oluşturuldu : {$stats['notes']}");
+    say("Hata            : {$stats['errors']}");
+    say("Bitiş           : " . date('Y-m-d H:i:s'));
+    say("\nArtık dosyayı silebilirsin: public/_kommo_import.php");
+    say("Ve lead map'i sil: storage/app/kommo_leadmap.json");
+    exit;
+}
