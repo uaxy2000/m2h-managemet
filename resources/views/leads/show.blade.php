@@ -786,7 +786,7 @@
                         @php
                             $formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLScugMTauTcWVP6A7C5THzkVW-vhzcir8QfytkcBGO1az9XBOw/viewform'
                                 . '?usp=pp_url'
-                                . '&entry.1910425423=' . urlencode(auth()->user()->email)
+                                . '&entry.1910425423=' . urlencode('info@m2h.ge')
                                 . '&entry.1909848528=' . urlencode($lead->first_name ?? '')
                                 . '&entry.2037197163=' . urlencode($lead->last_name ?? '')
                                 . '&entry.1332109165=' . urlencode($lead->email ?? '')
