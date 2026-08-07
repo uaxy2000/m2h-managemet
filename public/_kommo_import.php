@@ -74,8 +74,7 @@ function getOrCreateTag(string $name, string $groupId, array &$cache): string {
     if ($existing) { $cache[$key] = $existing; return $existing; }
     $id = (string) Str::uuid();
     DB::table('tags')->insert([
-        'id' => $id, 'name' => trim($name), 'color' => '#64748b',
-        'tag_group_id' => $groupId, 'created_at' => now(), 'updated_at' => now(),
+        'id' => $id, 'name' => trim($name), 'color' => '#64748b', 'tag_group_id' => $groupId,
     ]);
     $cache[$key] = $id;
     return $id;
@@ -115,7 +114,7 @@ if (!$defaultUser) { say("HATA: Default user bulunamadı!"); exit(1); }
 $kommoGroup = DB::table('tag_groups')->where('name', 'Kommo Tags')->first();
 if (!$kommoGroup) {
     $kommoGroupId = (string) Str::uuid();
-    DB::table('tag_groups')->insert(['id' => $kommoGroupId, 'name' => 'Kommo Tags', 'created_at' => now(), 'updated_at' => now()]);
+    DB::table('tag_groups')->insert(['id' => $kommoGroupId, 'name' => 'Kommo Tags']);
     say("'Kommo Tags' grubu oluşturuldu.");
 } else {
     $kommoGroupId = $kommoGroup->id;
