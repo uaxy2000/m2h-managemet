@@ -92,15 +92,23 @@ say("--- Phase 1: Kurulum ---");
 $internalCompanyId = DB::table('companies')->where('type', 'internal')->orderBy('created_at')->value('id');
 say("Internal company: {$internalCompanyId}");
 
-$ourUsers = DB::table('users')->select('id', 'email')->get()->keyBy('email');
+$ourUsers = DB::table('users')->select('id', 'email', 'name')->get()->keyBy('email');
+say("Sistemdeki kullanıcılar:");
+foreach ($ourUsers as $u) { say("  {$u->id} | {$u->name} | {$u->email}"); }
+
+// Burak: dene info@m2h.ge, sonra bzorer@gmail.com, sonra ilk super_admin/admin
+$burakId = $ourUsers['info@m2h.ge']?->id
+    ?? $ourUsers['bzorer@gmail.com']?->id
+    ?? DB::table('users')->whereIn('role', ['super_admin', 'admin'])->orderBy('created_at')->value('id');
+
 $userMap  = [
-    14808127 => $ourUsers['info@m2h.ge']?->id ?? null,
-    15069907 => $ourUsers['can@m2h.ge']?->id  ?? null,
+    14808127 => $burakId,
+    15069907 => $ourUsers['can@m2h.ge']?->id ?? null,
 ];
 foreach ($userMap as $kId => $oId) {
     say("  Kommo user {$kId} → " . ($oId ? $oId : 'BULUNAMADI'));
 }
-$defaultUser = $userMap[14808127];
+$defaultUser = $burakId;
 if (!$defaultUser) { say("HATA: Default user bulunamadı!"); exit(1); }
 
 // Kommo Tags grubu
