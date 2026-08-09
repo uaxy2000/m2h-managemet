@@ -97,6 +97,16 @@ $monthDiff    = $lastMonthLeads > 0
                 <div class="w-full bg-gray-100 rounded-full h-1.5">
                     <div class="h-1.5 rounded-full transition-all" style="width: {{ $pct }}%; background-color: {{ $stage->color }}"></div>
                 </div>
+                @if(isset($stageUserRaw[$stage->id]) && $stageUserRaw[$stage->id]->count() > 0)
+                <div class="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5">
+                    @foreach($stageUserRaw[$stage->id]->sortByDesc('cnt') as $row)
+                    <span class="text-xs text-gray-400">
+                        {{ $stageUserNames[$row->assigned_to] ?? '—' }}:
+                        <span class="font-medium text-gray-600">{{ $row->cnt }}</span>
+                    </span>
+                    @endforeach
+                </div>
+                @endif
             </div>
             @endforeach
         </div>

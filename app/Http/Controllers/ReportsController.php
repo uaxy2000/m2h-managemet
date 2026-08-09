@@ -38,6 +38,19 @@ class ReportsController extends Controller
             )
             ->values();
 
+        // Per-stage per-user breakdown
+        $stageUserRaw = DB::table('leads')
+            ->whereIn('stage_id', $stageDistribution->pluck('id'))
+            ->when($pipelineId, fn ($q) => $q->where('pipeline_id', $pipelineId))
+            ->whereNotNull('assigned_to')
+            ->select('stage_id', 'assigned_to', DB::raw('COUNT(*) as cnt'))
+            ->groupBy('stage_id', 'assigned_to')
+            ->get()
+            ->groupBy('stage_id');
+
+        $stageUserNames = User::whereIn('id', $stageUserRaw->flatten()->pluck('assigned_to')->unique())
+            ->pluck('name', 'id');
+
         // Source breakdown
         $baseLeads = Lead::query()->when($pipelineId, fn ($q) => $q->where('pipeline_id', $pipelineId));
 
@@ -93,7 +106,8 @@ class ReportsController extends Controller
 
         return view('reports.index', compact(
             'pipelines', 'pipelineId',
-            'stageDistribution', 'sourceBreakdown', 'assigneeBreakdown',
+            'stageDistribution', 'stageUserRaw', 'stageUserNames',
+            'sourceBreakdown', 'assigneeBreakdown',
             'trendData', 'totalLeads', 'thisMonthLeads', 'lastMonthLeads'
         ));
     }
