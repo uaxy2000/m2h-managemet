@@ -48,28 +48,44 @@ echo "=== KOMMO WA PROBE ===\n";
 echo "Domain : {$domain}\n";
 echo "Base   : {$base}\n\n";
 
-// 1. Talks endpoint
-echo "--- GET /api/v4/talks (limit=3) ---\n";
-$r = kommo($base, $token, '/talks', ['limit' => 3]);
+// 1. Talks - toplam sayı ve tüm origin'ler
+echo "--- GET /api/v4/talks (limit=50, sayfa 1) ---\n";
+$r = kommo($base, $token, '/talks', ['limit' => 50, 'page' => 1]);
 echo "HTTP {$r['code']}\n";
-echo json_encode($r['body'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n\n";
+$allTalks = $r['body']['_embedded']['talks'] ?? [];
+$total    = $r['body']['_total_items'] ?? 0;
+echo "Toplam talk: {$total}\n";
 
-// 2. Tek bir talk varsa mesajlarını dene
-$talks = $r['body']['_embedded']['talks'] ?? $r['body']['_embedded']['chats'] ?? [];
-if (!empty($talks)) {
-    $firstId = $talks[0]['id'] ?? null;
-    if ($firstId) {
-        echo "--- GET /api/v4/talks/{$firstId}/messages (limit=5) ---\n";
-        $r2 = kommo($base, $token, "/talks/{$firstId}/messages", ['limit' => 5]);
+// Origin dağılımı
+$origins = array_count_values(array_column($allTalks, 'origin'));
+echo "Origin dağılımı: " . json_encode($origins) . "\n\n";
+
+// 2. WABA talk'larını listele
+$wabaTalks = array_filter($allTalks, fn($t) => ($t['origin'] ?? '') === 'waba');
+echo "WABA talk sayısı: " . count($wabaTalks) . "\n";
+foreach ($wabaTalks as $t) {
+    echo "  talk_id={$t['talk_id']} contact_id={$t['contact_id']} kommo_lead={$t['entity_id']} chat_id={$t['chat_id']}\n";
+}
+echo "\n";
+
+// 3. İlk WABA talk'ın mesajlarını çek (talk_id kullan!)
+$firstWaba = reset($wabaTalks);
+if ($firstWaba) {
+    $tid = $firstWaba['talk_id'];
+    echo "--- GET /api/v4/talks/{$tid}/messages (limit=10) ---\n";
+    $r2 = kommo($base, $token, "/talks/{$tid}/messages", ['limit' => 10]);
+    echo "HTTP {$r2['code']}\n";
+    echo json_encode($r2['body'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n\n";
+} else {
+    // WABA yok, ilk talk'ın mesajlarına bak
+    $first = reset($allTalks);
+    if ($first) {
+        $tid = $first['talk_id'];
+        echo "--- GET /api/v4/talks/{$tid}/messages (limit=5, WABA degil) ---\n";
+        $r2 = kommo($base, $token, "/talks/{$tid}/messages", ['limit' => 5]);
         echo "HTTP {$r2['code']}\n";
         echo json_encode($r2['body'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n\n";
     }
 }
-
-// 3. Chats endpoint (alternatif)
-echo "--- GET /api/v4/chats (limit=3) ---\n";
-$r3 = kommo($base, $token, '/chats', ['limit' => 3]);
-echo "HTTP {$r3['code']}\n";
-echo json_encode($r3['body'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n\n";
 
 echo "=== BITTI ===\n";
