@@ -44,6 +44,8 @@ function normalizePhone(string $phone): array {
     ]);
 }
 
+$debug = isset($_GET['debug']);
+
 say("=== META CUSTOM FIELDS IMPORT ===");
 say("Başlangıç: " . date('Y-m-d H:i:s'));
 say("");
@@ -101,6 +103,21 @@ foreach ($formMappings as $form) {
         $metaLeads = $resp['data'] ?? [];
         $stats['leads_fetched'] += count($metaLeads);
         say("  Sayfa {$pageNum}: " . count($metaLeads) . " lead");
+
+        if ($debug && $pageNum === 1) {
+            say("\n  [DEBUG] İlk 3 Meta lead field_data:");
+            foreach (array_slice($metaLeads, 0, 3) as $i => $ml) {
+                say("  Lead " . ($i + 1) . ":");
+                foreach ($ml['field_data'] ?? [] as $item) {
+                    say("    [{$item['name']}] = " . ($item['values'][0] ?? '(boş)'));
+                }
+            }
+            say("\n  [DEBUG] CRM'deki ilk 5 telefon:");
+            foreach (array_slice(array_keys($leadsByPhone), 0, 5) as $p) {
+                say("    " . $p);
+            }
+            say("");
+        }
 
         foreach ($metaLeads as $ml) {
             // Alan değerlerini parse et
