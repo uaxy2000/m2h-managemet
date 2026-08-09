@@ -117,9 +117,12 @@ class WhatsAppWebhookController extends Controller
 
     private function handleStatusUpdate(string $waId, string $newStatus, int $timestamp): void
     {
+        Log::info('WhatsApp status update received', ['wa_id' => $waId, 'status' => $newStatus]);
+
         $activity = LeadActivity::where('meta->wa_message_id', $waId)->first();
 
         if (!$activity) {
+            Log::warning('WhatsApp status: no activity found for wa_id', ['wa_id' => $waId]);
             return;
         }
 
