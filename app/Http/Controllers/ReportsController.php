@@ -102,10 +102,10 @@ class ReportsController extends Controller
         $REGISTERED_STAGE = 'a2663266-e3b6-42cd-b998-a479287c5256';
 
         $users = User::with('company')
+            ->whereIn('role', ['super_admin', 'admin', 'member'])
             ->when(!$isAdmin, fn ($q) => $q->where('id', $authUser->id))
             ->orderBy('name')
-            ->get()
-            ->filter(fn ($u) => $u->isInternal());
+            ->get();
 
         $userIds = $users->pluck('id');
 
