@@ -188,7 +188,7 @@ class ReportsController extends Controller
                     ->groupBy(fn ($r) => $r['stage']->pipeline_id)
                     ->map(fn ($stages) => [
                         'pipeline' => $stages->first()['stage']->pipeline,
-                        'stages'   => $stages->sortByDesc('count')->values(),
+                        'stages'   => $stages->sortBy(fn ($r) => $r['stage']->sort_order ?? 999)->values(),
                     ])
                     ->sortBy(fn ($g) => $g['pipeline']?->sort_order ?? 999)
                     ->values(),
