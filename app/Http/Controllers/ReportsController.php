@@ -102,7 +102,7 @@ class ReportsController extends Controller
         $REGISTERED_STAGE = 'a2663266-e3b6-42cd-b998-a479287c5256';
 
         $users = User::with('company')
-            ->whereIn('role', ['super_admin', 'admin', 'member'])
+            ->whereHas('company', fn ($q) => $q->where('type', 'internal'))
             ->when(!$isAdmin, fn ($q) => $q->where('id', $authUser->id))
             ->orderBy('name')
             ->get();
