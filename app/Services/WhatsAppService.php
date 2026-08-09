@@ -20,7 +20,7 @@ class WhatsAppService
         $this->token         = config('services.whatsapp.token');
     }
 
-    public function sendText(Lead $lead, string $message, int $sentBy): bool
+    public function sendText(Lead $lead, string $message, string|null $sentBy): bool
     {
         $to = preg_replace('/\D/', '', $lead->phone);
 
@@ -50,7 +50,7 @@ class WhatsAppService
         return true;
     }
 
-    public function sendTemplate(Lead $lead, WaTemplate $template, int|null $sentBy): bool
+    public function sendTemplate(Lead $lead, WaTemplate $template, string|null $sentBy): bool
     {
         $to = preg_replace('/\D/', '', $lead->phone);
         if (!$to) {
