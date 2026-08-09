@@ -66,7 +66,7 @@ class Lead extends Model
 
     public function statusHistory(): HasMany
     {
-        return $this->hasMany(LeadStatusHistory::class)->orderByDesc('changed_at');
+        return $this->hasMany(LeadStatusHistory::class)->orderBy('changed_at');
     }
 
     public function tags(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
