@@ -65,7 +65,13 @@ class WhatsAppService
         $paramFields  = $template->parameter_fields ?? [];
 
         // Header (image only)
-        if ($template->headerType() === 'IMAGE' && $template->header_image_url) {
+        if ($template->headerType() === 'IMAGE') {
+            if (!$template->header_image_url) {
+                Log::error('WhatsApp sendTemplate: IMAGE header missing URL, set header_image_url in WA Templates settings', [
+                    'template' => $template->name,
+                ]);
+                return false;
+            }
             $components[] = [
                 'type'       => 'header',
                 'parameters' => [['type' => 'image', 'image' => ['link' => $template->header_image_url]]],

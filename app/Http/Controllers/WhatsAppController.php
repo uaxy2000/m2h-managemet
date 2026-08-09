@@ -39,6 +39,6 @@ class WhatsAppController extends Controller
 
         return $ok
             ? back()->with('wa_success', "'{$templateLabel}' gönderildi.")->withFragment('timeline')
-            : back()->with('wa_error', 'Şablon gönderilemedi. Token süresi dolmuş olabilir.');
+            : back()->with('wa_error', "'{$templateLabel}' gönderilemedi. Log'u kontrol edin (eksik header görseli veya API hatası).");
     }
 }
