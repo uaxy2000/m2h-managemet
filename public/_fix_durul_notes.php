@@ -37,10 +37,9 @@ $leadIds = DB::table('leads')
 
 echo "Durul'a assign edilmis lead sayisi: " . $leadIds->count() . "\n";
 
-$noteCount = DB::table('lead_activities')
+$noteCount = DB::table('notes')
     ->whereIn('lead_id', $leadIds)
-    ->where('type', 'note')
-    ->where('user_id', $burak->id)
+    ->where('created_by', $burak->id)
     ->count();
 
 echo "Aktarilacak not sayisi (Burak -> Durul): {$noteCount}\n\n";
@@ -50,11 +49,10 @@ if (($_GET['confirm'] ?? '') !== 'yes') {
     exit(0);
 }
 
-$updated = DB::table('lead_activities')
+$updated = DB::table('notes')
     ->whereIn('lead_id', $leadIds)
-    ->where('type', 'note')
-    ->where('user_id', $burak->id)
-    ->update(['user_id' => $durul->id]);
+    ->where('created_by', $burak->id)
+    ->update(['created_by' => $durul->id]);
 
 echo "Aktarilan not: {$updated}\n";
 echo "\nTamamlandi. Bu dosyayi sil: public/_fix_durul_notes.php\n";
