@@ -883,7 +883,29 @@
                             @foreach($entry['messages'] as $msg)
                             <div class="{{ !$loop->last ? 'pb-2 border-b border-gray-100' : '' }}">
                                 <p class="text-sm text-gray-800 leading-relaxed">{{ $msg->description }}</p>
-                                <p class="text-xs text-gray-400 mt-0.5 {{ $isOutgoing ? 'text-right' : '' }}">{{ $msg->created_at->diffForHumans() }}</p>
+                                <div class="flex items-center gap-1 mt-0.5 {{ $isOutgoing ? 'justify-end' : '' }}">
+                                    <span class="text-xs text-gray-400">{{ $msg->created_at->diffForHumans() }}</span>
+                                    @if($isOutgoing)
+                                    @php $waStatus = $msg->meta['status'] ?? null; @endphp
+                                    @if($waStatus === 'read')
+                                    <svg class="w-3.5 h-3 flex-shrink-0" viewBox="0 0 16 11" fill="none">
+                                        <path d="M1 5.5L5 9.5L15 1" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M5 5.5L9 9.5" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M9 1L13 5" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                    @elseif($waStatus === 'delivered')
+                                    <svg class="w-3.5 h-3 flex-shrink-0" viewBox="0 0 16 11" fill="none">
+                                        <path d="M1 5.5L5 9.5L15 1" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M5 5.5L9 9.5" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M9 1L13 5" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                    @elseif($waStatus === 'sent')
+                                    <svg class="w-2.5 h-3 flex-shrink-0" viewBox="0 0 10 11" fill="none">
+                                        <path d="M1 5.5L4 8.5L9 1" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                    @endif
+                                    @endif
+                                </div>
                             </div>
                             @endforeach
                         </div>

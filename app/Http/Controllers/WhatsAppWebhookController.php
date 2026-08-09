@@ -58,6 +58,14 @@ class WhatsAppWebhookController extends Controller
                         sentAt:  $message['timestamp'] ?? now()->timestamp,
                     );
                 }
+
+                foreach ($value['statuses'] ?? [] as $status) {
+                    $this->handleStatusUpdate(
+                        waId:      $status['id'],
+                        newStatus: $status['status'],
+                        timestamp: (int) ($status['timestamp'] ?? now()->timestamp),
+                    );
+                }
             }
         }
 
@@ -105,6 +113,31 @@ class WhatsAppWebhookController extends Controller
         ]);
 
         Log::info('WhatsApp webhook: message logged', ['lead_id' => $lead->id, 'from' => $from]);
+    }
+
+    private function handleStatusUpdate(string $waId, string $newStatus, int $timestamp): void
+    {
+        $activity = LeadActivity::where('meta->wa_message_id', $waId)->first();
+
+        if (!$activity) {
+            return;
+        }
+
+        // Only upgrade: sent → delivered → read
+        $order   = ['sent' => 1, 'delivered' => 2, 'read' => 3];
+        $current = $activity->meta['status'] ?? null;
+
+        if ($current && ($order[$current] ?? 0) >= ($order[$newStatus] ?? 0)) {
+            return;
+        }
+
+        $meta              = $activity->meta ?? [];
+        $meta['status']    = $newStatus;
+        $meta['status_at'] = $timestamp;
+
+        $activity->update(['meta' => $meta]);
+
+        Log::info('WhatsApp status updated', ['wa_id' => $waId, 'status' => $newStatus]);
     }
 
     private function normalizePhone(string $phone): string
