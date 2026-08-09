@@ -1,8 +1,10 @@
 <?php
 /**
  * Sunday Step 3: Meta form cevaplarından custom field doldurma
- * Meta Graph API'den tüm form lead'lerini çeker, telefon ile eşleştirip
+ * Meta Graph API'den tüm form lead'lerini çeker, Meta lead ID ile eşleştirip
  * custom field değerlerini lead_custom_values tablosuna yazar.
+ *
+ * Önce _sunday_4_meta_lead_id.php çalıştırılmalıdır.
  *
  * URL: https://management.m2h.ge/_sunday_3_meta_cf.php
  */
@@ -34,16 +36,6 @@ function normalizeKey(string $key): string {
     return str_replace(' ', '_', mb_strtolower(str_replace(['İ', 'I'], 'i', trim($key)), 'UTF-8'));
 }
 
-function normalizePhone(string $phone): array {
-    $digits = preg_replace('/\D/', '', $phone);
-    return array_unique([
-        $phone,
-        '+' . $digits,
-        $digits,
-        $digits[0] === '0' ? '+9' . $digits : null, // Turkish 0xxx → +90xxx (heuristic)
-    ]);
-}
-
 $debug = isset($_GET['debug']);
 
 say("=== META CUSTOM FIELDS IMPORT ===");
@@ -66,9 +58,9 @@ $fieldOptions = DB::table('custom_field_options')
     ->get()
     ->groupBy('custom_field_id');
 
-// ── Sistemdeki leadleri telefona göre index'le ────────────────────────────
-$leadsByPhone = DB::table('leads')->whereNotNull('phone')->pluck('id', 'phone')->toArray();
-say("Telefonu olan lead sayısı: " . count($leadsByPhone));
+// ── Sistemdeki leadleri Meta lead ID'ye göre index'le ────────────────────
+$leadsByMetaId = DB::table('leads')->whereNotNull('meta_lead_id')->pluck('id', 'meta_lead_id')->toArray();
+say("Meta lead ID'si olan lead sayısı: " . count($leadsByMetaId));
 
 // ── Meta form mapping'leri (page token dahil) ─────────────────────────────
 $formMappings = DB::table('meta_form_mappings')
@@ -105,16 +97,18 @@ foreach ($formMappings as $form) {
         say("  Sayfa {$pageNum}: " . count($metaLeads) . " lead");
 
         if ($debug && $pageNum === 1) {
-            say("\n  [DEBUG] İlk 3 Meta lead field_data:");
+            say("\n  [DEBUG] İlk 3 Meta lead:");
             foreach (array_slice($metaLeads, 0, 3) as $i => $ml) {
-                say("  Lead " . ($i + 1) . ":");
+                say("  Lead " . ($i + 1) . " (Meta ID: {$ml['id']}):");
                 foreach ($ml['field_data'] ?? [] as $item) {
                     say("    [{$item['name']}] = " . ($item['values'][0] ?? '(boş)'));
                 }
+                $matched = isset($leadsByMetaId[$ml['id']]) ? 'EŞLEŞTİ: ' . $leadsByMetaId[$ml['id']] : 'eşleşmedi';
+                say("    → CRM: {$matched}");
             }
-            say("\n  [DEBUG] CRM'deki ilk 5 telefon:");
-            foreach (array_slice(array_keys($leadsByPhone), 0, 5) as $p) {
-                say("    " . $p);
+            say("\n  [DEBUG] CRM'deki ilk 5 Meta lead ID:");
+            foreach (array_slice(array_keys($leadsByMetaId), 0, 5) as $mid) {
+                say("    " . $mid);
             }
             say("");
         }
@@ -126,17 +120,9 @@ foreach ($formMappings as $form) {
                 $fields[$item['name']] = $item['values'][0] ?? null;
             }
 
-            // Telefonu bul ve lead'i eşleştir
-            $rawPhone = $fields['phone_number'] ?? $fields['telefon'] ?? $fields['phone'] ?? null;
-            if (!$rawPhone) { $stats['unmatched']++; continue; }
-
-            $ourLeadId = null;
-            foreach (normalizePhone($rawPhone) as $variant) {
-                if ($variant && isset($leadsByPhone[$variant])) {
-                    $ourLeadId = $leadsByPhone[$variant];
-                    break;
-                }
-            }
+            // Meta lead ID ile eşleştir
+            $metaLeadId = (string) $ml['id'];
+            $ourLeadId  = $leadsByMetaId[$metaLeadId] ?? null;
 
             if (!$ourLeadId) { $stats['unmatched']++; continue; }
             $stats['leads_matched']++;
@@ -212,7 +198,7 @@ foreach ($formMappings as $form) {
 say("=== TAMAMLANDI ===");
 say("Meta lead çekildi  : {$stats['leads_fetched']}");
 say("CRM'de eşleşti     : {$stats['leads_matched']}");
-say("Eşleşmedi (telefon): {$stats['unmatched']}");
+say("Eşleşmedi (meta_id) : {$stats['unmatched']}");
 say("Custom field yazıldı: {$stats['fields_set']}");
 say("Hata               : {$stats['errors']}");
 say("Bitiş              : " . date('Y-m-d H:i:s'));
