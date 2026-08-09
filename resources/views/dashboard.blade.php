@@ -160,7 +160,7 @@ $phases = [
             ['label' => 'Meta Lead Ads — webhook receiver (HMAC signature validation)',   'complete' => true],
             ['label' => 'Meta Lead Ads — auto lead import (incl. Turkish field names)',   'complete' => true],
             ['label' => 'Meta Lead Ads — custom form question capture & field mapping',   'complete' => true],
-            ['label' => 'Meta Lead Ads — bulk import of existing leads via Graph API',    'complete' => false],
+            ['label' => 'Meta Lead Ads — bulk import of existing leads via Graph API',    'complete' => true],
             ['label' => 'WhatsApp — send & receive messages per lead',                    'complete' => true],
             ['label' => 'Google Form pre-fill from lead note (partner referral form)',    'complete' => true],
             ['label' => 'Kommo CRM → M2H migration (leads, tags, notes)',                'complete' => true],
