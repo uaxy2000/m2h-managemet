@@ -177,8 +177,8 @@ $periodLabels = [
                     @php $upct = $stage->leads_count > 0 ? round($row->cnt / $stage->leads_count * 100) : 0; @endphp
                     <div class="flex items-center gap-2">
                         <span class="text-xs text-gray-500 w-20 truncate flex-shrink-0">{{ $stageUserNames[$row->assigned_to] ?? '—' }}</span>
-                        <div class="flex-1 bg-gray-200 rounded-full h-2 min-w-0">
-                            <div class="h-2 rounded-full bg-indigo-400 transition-all" style="width: {{ max($upct, $row->cnt > 0 ? 4 : 0) }}%"></div>
+                        <div class="flex-1 rounded-full h-2 min-w-0" style="background-color: #e2e8f0">
+                            <div class="h-2 rounded-full transition-all" style="width: {{ max($upct, $row->cnt > 0 ? 4 : 0) }}%; background-color: #818cf8"></div>
                         </div>
                         <span class="text-xs tabular-nums text-gray-600 w-6 text-right flex-shrink-0">{{ $row->cnt }}</span>
                     </div>
