@@ -79,21 +79,37 @@ $leadsToUpdate = DB::table('leads')
     ->select('id', 'assigned_to')
     ->get();
 
+// Eski kullanıcı adlarını önceden çek (N+1 sorgusu önlemek için)
+$oldUserIds = $leadsToUpdate->pluck('assigned_to')->filter()->unique()->values();
+$oldUsers   = DB::table('users')->whereIn('id', $oldUserIds)->pluck('name', 'id');
+
+$activities = [];
 foreach ($leadsToUpdate as $lead) {
     DB::table('leads')
         ->where('id', $lead->id)
         ->update(['assigned_to' => $durul->id, 'updated_at' => $now]);
 
-    DB::table('lead_activities')->insert([
-        'id'         => (string) Str::uuid(),
-        'lead_id'    => $lead->id,
-        'causer_id'  => $durul->id,
-        'type'       => 'assignment_changed',
-        'payload'    => json_encode(['from' => $lead->assigned_to, 'to' => $durul->id]),
-        'created_at' => $now,
-    ]);
+    $oldName = $oldUsers[$lead->assigned_to] ?? null;
+    $activities[] = [
+        'id'          => (string) Str::uuid(),
+        'lead_id'     => $lead->id,
+        'user_id'     => $durul->id,
+        'type'        => 'assigned',
+        'description' => 'Assigned to ' . $durul->name . ($oldName ? ' (was: ' . $oldName . ')' : ''),
+        'created_at'  => $now,
+    ];
 
     $updated++;
+
+    // Her 50 lead'de bir aktivite kayıtlarını toplu yaz
+    if (count($activities) >= 50) {
+        DB::table('lead_activities')->insert($activities);
+        $activities = [];
+    }
+}
+
+if (!empty($activities)) {
+    DB::table('lead_activities')->insert($activities);
 }
 
 echo "=== TAMAMLANDI ===\n";
