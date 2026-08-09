@@ -20,9 +20,43 @@ class ReportsController extends Controller
         $pipelineId = $request->get('pipeline');
         $pipelines  = Pipeline::where('is_active', true)->orderBy('sort_order')->get();
 
-        // Stage distribution
-        $stagesQuery = Stage::withCount(['leads' => function ($q) use ($pipelineId) {
+        // Date range
+        $period   = $request->get('period', 'all_time');
+        $dateFrom = null;
+        $dateTo   = null;
+
+        switch ($period) {
+            case 'last_7_days':
+                $dateFrom = now()->subDays(7)->startOfDay();
+                $dateTo   = now()->endOfDay();
+                break;
+            case 'last_30_days':
+                $dateFrom = now()->subDays(30)->startOfDay();
+                $dateTo   = now()->endOfDay();
+                break;
+            case 'last_3_months':
+                $dateFrom = now()->subMonths(3)->startOfDay();
+                $dateTo   = now()->endOfDay();
+                break;
+            case 'last_6_months':
+                $dateFrom = now()->subMonths(6)->startOfDay();
+                $dateTo   = now()->endOfDay();
+                break;
+            case 'this_year':
+                $dateFrom = now()->startOfYear()->startOfDay();
+                $dateTo   = now()->endOfDay();
+                break;
+            case 'custom':
+                $dateFrom = $request->get('date_from') ? Carbon::parse($request->get('date_from'))->startOfDay() : null;
+                $dateTo   = $request->get('date_to')   ? Carbon::parse($request->get('date_to'))->endOfDay()   : null;
+                break;
+        }
+
+        // Stage distribution (with date filter)
+        $stagesQuery = Stage::withCount(['leads' => function ($q) use ($pipelineId, $dateFrom, $dateTo) {
             if ($pipelineId) $q->where('pipeline_id', $pipelineId);
+            if ($dateFrom)   $q->where('created_at', '>=', $dateFrom);
+            if ($dateTo)     $q->where('created_at', '<=', $dateTo);
         }])->with('pipeline');
 
         if ($pipelineId) {
@@ -38,10 +72,12 @@ class ReportsController extends Controller
             )
             ->values();
 
-        // Per-stage per-user breakdown
+        // Per-stage per-user breakdown (with date filter)
         $stageUserRaw = DB::table('leads')
             ->whereIn('stage_id', $stageDistribution->pluck('id'))
             ->when($pipelineId, fn ($q) => $q->where('pipeline_id', $pipelineId))
+            ->when($dateFrom, fn ($q) => $q->where('created_at', '>=', $dateFrom))
+            ->when($dateTo,   fn ($q) => $q->where('created_at', '<=', $dateTo))
             ->whereNotNull('assigned_to')
             ->select('stage_id', 'assigned_to', DB::raw('COUNT(*) as cnt'))
             ->groupBy('stage_id', 'assigned_to')
@@ -51,8 +87,11 @@ class ReportsController extends Controller
         $stageUserNames = User::whereIn('id', $stageUserRaw->flatten()->pluck('assigned_to')->unique())
             ->pluck('name', 'id');
 
-        // Source breakdown
-        $baseLeads = Lead::query()->when($pipelineId, fn ($q) => $q->where('pipeline_id', $pipelineId));
+        // Base query with date filter — used for source, assignee, total
+        $baseLeads = Lead::query()
+            ->when($pipelineId, fn ($q) => $q->where('pipeline_id', $pipelineId))
+            ->when($dateFrom, fn ($q) => $q->where('created_at', '>=', $dateFrom))
+            ->when($dateTo,   fn ($q) => $q->where('created_at', '<=', $dateTo));
 
         $sourceBreakdown = [
             ['label' => 'Meta Ad', 'count' => (clone $baseLeads)->where(fn ($q) => $q->where('source', 'meta_ad')->orWhereNotNull('meta_lead_id'))->count(), 'color' => '#6366f1'],
@@ -61,11 +100,13 @@ class ReportsController extends Controller
             ['label' => 'Manual',  'count' => (clone $baseLeads)->whereNull('meta_lead_id')->where('source', '!=', 'meta_ad')->where('source', '!=', 'whatsapp')->whereNull('agent_id')->count(), 'color' => '#64748b'],
         ];
 
-        // Assignee breakdown
+        // Assignee breakdown (with date filter)
         $assigneeCounts = DB::table('leads')
             ->select('assigned_to', DB::raw('COUNT(*) as leads_count'))
             ->whereNotNull('assigned_to')
             ->when($pipelineId, fn ($q) => $q->where('pipeline_id', $pipelineId))
+            ->when($dateFrom, fn ($q) => $q->where('created_at', '>=', $dateFrom))
+            ->when($dateTo,   fn ($q) => $q->where('created_at', '<=', $dateTo))
             ->groupBy('assigned_to')
             ->orderByDesc('leads_count')
             ->pluck('leads_count', 'assigned_to');
@@ -76,7 +117,7 @@ class ReportsController extends Controller
             ->sortByDesc('count')
             ->values();
 
-        // Monthly trend (last 6 months)
+        // Monthly trend (last 6 months — always calendar, not date-filtered)
         $monthlyTrend = Lead::query()
             ->when($pipelineId, fn ($q) => $q->where('pipeline_id', $pipelineId))
             ->where('created_at', '>=', now()->subMonths(5)->startOfMonth())
@@ -89,7 +130,6 @@ class ReportsController extends Controller
             ->get()
             ->keyBy('month');
 
-        // Fill in any missing months
         $trendData = collect();
         for ($i = 5; $i >= 0; $i--) {
             $key = now()->subMonths($i)->format('Y-m');
@@ -99,13 +139,14 @@ class ReportsController extends Controller
             ]);
         }
 
-        // Summary totals
-        $totalLeads    = (clone $baseLeads)->count();
-        $thisMonthLeads = (clone $baseLeads)->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count();
-        $lastMonthLeads = (clone $baseLeads)->whereMonth('created_at', now()->subMonth()->month)->whereYear('created_at', now()->subMonth()->year)->count();
+        // Summary totals — this/last month always use calendar months (pipeline-only filter)
+        $calendarBase   = Lead::query()->when($pipelineId, fn ($q) => $q->where('pipeline_id', $pipelineId));
+        $totalLeads     = (clone $baseLeads)->count();
+        $thisMonthLeads = (clone $calendarBase)->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count();
+        $lastMonthLeads = (clone $calendarBase)->whereMonth('created_at', now()->subMonth()->month)->whereYear('created_at', now()->subMonth()->year)->count();
 
         return view('reports.index', compact(
-            'pipelines', 'pipelineId',
+            'pipelines', 'pipelineId', 'period', 'dateFrom', 'dateTo',
             'stageDistribution', 'stageUserRaw', 'stageUserNames',
             'sourceBreakdown', 'assigneeBreakdown',
             'trendData', 'totalLeads', 'thisMonthLeads', 'lastMonthLeads'
