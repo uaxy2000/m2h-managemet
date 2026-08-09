@@ -23,7 +23,7 @@ $query = DB::table('leads')
 
 $count = $query->count();
 
-if ($_GET['confirm'] ?? '' !== 'yes') {
+if (($_GET['confirm'] ?? '') !== 'yes') {
     echo "=== CLEANUP PREVIEW ===\n\n";
     echo "Silinecek lead sayısı : {$count}\n";
     echo "(meta_lead_id IS NULL AND source != 'whatsapp')\n\n";
