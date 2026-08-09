@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Ödemeler')
-@section('heading', 'Ödemeler')
+@section('title', 'Payments')
+@section('heading', 'Payments')
 
 @section('content')
 
@@ -17,33 +17,33 @@
 </div>
 @endif
 
-<div x-data="{ open: false, userId: '{{ old('user_id') }}' }">
+<div x-data="{ open: false }">
 
-{{-- ── Özet Tablosu ─────────────────────────────────────────────────────── --}}
+{{-- ── User Summary ──────────────────────────────────────────────────────── --}}
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
     <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
-        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Kullanıcı Özeti</h3>
+        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">User Summary</h3>
         <button @click="open = true"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium transition-colors">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
             </svg>
-            Ödeme Ekle
+            Add Payment
         </button>
     </div>
     @if($userStats->isEmpty())
-    <div class="px-5 py-8 text-center text-sm text-gray-400">Henüz kayıtlı lead yok.</div>
+    <div class="px-5 py-8 text-center text-sm text-gray-400">No registered leads yet.</div>
     @else
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead>
                 <tr class="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wide">
-                    <th class="text-left px-5 py-3 font-medium">Kullanıcı</th>
-                    <th class="text-right px-4 py-3 font-medium">Toplam Register</th>
-                    <th class="text-right px-4 py-3 font-medium">Ödendi</th>
-                    <th class="text-right px-4 py-3 font-medium">Ödenmedi</th>
-                    <th class="text-right px-4 py-3 font-medium">Son Birim Fiyat</th>
-                    <th class="text-right px-5 py-3 font-medium">Tahmini Alacak</th>
+                    <th class="text-left px-5 py-3 font-medium">User</th>
+                    <th class="text-right px-4 py-3 font-medium">Total Registered</th>
+                    <th class="text-right px-4 py-3 font-medium">Paid</th>
+                    <th class="text-right px-4 py-3 font-medium">Unpaid</th>
+                    <th class="text-right px-4 py-3 font-medium">Last Unit Price</th>
+                    <th class="text-right px-5 py-3 font-medium">Est. Pending</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
@@ -97,25 +97,25 @@
     @endif
 </div>
 
-{{-- ── Ödeme Geçmişi ─────────────────────────────────────────────────────── --}}
+{{-- ── Payment History ───────────────────────────────────────────────────── --}}
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
     <div class="px-5 py-3.5 border-b border-gray-100">
-        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Ödeme Geçmişi</h3>
+        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Payment History</h3>
     </div>
     @if($payments->isEmpty())
-    <div class="px-5 py-10 text-center text-sm text-gray-400">Henüz ödeme kaydı yok.</div>
+    <div class="px-5 py-10 text-center text-sm text-gray-400">No payments recorded yet.</div>
     @else
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead>
                 <tr class="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wide">
-                    <th class="text-left px-5 py-3 font-medium">Tarih</th>
-                    <th class="text-left px-4 py-3 font-medium">Kullanıcı</th>
-                    <th class="text-right px-4 py-3 font-medium">Tutar</th>
-                    <th class="text-right px-4 py-3 font-medium">Lead</th>
-                    <th class="text-right px-4 py-3 font-medium">Birim Fiyat</th>
-                    <th class="text-left px-4 py-3 font-medium">Not</th>
-                    <th class="text-left px-4 py-3 font-medium">Kaydeden</th>
+                    <th class="text-left px-5 py-3 font-medium">Date</th>
+                    <th class="text-left px-4 py-3 font-medium">User</th>
+                    <th class="text-right px-4 py-3 font-medium">Amount</th>
+                    <th class="text-right px-4 py-3 font-medium">Leads</th>
+                    <th class="text-right px-4 py-3 font-medium">Unit Price</th>
+                    <th class="text-left px-4 py-3 font-medium">Note</th>
+                    <th class="text-left px-4 py-3 font-medium">Recorded By</th>
                     <th class="px-5 py-3"></th>
                 </tr>
             </thead>
@@ -137,10 +137,10 @@
                     <td class="px-4 py-3 text-gray-400 text-xs">{{ $p->createdBy->name }}</td>
                     <td class="px-5 py-3 text-right">
                         <form method="POST" action="{{ route('payments.destroy', $p) }}"
-                              onsubmit="return confirm('Bu ödeme kaydını silmek istediğinizden emin misiniz?\nBağlı leadler tekrar ödenmemiş sayılacak.')">
+                              onsubmit="return confirm('Delete this payment record?\nLinked leads will be marked as unpaid again.')">
                             @csrf @method('DELETE')
                             <button type="submit"
-                                    class="text-xs text-gray-300 hover:text-red-500 transition-colors">Sil</button>
+                                    class="text-xs text-gray-300 hover:text-red-500 transition-colors">Delete</button>
                         </form>
                     </td>
                 </tr>
@@ -151,7 +151,7 @@
     @endif
 </div>
 
-{{-- ── Ödeme Ekle Modal ──────────────────────────────────────────────────── --}}
+{{-- ── Add Payment Modal ─────────────────────────────────────────────────── --}}
 <div x-show="open" x-cloak
      class="fixed inset-0 z-50 flex items-center justify-center p-4"
      @keydown.escape.window="open = false">
@@ -159,7 +159,7 @@
     <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6" @click.stop>
 
         <div class="flex items-center justify-between mb-5">
-            <h2 class="text-base font-semibold text-gray-800">Ödeme Ekle</h2>
+            <h2 class="text-base font-semibold text-gray-800">Add Payment</h2>
             <button @click="open = false" class="text-gray-400 hover:text-gray-600">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
@@ -170,12 +170,11 @@
         <form method="POST" action="{{ route('payments.store') }}" class="space-y-4">
             @csrf
 
-            {{-- Kullanıcı --}}
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Kullanıcı</label>
-                <select name="user_id" x-model="userId" required
+                <label class="block text-xs font-medium text-gray-600 mb-1">User</label>
+                <select name="user_id" required
                         class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <option value="">— Seçin —</option>
+                    <option value="">— Select —</option>
                     @foreach($internalUsers as $u)
                     <option value="{{ $u->id }}" {{ old('user_id') === $u->id ? 'selected' : '' }}>
                         {{ $u->name }}
@@ -184,17 +183,15 @@
                 </select>
             </div>
 
-            {{-- Tutar + Para Birimi --}}
             <div class="grid grid-cols-3 gap-3">
                 <div class="col-span-2">
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Tutar</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Amount</label>
                     <input type="number" name="amount" step="0.01" min="0.01" required
-                           value="{{ old('amount') }}"
-                           placeholder="0.00"
+                           value="{{ old('amount') }}" placeholder="0.00"
                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Para Birimi</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Currency</label>
                     <select name="currency" required
                             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <option value="TRY" {{ old('currency', 'TRY') === 'TRY' ? 'selected' : '' }}>TRY</option>
@@ -204,38 +201,34 @@
                 </div>
             </div>
 
-            {{-- Lead Sayısı + Tarih --}}
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Kaç Lead İçin</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Lead Count</label>
                     <input type="number" name="lead_count" min="1" required
-                           value="{{ old('lead_count') }}"
-                           placeholder="100"
+                           value="{{ old('lead_count') }}" placeholder="100"
                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Ödeme Tarihi</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Payment Date</label>
                     <input type="date" name="paid_at" required
                            value="{{ old('paid_at', date('Y-m-d')) }}"
                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
             </div>
 
-            {{-- Not --}}
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Not <span class="text-gray-400">(opsiyonel)</span></label>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Note <span class="text-gray-400">(optional)</span></label>
                 <input type="text" name="note" maxlength="500"
-                       value="{{ old('note') }}"
-                       placeholder="Ek açıklama..."
+                       value="{{ old('note') }}" placeholder="Additional notes..."
                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
             </div>
 
             <div class="flex justify-end gap-3 pt-1">
                 <button type="button" @click="open = false"
-                        class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors">İptal</button>
+                        class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors">Cancel</button>
                 <button type="submit"
                         class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors">
-                    Kaydet
+                    Save
                 </button>
             </div>
         </form>
@@ -243,9 +236,5 @@
 </div>
 
 </div>{{-- x-data --}}
-
-@if(old('user_id'))
-<script>document.addEventListener('DOMContentLoaded', () => { /* reopen modal on validation error */ });</script>
-@endif
 
 @endsection
