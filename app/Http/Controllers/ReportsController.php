@@ -185,7 +185,12 @@ class ReportsController extends Controller
                 'stage_dist' => ($stageDistRaw[$u->id] ?? collect())
                     ->map(fn ($r) => ['stage' => $stageMap[$r->stage_id] ?? null, 'count' => (int) $r->cnt])
                     ->filter(fn ($r) => $r['stage'] !== null)
-                    ->sortByDesc('count')
+                    ->groupBy(fn ($r) => $r['stage']->pipeline_id)
+                    ->map(fn ($stages) => [
+                        'pipeline' => $stages->first()['stage']->pipeline,
+                        'stages'   => $stages->sortByDesc('count')->values(),
+                    ])
+                    ->sortBy(fn ($g) => $g['pipeline']?->sort_order ?? 999)
                     ->values(),
                 'monthly'    => $months->map(fn ($m) => [
                     'label' => Carbon::createFromFormat('Y-m', $m)->format('M y'),

@@ -153,18 +153,25 @@
             <p class="text-sm font-semibold text-gray-700">{{ $stat['user']->name }}</p>
             <span class="text-xs text-gray-400 ml-auto">{{ $stat['total'] }} leads</span>
         </div>
-        <div class="space-y-2">
-            @foreach($stat['stage_dist'] as $row)
-            @php $pct = $stat['total'] > 0 ? round($row['count'] / $stat['total'] * 100) : 0; @endphp
-            <div class="flex items-center gap-2.5">
-                <span class="text-xs text-gray-500 w-36 truncate flex-shrink-0">{{ $row['stage']->name }}</span>
-                <div class="flex-1 bg-gray-100 rounded-full h-1.5">
-                    <div class="h-1.5 rounded-full transition-all"
-                         style="width:{{ $pct }}%; background:{{ $row['stage']->color ?? '#6366f1' }}"></div>
+        <div class="space-y-3">
+            @foreach($stat['stage_dist'] as $group)
+            <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1.5">{{ $group['pipeline']->name }}</p>
+                <div class="space-y-1.5">
+                    @foreach($group['stages'] as $row)
+                    @php $pct = $stat['total'] > 0 ? round($row['count'] / $stat['total'] * 100) : 0; @endphp
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-xs text-gray-500 w-36 truncate flex-shrink-0">{{ $row['stage']->name }}</span>
+                        <div class="flex-1 bg-gray-100 rounded-full h-1.5">
+                            <div class="h-1.5 rounded-full transition-all"
+                                 style="width:{{ $pct }}%; background:{{ $row['stage']->color ?? '#6366f1' }}"></div>
+                        </div>
+                        <span class="text-xs tabular-nums text-gray-500 w-14 text-right flex-shrink-0">
+                            {{ $row['count'] }} <span class="text-gray-300">({{ $pct }}%)</span>
+                        </span>
+                    </div>
+                    @endforeach
                 </div>
-                <span class="text-xs tabular-nums text-gray-500 w-14 text-right flex-shrink-0">
-                    {{ $row['count'] }} <span class="text-gray-300">({{ $pct }}%)</span>
-                </span>
             </div>
             @endforeach
         </div>
@@ -178,17 +185,24 @@
 @if($stat && $stat['total'] > 0)
 <div class="bg-white rounded-xl border border-gray-200 p-5">
     <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">My Leads by Stage</h3>
-    <div class="space-y-2.5">
-        @foreach($stat['stage_dist'] as $row)
-        @php $pct = $stat['total'] > 0 ? round($row['count'] / $stat['total'] * 100) : 0; @endphp
-        <div class="flex items-center gap-3">
-            <span class="text-sm text-gray-600 w-40 truncate flex-shrink-0">{{ $row['stage']->name }}</span>
-            <div class="flex-1 bg-gray-100 rounded-full h-2">
-                <div class="h-2 rounded-full transition-all"
-                     style="width:{{ $pct }}%; background:{{ $row['stage']->color ?? '#6366f1' }}"></div>
+    <div class="space-y-4">
+        @foreach($stat['stage_dist'] as $group)
+        <div>
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">{{ $group['pipeline']->name }}</p>
+            <div class="space-y-2">
+                @foreach($group['stages'] as $row)
+                @php $pct = $stat['total'] > 0 ? round($row['count'] / $stat['total'] * 100) : 0; @endphp
+                <div class="flex items-center gap-3">
+                    <span class="text-sm text-gray-600 w-40 truncate flex-shrink-0">{{ $row['stage']->name }}</span>
+                    <div class="flex-1 bg-gray-100 rounded-full h-2">
+                        <div class="h-2 rounded-full transition-all"
+                             style="width:{{ $pct }}%; background:{{ $row['stage']->color ?? '#6366f1' }}"></div>
+                    </div>
+                    <span class="text-sm tabular-nums font-medium text-gray-700 w-6 text-right flex-shrink-0">{{ $row['count'] }}</span>
+                    <span class="text-xs text-gray-400 w-9 text-right flex-shrink-0">{{ $pct }}%</span>
+                </div>
+                @endforeach
             </div>
-            <span class="text-sm tabular-nums font-medium text-gray-700 w-6 text-right flex-shrink-0">{{ $row['count'] }}</span>
-            <span class="text-xs text-gray-400 w-9 text-right flex-shrink-0">{{ $pct }}%</span>
         </div>
         @endforeach
     </div>
