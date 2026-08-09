@@ -888,20 +888,21 @@
                                     @if($isOutgoing)
                                     @php $waStatus = $msg->meta['status'] ?? null; @endphp
                                     @if($waStatus === 'read')
-                                    <svg class="w-3.5 h-3 flex-shrink-0" viewBox="0 0 16 11" fill="none">
-                                        <path d="M1 5.5L5 9.5L15 1" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <path d="M5 5.5L9 9.5" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <path d="M9 1L13 5" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    {{-- Double tick blue (read) --}}
+                                    <svg style="width:16px;height:11px;flex-shrink:0" viewBox="0 0 18 12" fill="none">
+                                        <path d="M1 6L4.5 9.5L10 3" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M7 6L10.5 9.5L17 2" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                                     </svg>
                                     @elseif($waStatus === 'delivered')
-                                    <svg class="w-3.5 h-3 flex-shrink-0" viewBox="0 0 16 11" fill="none">
-                                        <path d="M1 5.5L5 9.5L15 1" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <path d="M5 5.5L9 9.5" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <path d="M9 1L13 5" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    {{-- Double tick grey (delivered) --}}
+                                    <svg style="width:16px;height:11px;flex-shrink:0" viewBox="0 0 18 12" fill="none">
+                                        <path d="M1 6L4.5 9.5L10 3" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M7 6L10.5 9.5L17 2" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                                     </svg>
                                     @elseif($waStatus === 'sent')
-                                    <svg class="w-2.5 h-3 flex-shrink-0" viewBox="0 0 10 11" fill="none">
-                                        <path d="M1 5.5L4 8.5L9 1" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    {{-- Single tick grey (sent) --}}
+                                    <svg style="width:10px;height:11px;flex-shrink:0" viewBox="0 0 10 12" fill="none">
+                                        <path d="M1 6L4 9.5L9 2" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                                     </svg>
                                     @endif
                                     @endif
