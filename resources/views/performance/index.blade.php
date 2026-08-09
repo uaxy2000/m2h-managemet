@@ -7,6 +7,36 @@
 
 @php $REGISTERED_STAGE = 'a2663266-e3b6-42cd-b998-a479287c5256'; @endphp
 
+{{-- ── Earnings card (member only) ────────────────────────────────────── --}}
+@if(!$isAdmin && $earnings)
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Toplam Register</p>
+        <p class="text-3xl font-bold text-gray-900 mt-1 tabular-nums">{{ $earnings['total'] }}</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Ödendi</p>
+        <p class="text-3xl font-bold text-green-600 mt-1 tabular-nums">{{ $earnings['paid'] }}</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Ödenmedi</p>
+        <p class="text-3xl font-bold {{ $earnings['unpaid'] > 0 ? 'text-amber-500' : 'text-gray-300' }} mt-1 tabular-nums">{{ $earnings['unpaid'] }}</p>
+    </div>
+    <div class="bg-white rounded-xl border border-indigo-200 p-5 bg-indigo-50/40">
+        <p class="text-xs font-medium text-indigo-500 uppercase tracking-wide">Tahmini Alacak</p>
+        @if($earnings['estimated_pending'])
+        <p class="text-2xl font-bold text-indigo-600 mt-1 tabular-nums">
+            {{ number_format($earnings['estimated_pending'], 0, ',', '.') }}
+            <span class="text-sm font-normal">{{ $earnings['currency'] }}</span>
+        </p>
+        <p class="text-xs text-indigo-400 mt-0.5">{{ number_format($earnings['unit_price'], 2) }} {{ $earnings['currency'] }} × {{ $earnings['unpaid'] }} lead</p>
+        @else
+        <p class="text-2xl font-bold text-gray-300 mt-1">—</p>
+        @endif
+    </div>
+</div>
+@endif
+
 {{-- ── Summary table ─────────────────────────────────────────────────── --}}
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
     <div class="px-5 py-3.5 border-b border-gray-100">

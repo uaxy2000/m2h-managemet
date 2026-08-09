@@ -28,6 +28,7 @@ use App\Http\Controllers\UnifiedTaskController;
 use App\Http\Controllers\TodoListController;
 use App\Http\Controllers\TodoListItemController;
 use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\PaymentsController;
 use Illuminate\Support\Facades\Route;
 
 // Meta webhook routes are registered in bootstrap/app.php with no middleware
@@ -53,6 +54,11 @@ Route::middleware('auth')->group(function () {
     // Reports
     Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
     Route::get('performance', [ReportsController::class, 'performance'])->name('performance.index');
+
+    // Payments
+    Route::get('payments', [PaymentsController::class, 'index'])->name('payments.index');
+    Route::post('payments', [PaymentsController::class, 'store'])->name('payments.store');
+    Route::delete('payments/{payment}', [PaymentsController::class, 'destroy'])->name('payments.destroy');
 
     Route::get('/', fn () => redirect()->route('dashboard'));
 

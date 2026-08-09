@@ -199,6 +199,40 @@ class ReportsController extends Controller
             ];
         })->values();
 
-        return view('performance.index', compact('userStats', 'isAdmin', 'months'));
+        // Kazanç özeti (member için — sadece kendi verisi; admin görmez bu bloğu)
+        $earnings = null;
+        if (!$isAdmin) {
+            $totalReg = (int) DB::table('lead_status_history')
+                ->join('leads', 'leads.id', '=', 'lead_status_history.lead_id')
+                ->where('leads.assigned_to', $authUser->id)
+                ->where('lead_status_history.to_stage_id', $REGISTERED_STAGE)
+                ->distinct('lead_status_history.lead_id')
+                ->count('lead_status_history.lead_id');
+
+            $paid = (int) DB::table('payment_leads')
+                ->join('payments', 'payments.id', '=', 'payment_leads.payment_id')
+                ->where('payments.user_id', $authUser->id)
+                ->count();
+
+            $lastPayment = DB::table('payments')
+                ->where('user_id', $authUser->id)
+                ->orderByDesc('paid_at')
+                ->orderByDesc('created_at')
+                ->first();
+
+            $unitPrice = $lastPayment ? round($lastPayment->amount / $lastPayment->lead_count, 2) : null;
+            $unpaid    = max(0, $totalReg - $paid);
+
+            $earnings = [
+                'total'             => $totalReg,
+                'paid'              => $paid,
+                'unpaid'            => $unpaid,
+                'unit_price'        => $unitPrice,
+                'currency'          => $lastPayment?->currency,
+                'estimated_pending' => ($unitPrice && $unpaid > 0) ? round($unitPrice * $unpaid, 2) : null,
+            ];
+        }
+
+        return view('performance.index', compact('userStats', 'isAdmin', 'months', 'earnings'));
     }
 }
