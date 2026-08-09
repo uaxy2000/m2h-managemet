@@ -31,16 +31,21 @@ class ReportsController extends Controller
 
         $stageDistribution = $stagesQuery->get()
             ->filter(fn ($s) => $s->leads_count > 0)
-            ->sortByDesc('leads_count')
+            ->sort(fn ($a, $b) =>
+                [$a->pipeline?->sort_order ?? 999, $a->sort_order]
+                <=>
+                [$b->pipeline?->sort_order ?? 999, $b->sort_order]
+            )
             ->values();
 
         // Source breakdown
         $baseLeads = Lead::query()->when($pipelineId, fn ($q) => $q->where('pipeline_id', $pipelineId));
 
         $sourceBreakdown = [
-            ['label' => 'Meta Ad', 'count' => (clone $baseLeads)->where('source', 'meta_ad')->count(), 'color' => '#6366f1'],
-            ['label' => 'Agent',   'count' => (clone $baseLeads)->whereNotNull('agent_id')->count(),    'color' => '#f97316'],
-            ['label' => 'Manual',  'count' => (clone $baseLeads)->whereNull('source')->whereNull('agent_id')->count(), 'color' => '#64748b'],
+            ['label' => 'Meta Ad', 'count' => (clone $baseLeads)->where(fn ($q) => $q->where('source', 'meta_ad')->orWhereNotNull('meta_lead_id'))->count(), 'color' => '#6366f1'],
+            ['label' => 'Agent',   'count' => (clone $baseLeads)->whereNotNull('agent_id')->count(), 'color' => '#f97316'],
+            ['label' => 'WhatsApp','count' => (clone $baseLeads)->where('source', 'whatsapp')->count(), 'color' => '#22c55e'],
+            ['label' => 'Manual',  'count' => (clone $baseLeads)->whereNull('meta_lead_id')->where('source', '!=', 'meta_ad')->where('source', '!=', 'whatsapp')->whereNull('agent_id')->count(), 'color' => '#64748b'],
         ];
 
         // Assignee breakdown
