@@ -337,11 +337,11 @@
             $pencilSvg = '<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z"/></svg>';
             @endphp
 
-            <div class="grid grid-cols-2 gap-x-5 gap-y-4">
+            <div class="grid grid-cols-2 gap-x-5 gap-y-6">
 
                 {{-- Internal --}}
                 <div x-data="{editing:false}">
-                    <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-1 mb-1">
                         <p class="text-xs text-gray-400">Internal</p>
                         @if($canManageAssignment)
                         <button @click="editing=!editing" type="button" class="text-gray-300 hover:text-indigo-500 transition-colors flex items-center">
@@ -371,7 +371,7 @@
 
                 {{-- Service Provider --}}
                 <div x-data="{editing:false}">
-                    <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-1 mb-1">
                         <p class="text-xs text-gray-400">Service Provider</p>
                         @if($canChangeServiceProvider && $serviceProviders->isNotEmpty())
                         <button @click="editing=!editing" type="button" class="text-gray-300 hover:text-indigo-500 transition-colors flex items-center">
@@ -402,7 +402,7 @@
 
                 {{-- Agent --}}
                 <div x-data="{editing:false}">
-                    <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-1 mb-1">
                         <p class="text-xs text-gray-400">Agent</p>
                         @if($canManageAssignment && $agents->isNotEmpty())
                         <button @click="editing=!editing" type="button" class="text-gray-300 hover:text-indigo-500 transition-colors flex items-center">
@@ -434,7 +434,7 @@
                 {{-- Stage --}}
                 @if($canManageAssignment)
                 <div x-data="{editing:false}">
-                    <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-1 mb-1">
                         <p class="text-xs text-gray-400">Stage</p>
                         <button @click="editing=!editing" type="button" class="text-gray-300 hover:text-indigo-500 transition-colors flex items-center">
                             <span x-show="!editing">{!! $pencilSvg !!}</span>
