@@ -44,7 +44,7 @@ class WaTemplateController extends Controller
             'display_name'     => $request->input('display_name'),
             'header_image_url' => $request->input('header_image_url'),
             'parameter_fields' => $request->input('parameter_fields'),
-            'is_active'        => $request->boolean('is_active', true),
+            'is_active'        => $request->boolean('is_active'),
         ]);
 
         $label = $waTemplate->display_name ?? $waTemplate->name;
