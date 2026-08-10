@@ -10,9 +10,11 @@ use App\Models\LeadCustomValue;
 use App\Models\LeadStatusHistory;
 use App\Models\Pipeline;
 use App\Models\Program;
+use App\Models\Stage;
 use App\Models\Tag;
 use App\Models\TagGroup;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,90 +37,31 @@ class LeadController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        $rawCf = (array) $request->get('cf', []);
-        $cfFilters = array_filter($rawCf, fn ($v) => $v !== '' && $v !== null);
-
-        $filters = [
-            'search'      => trim((string) $request->get('search')),
-            'assigned_to' => $this->forceOwnLeads($authUser) ? $authUser->id : $request->get('assigned_to'),
-            'source'      => $request->get('source'),
-            'duplicate'   => $request->boolean('duplicate'),
-            'program_id'  => $request->get('program_id'),
-            'tags'        => array_values(array_filter((array) $request->get('tags', []))),
-            'cf'          => $cfFilters,
-        ];
+        $filters = $this->parseFilters($request);
 
         $currentPipeline = $currentPipelineId
             ? Pipeline::with([
                 'stages'       => fn ($q) => $q->orderBy('sort_order'),
                 'stages.leads' => function ($q) use ($filters, $filterableFields) {
-                    $q->when($filters['tags'], fn ($q, $ids) =>
-                            $q->whereHas('tags', fn ($q) => $q->whereIn('tags.id', $ids))
-                        )
-                        ->when($filters['search'], fn ($q, $s) =>
-                            $q->where(fn ($q) => $q
-                                ->where('first_name', 'like', "%{$s}%")
-                                ->orWhere('last_name', 'like', "%{$s}%")
-                            )
-                        )
-                        ->when($filters['assigned_to'], fn ($q, $uid) =>
-                            $q->where('assigned_to', $uid)
-                        )
-                        ->when($filters['source'] === 'meta_ad',
-                            fn ($q) => $q->where('source', 'meta_ad')
-                        )
-                        ->when($filters['source'] === 'manual',
-                            fn ($q) => $q->whereNull('source')->whereNull('agent_id')
-                        )
-                        ->when($filters['source'] === 'agent',
-                            fn ($q) => $q->whereNotNull('agent_id')
-                        )
-                        ->when($filters['duplicate'], fn ($q) =>
-                            $q->where('is_duplicate_flag', true)
-                        )
-                        ->when($filters['program_id'], fn ($q, $progId) =>
-                            str_starts_with($progId, 'country:')
-                                ? $q->whereHas('programs', fn ($q) => $q->where('country', substr($progId, 8)))
-                                : $q->whereHas('programs', fn ($q) => $q->where('programs.id', $progId))
-                        )
-                        ->when($filters['cf'], function ($q) use ($filters, $filterableFields) {
-                            foreach ($filters['cf'] as $key => $value) {
-                                $field = $filterableFields->firstWhere('key', $key);
-                                if (!$field) continue;
-                                if ($field->type === 'multi_select') {
-                                    $q->whereHas('customValues', fn ($q2) =>
-                                        $q2->where('custom_field_id', $field->id)
-                                           ->where('value', 'like', '%"' . $value . '"%')
-                                    );
-                                } else {
-                                    $q->whereHas('customValues', fn ($q2) =>
-                                        $q2->where('custom_field_id', $field->id)
-                                           ->where('value', $value)
-                                    );
-                                }
-                            }
-                        })
-                        ->withCount(['tasks as overdue_count' => fn ($q) => $q
-                            ->where('is_done', false)
-                            ->whereNotNull('due_at')
-                            ->where('due_at', '<', now())
-                        ])
-                        ->withExists(['activities as has_wa_messages' => fn ($q) => $q
-                            ->whereIn('type', ['whatsapp_incoming', 'whatsapp_outgoing'])
-                        ])
-                        ->withExists(['activities as has_unread_wa' => fn ($q) => $q
-                            ->where('type', 'whatsapp_incoming')
-                            ->where('is_read', false)
-                        ])
-                        ->with([
-                            'assignedTo',
-                            'tags',
-                            'programs' => fn ($q) => $q->wherePivot('is_primary', true),
-                        ])
-                        ->orderByDesc('created_at');
+                    $this->applyLeadBaseFilters($q, $filters, $filterableFields);
+                    $this->withLeadKanbanEagers($q);
+                    $q->limit(100);
                 },
             ])->find($currentPipelineId)
             : null;
+
+        // Total counts per stage (for shown/total badge) — single grouped query
+        $stageTotals = collect();
+        if ($currentPipeline) {
+            $stageIds = $currentPipeline->stages->pluck('id')->toArray();
+            if ($stageIds) {
+                $tq = Lead::whereIn('stage_id', $stageIds);
+                $this->applyLeadBaseFilters($tq, $filters, $filterableFields);
+                $stageTotals = $tq->selectRaw('stage_id, COUNT(*) as total')
+                    ->groupBy('stage_id')
+                    ->pluck('total', 'stage_id');
+            }
+        }
 
         $tagGroups     = TagGroup::with(['tags' => fn ($q) => $q->orderBy('name')])->orderBy('name')->get();
         $ungroupedTags = Tag::whereNull('tag_group_id')->orderBy('name')->get();
@@ -141,7 +84,7 @@ class LeadController extends Controller
             'pipelines', 'currentPipeline', 'filters',
             'tagGroups', 'ungroupedTags', 'hasTags',
             'internalUsers', 'programsByCountry', 'ownOnly',
-            'filterableFields'
+            'filterableFields', 'stageTotals'
         ));
     }
 
@@ -568,11 +511,139 @@ class LeadController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function kanbanCards(Request $request, Stage $stage): JsonResponse
+    {
+        $filterableFields = CustomField::where('is_active', true)
+            ->whereIn('type', ['select', 'multi_select'])
+            ->with('options')
+            ->orderBy('sort_order')
+            ->get();
+
+        $filters = $this->parseFilters($request);
+        $page    = max(1, (int) $request->get('page', 1));
+        $perPage = 100;
+
+        // Total count with filters
+        $countQ = $stage->leads();
+        $this->applyLeadBaseFilters($countQ, $filters, $filterableFields);
+        $total = $countQ->count();
+
+        // Paginated leads with all eager loads
+        $leadsQ = $stage->leads();
+        $this->applyLeadBaseFilters($leadsQ, $filters, $filterableFields);
+        $this->withLeadKanbanEagers($leadsQ);
+        $leads = $leadsQ->forPage($page, $perPage)->get();
+
+        $html = '';
+        foreach ($leads as $lead) {
+            $html .= view('leads._kanban_card', compact('lead'))->render();
+        }
+
+        $shown = min(($page - 1) * $perPage + $leads->count(), $total);
+
+        return response()->json([
+            'html'      => $html,
+            'total'     => $total,
+            'shown'     => $shown,
+            'next_page' => $shown < $total ? $page + 1 : null,
+        ]);
+    }
+
     // Internal non-admin users (role=member in an internal company) are restricted to their own leads.
     private function forceOwnLeads(User $user): bool
     {
         if ($user->isInternalAdmin()) return false;
         $company = $user->relationLoaded('company') ? $user->company : $user->load('company')->company;
         return $company?->type === 'internal';
+    }
+
+    private function parseFilters(Request $request): array
+    {
+        $authUser = auth()->user();
+        $rawCf    = (array) $request->get('cf', []);
+        return [
+            'search'      => trim((string) $request->get('search')),
+            'assigned_to' => $this->forceOwnLeads($authUser) ? $authUser->id : $request->get('assigned_to'),
+            'source'      => $request->get('source'),
+            'duplicate'   => $request->boolean('duplicate'),
+            'program_id'  => $request->get('program_id'),
+            'tags'        => array_values(array_filter((array) $request->get('tags', []))),
+            'cf'          => array_filter($rawCf, fn ($v) => $v !== '' && $v !== null),
+        ];
+    }
+
+    private function applyLeadBaseFilters(Builder $q, array $filters, $filterableFields): Builder
+    {
+        return $q
+            ->when($filters['tags'], fn ($q, $ids) =>
+                $q->whereHas('tags', fn ($q) => $q->whereIn('tags.id', $ids))
+            )
+            ->when($filters['search'], fn ($q, $s) =>
+                $q->where(fn ($q) => $q
+                    ->where('first_name', 'like', "%{$s}%")
+                    ->orWhere('last_name', 'like', "%{$s}%")
+                )
+            )
+            ->when($filters['assigned_to'], fn ($q, $uid) =>
+                $q->where('assigned_to', $uid)
+            )
+            ->when($filters['source'] === 'meta_ad',
+                fn ($q) => $q->where('source', 'meta_ad')
+            )
+            ->when($filters['source'] === 'manual',
+                fn ($q) => $q->whereNull('source')->whereNull('agent_id')
+            )
+            ->when($filters['source'] === 'agent',
+                fn ($q) => $q->whereNotNull('agent_id')
+            )
+            ->when($filters['duplicate'], fn ($q) =>
+                $q->where('is_duplicate_flag', true)
+            )
+            ->when($filters['program_id'], fn ($q, $progId) =>
+                str_starts_with($progId, 'country:')
+                    ? $q->whereHas('programs', fn ($q) => $q->where('country', substr($progId, 8)))
+                    : $q->whereHas('programs', fn ($q) => $q->where('programs.id', $progId))
+            )
+            ->when($filters['cf'], function ($q) use ($filters, $filterableFields) {
+                foreach ($filters['cf'] as $key => $value) {
+                    $field = $filterableFields->firstWhere('key', $key);
+                    if (!$field) continue;
+                    if ($field->type === 'multi_select') {
+                        $q->whereHas('customValues', fn ($q2) =>
+                            $q2->where('custom_field_id', $field->id)
+                               ->where('value', 'like', '%"' . $value . '"%')
+                        );
+                    } else {
+                        $q->whereHas('customValues', fn ($q2) =>
+                            $q2->where('custom_field_id', $field->id)
+                               ->where('value', $value)
+                        );
+                    }
+                }
+            });
+    }
+
+    private function withLeadKanbanEagers(Builder $q): Builder
+    {
+        return $q
+            ->withCount(['tasks as overdue_count' => fn ($q) => $q
+                ->where('is_done', false)
+                ->whereNotNull('due_at')
+                ->where('due_at', '<', now())
+            ])
+            ->withExists(['activities as has_wa_messages' => fn ($q) => $q
+                ->whereIn('type', ['whatsapp_incoming', 'whatsapp_outgoing'])
+            ])
+            ->withExists(['activities as has_unread_wa' => fn ($q) => $q
+                ->where('type', 'whatsapp_incoming')
+                ->where('is_read', false)
+            ])
+            ->with([
+                'assignedTo',
+                'tags',
+                'subStage',
+                'programs' => fn ($q) => $q->wherePivot('is_primary', true),
+            ])
+            ->orderByDesc('created_at');
     }
 }

@@ -76,6 +76,7 @@ Route::middleware('auth')->group(function () {
 
     // Leads
     Route::post('leads/{lead}/move', [LeadController::class, 'move'])->name('leads.move');
+    Route::get('kanban-cards/{stage}', [LeadController::class, 'kanbanCards'])->name('leads.kanban-cards');
     Route::resource('leads', LeadController::class);
 
     // Notes (nested under lead)
