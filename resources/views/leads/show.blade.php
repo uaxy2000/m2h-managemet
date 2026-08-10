@@ -7,13 +7,24 @@
 
 {{-- Breadcrumb + actions --}}
 <div class="flex items-center justify-between mb-5">
-    <a href="{{ route('leads.index', ['pipeline' => $lead->pipeline_id]) }}"
+    <a id="back-to-leads"
+       href="{{ route('leads.index', ['pipeline' => $lead->pipeline_id]) }}"
        class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/>
         </svg>
         Leads
     </a>
+    <script>
+    (function () {
+        try {
+            const s = JSON.parse(sessionStorage.getItem('kanban_scroll') || 'null');
+            if (s && s.returnUrl) {
+                document.getElementById('back-to-leads').href = s.returnUrl;
+            }
+        } catch (_) {}
+    })();
+    </script>
     <div class="flex items-center gap-2">
         <button onclick="window.location.reload()"
                 class="inline-flex items-center gap-1.5 text-sm text-gray-500 px-3 py-2 rounded-lg

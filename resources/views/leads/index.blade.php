@@ -490,12 +490,13 @@ document.addEventListener('DOMContentLoaded', function () {
             const card = e.target.closest('.lead-card');
             if (!card || !card.dataset.href) return;
 
-            // Save scroll state before navigating
+            // Save full URL + scroll state before navigating
             const colScrolls = {};
             document.querySelectorAll('.stage-column').forEach(col => {
                 if (col.scrollTop > 0) colScrolls[col.dataset.stage] = col.scrollTop;
             });
             sessionStorage.setItem('kanban_scroll', JSON.stringify({
+                returnUrl: window.location.href,
                 boardLeft: board.scrollLeft,
                 columns:   colScrolls,
             }));
