@@ -106,6 +106,10 @@ class LeadController extends Controller
                         ->withExists(['activities as has_wa_messages' => fn ($q) => $q
                             ->whereIn('type', ['whatsapp_incoming', 'whatsapp_outgoing'])
                         ])
+                        ->withExists(['activities as has_unread_wa' => fn ($q) => $q
+                            ->where('type', 'whatsapp_incoming')
+                            ->where('is_read', false)
+                        ])
                         ->with([
                             'assignedTo',
                             'tags',

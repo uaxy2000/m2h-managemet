@@ -299,6 +299,12 @@
     </div>
     @else
 
+    <style>
+    @keyframes wa-ping {
+        75%, 100% { transform: scale(2); opacity: 0; }
+    }
+    </style>
+
     {{-- Kanban board --}}
     <div class="flex-1 overflow-x-auto overflow-y-hidden cursor-grab" id="kanban-board">
         <div class="flex gap-4 h-full px-6 py-5">
@@ -388,9 +394,17 @@
 
                         @if($lead->has_wa_messages || $lead->overdue_count > 0)
                         <div class="mt-1.5 flex items-center gap-2 flex-wrap">
-                            @if($lead->has_wa_messages)
-                            <span class="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
-                                <svg class="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                            @if($lead->has_unread_wa)
+                            <span class="inline-flex items-center gap-1 text-xs font-semibold" style="color:#16a34a">
+                                <span style="position:relative;display:inline-flex;width:8px;height:8px;flex-shrink:0">
+                                    <span style="position:absolute;inset:0;border-radius:50%;background:#22c55e;animation:wa-ping 1.4s cubic-bezier(0,0,0.2,1) infinite;opacity:.75"></span>
+                                    <span style="position:relative;display:inline-block;width:8px;height:8px;border-radius:50%;background:#16a34a"></span>
+                                </span>
+                                WA
+                            </span>
+                            @elseif($lead->has_wa_messages)
+                            <span class="inline-flex items-center gap-1 text-xs font-medium" style="color:#6b7280">
+                                <svg style="width:12px;height:12px;flex-shrink:0" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
                                     <path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.554 4.118 1.522 5.845L.057 23.25l5.565-1.457A11.938 11.938 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.712 9.712 0 0 1-4.95-1.354l-.355-.21-3.305.866.881-3.218-.231-.371A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
                                 </svg>
