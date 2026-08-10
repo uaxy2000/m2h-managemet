@@ -572,7 +572,7 @@ class LeadController extends Controller
         ];
     }
 
-    private function applyLeadBaseFilters(Builder $q, array $filters, $filterableFields): Builder
+    private function applyLeadBaseFilters($q, array $filters, $filterableFields)
     {
         return $q
             ->when($filters['tags'], fn ($q, $ids) =>
@@ -623,7 +623,7 @@ class LeadController extends Controller
             });
     }
 
-    private function withLeadKanbanEagers(Builder $q): Builder
+    private function withLeadKanbanEagers($q)
     {
         return $q
             ->withCount(['tasks as overdue_count' => fn ($q) => $q
