@@ -17,3 +17,5 @@ yarn-error.log
 /.idea
 /.vscode
 m2h-crm-spec.md
+/public/run_migrate_temp.php
+/public/_*.php
