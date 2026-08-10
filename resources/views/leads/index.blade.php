@@ -424,6 +424,16 @@
                         </div>
                         @endif
 
+                        {{-- Stage selector --}}
+                        <div class="mt-2 pt-2 border-t border-gray-100" onclick="event.stopPropagation()">
+                            <select onchange="moveLeadStage('{{ $lead->id }}', this.value)"
+                                    style="width:100%;font-size:11px;color:#6b7280;border:1px solid #e5e7eb;border-radius:6px;padding:3px 6px;background:white;cursor:pointer;outline:none">
+                                @foreach($currentPipeline->stages->sortBy('sort_order') as $s)
+                                <option value="{{ $s->id }}" @selected($s->id === $lead->stage_id)>{{ $s->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         @if($lead->meta_platform || $lead->is_duplicate_flag)
                         <div class="mt-1.5 flex items-center gap-1.5 flex-wrap">
                             @if($lead->meta_platform === 'ig')
@@ -557,6 +567,18 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
+async function moveLeadStage(leadId, stageId) {
+    const res = await fetch(`/leads/${leadId}/move`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+        },
+        body: JSON.stringify({stage_id: stageId}),
+    });
+    if (res.ok) window.location.reload();
+}
 </script>
 @endpush
 
