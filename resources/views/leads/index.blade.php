@@ -310,6 +310,9 @@
         <div class="flex gap-4 h-full px-6 py-5">
 
             @forelse($currentPipeline->stages as $stage)
+            @if(strtolower($stage->name) === 'lead received' && !auth()->user()->isInternal())
+                @continue
+            @endif
             <div class="flex flex-col w-72 flex-shrink-0 h-full">
 
                 {{-- Column header --}}
