@@ -156,17 +156,26 @@ class WhatsAppService
         foreach ($data as $tpl) {
             if (strtoupper($tpl['status'] ?? '') !== 'APPROVED') continue;
 
-            WaTemplate::updateOrCreate(
-                ['name' => $tpl['name']],
-                [
+            $record = WaTemplate::where('name', $tpl['name'])->first();
+            if ($record) {
+                $record->update([
+                    'language'   => $tpl['language'] ?? 'tr',
+                    'category'   => $tpl['category'] ?? 'MARKETING',
+                    'status'     => $tpl['status'] ?? 'APPROVED',
+                    'components' => $tpl['components'] ?? [],
+                    'synced_at'  => now(),
+                ]);
+            } else {
+                WaTemplate::create([
+                    'name'       => $tpl['name'],
                     'language'   => $tpl['language'] ?? 'tr',
                     'category'   => $tpl['category'] ?? 'MARKETING',
                     'status'     => $tpl['status'] ?? 'APPROVED',
                     'components' => $tpl['components'] ?? [],
                     'is_active'  => true,
                     'synced_at'  => now(),
-                ]
-            );
+                ]);
+            }
             $synced++;
         }
 

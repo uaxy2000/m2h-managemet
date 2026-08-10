@@ -120,6 +120,7 @@
 
                 {{-- Active toggle --}}
                 <div class="flex items-center gap-2">
+                    <input type="hidden" name="is_active" value="0">
                     <input type="checkbox" name="is_active" value="1" id="active_{{ $tpl->id }}"
                            @checked($tpl->is_active)
                            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
