@@ -132,6 +132,9 @@
                         @if($lead->meta_campaign_name)<span title="Campaign" class="text-gray-300">{{ $lead->meta_campaign_name }}</span>@endif
                     </p>
                     @endif
+                    @if($lead->meta_ad_id)
+                    <p class="text-xs text-gray-300 mt-0.5 font-mono" title="Ad ID">fb{{ $lead->meta_ad_id }}</p>
+                    @endif
                 </div>
 
                 {{-- Right: Tags --}}
@@ -255,7 +258,8 @@
                     {{ $entry->toStage?->name ?? '—' }}
                 </p>
                 <p class="text-xs text-gray-400 mt-0.5 whitespace-nowrap">
-                    {{ $entry->changed_at->format('d M Y') }}
+                    {{ $entry->changed_at->format('d M Y') }}<br>
+                    <span class="text-gray-300">{{ $entry->changed_at->format('H:i') }}</span>
                 </p>
             </div>
             @if(!$isLast)

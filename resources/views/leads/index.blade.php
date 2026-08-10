@@ -327,7 +327,10 @@
                          data-id="{{ $lead->id }}"
                          data-href="{{ route('leads.show', $lead) }}">
 
-                        <p class="text-sm font-semibold text-gray-800 truncate">{{ $lead->fullName() }}</p>
+                        <div class="flex items-start justify-between gap-1.5 mb-0.5">
+                            <p class="text-sm font-semibold text-gray-800 truncate">{{ $lead->fullName() }}</p>
+                            <span class="text-xs text-gray-300 flex-shrink-0 leading-tight">{{ $lead->created_at->format('d M Y') }}</span>
+                        </div>
 
                         @if($lead->email)
                         <p class="text-xs text-gray-400 mt-0.5 truncate">{{ $lead->email }}</p>

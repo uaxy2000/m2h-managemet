@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
-use App\Models\CustomFieldOption;
 use App\Models\Lead;
 use App\Models\LeadCustomValue;
 use App\Models\LeadStatusHistory;
@@ -154,6 +153,8 @@ class MetaWebhookController extends Controller
             'assigned_to'       => $mapping->assigned_to ?? null,
             'source'            => 'meta_ad',
             'meta_lead_id'      => $leadgenId,
+            'meta_ad_id'        => $data['ad_id'] ?? null,
+            'meta_campaign_id'  => $data['campaign_id'] ?? null,
             'meta_form_id'      => $formId,
             'meta_ad_name'      => $data['ad_name'] ?? null,
             'meta_campaign_name'=> $data['campaign_name'] ?? null,
