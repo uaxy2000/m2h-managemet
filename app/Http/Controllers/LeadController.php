@@ -644,6 +644,7 @@ class LeadController extends Controller
                 'subStage',
                 'programs' => fn ($q) => $q->wherePivot('is_primary', true),
             ])
+            ->orderByDesc('has_unread_wa')
             ->orderByDesc('created_at');
     }
 }
