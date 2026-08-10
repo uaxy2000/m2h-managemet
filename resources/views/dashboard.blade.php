@@ -149,6 +149,7 @@ $phases = [
             ['label' => 'Internal member lead scoping (own leads only — dashboard, kanban, filter)', 'complete' => true],
             ['label' => 'Custom fields with per-lead values & Meta form mapping',          'complete' => true],
             ['label' => 'Lead timeline — notes, tasks, tag, assignment & custom field changes', 'complete' => true],
+            ['label' => 'Kanban enhancements (creation date, WA pulse, tag tooltips, avatar, stage change from detail)', 'complete' => true],
             ['label' => 'Client portal login (read-only lead view)',                       'complete' => false],
         ],
     ],
@@ -183,6 +184,7 @@ $phases = [
     [
         'title' => 'Access Control',
         'items' => [
+            ['label' => 'Role-based kanban column & stage visibility (Lead Received restricted to admins)', 'complete' => true],
             ['label' => 'Service provider login (read-only view of assigned leads)',       'complete' => false],
             ['label' => 'Agent login (read-only view of assigned leads)',                  'complete' => false],
             ['label' => 'Role-based field visibility',                                    'complete' => false],

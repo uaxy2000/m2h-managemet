@@ -43,6 +43,12 @@
             ['Service Provider change', '', [
                 [$yes, '✓'], [$yes, '✓'], [$cond, 'If assigned'], [$no, '✗'], [$no, '✗'],
             ]],
+            ['Stage change', 'From lead detail dropdown', [
+                [$yes, '✓'], [$yes, '✓'], [$cond, 'Excl. Lead Received'], [$no, '✗'], [$no, '✗'],
+            ]],
+            ['"Lead Received" stage visibility', 'Kanban column + stage dropdown', [
+                [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'], [$no, '✗'],
+            ]],
             ['Add note', '', [
                 [$yes, '✓'], [$yes, '✓'], [$yes, '✓'], [$yes, '✓'], [$yes, '✓'],
             ]],
