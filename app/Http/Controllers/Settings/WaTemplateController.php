@@ -13,8 +13,9 @@ class WaTemplateController extends Controller
 {
     public function index(): View
     {
-        $templates = WaTemplate::orderBy('name')->get();
-        return view('settings.wa-templates.index', compact('templates'));
+        $activeTemplates   = WaTemplate::where('is_active', true)->orderBy('name')->get();
+        $inactiveTemplates = WaTemplate::where('is_active', false)->orderBy('name')->get();
+        return view('settings.wa-templates.index', compact('activeTemplates', 'inactiveTemplates'));
     }
 
     public function sync(WhatsAppService $wa): RedirectResponse

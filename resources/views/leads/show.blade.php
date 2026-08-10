@@ -333,123 +333,143 @@
         <div class="bg-white rounded-xl border border-gray-200 p-5">
             <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Assignment</h3>
 
-            {{-- Assignee --}}
-            <div x-data="{ editing: false }">
-                <div class="flex items-center justify-between mb-1">
-                    <p class="text-xs text-gray-400">Internal</p>
+            @php
+            $pencilSvg = '<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z"/></svg>';
+            @endphp
+
+            <div class="grid grid-cols-2 gap-x-5 gap-y-4">
+
+                {{-- Internal --}}
+                <div x-data="{editing:false}">
+                    <div class="flex items-center justify-between mb-1">
+                        <p class="text-xs text-gray-400">Internal</p>
+                        @if($canManageAssignment)
+                        <button @click="editing=!editing" type="button" class="text-gray-300 hover:text-indigo-500 transition-colors flex items-center">
+                            <span x-show="!editing">{!! $pencilSvg !!}</span>
+                            <span x-show="editing" x-cloak class="text-xs text-indigo-500 leading-none">✕</span>
+                        </button>
+                        @endif
+                    </div>
+                    <div x-show="!editing">
+                        <p class="text-sm font-medium text-gray-800">{{ $lead->assignedTo?->name ?? '—' }}</p>
+                    </div>
                     @if($canManageAssignment)
-                    <button @click="editing = !editing" type="button"
-                            class="text-xs text-indigo-600 hover:text-indigo-800"
-                            x-text="editing ? 'Cancel' : 'Change'"></button>
+                    <div x-show="editing" x-cloak>
+                        <form method="POST" action="{{ route('leads.assign-user', $lead) }}" class="flex gap-1.5">
+                            @csrf @method('PATCH')
+                            <select name="assigned_to" class="flex-1 min-w-0 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="">— None —</option>
+                                @foreach($internalUsers as $u)
+                                <option value="{{ $u->id }}" {{ $lead->assigned_to === $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
+                                @endforeach
+                            </select>
+                            <button type="submit" class="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-2.5 py-1.5 rounded-lg transition-colors font-medium">✓</button>
+                        </form>
+                    </div>
                     @endif
                 </div>
-                <div x-show="!editing">
-                    @if($lead->assignedTo)
-                    <p class="text-sm font-medium text-gray-800">{{ $lead->assignedTo->name }}</p>
-                    @else
-                    <p class="text-sm text-gray-400">Not assigned</p>
-                    @endif
-                </div>
-                @if($canManageAssignment)
-                <div x-show="editing" x-cloak>
-                    <form method="POST" action="{{ route('leads.assign-user', $lead) }}" class="flex gap-2">
-                        @csrf @method('PATCH')
-                        <select name="assigned_to"
-                                class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">— None —</option>
-                            @foreach($internalUsers as $u)
-                            <option value="{{ $u->id }}" {{ $lead->assigned_to === $u->id ? 'selected' : '' }}>
-                                {{ $u->name }}
-                            </option>
-                            @endforeach
-                        </select>
-                        <button type="submit"
-                                class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">
-                            Save
-                        </button>
-                    </form>
-                </div>
-                @endif
-            </div>
 
-            {{-- Service Provider --}}
-            <div class="border-t border-gray-100 mt-5 pt-4" x-data="{ editing: false }">
-                <div class="flex items-center justify-between mb-1">
-                    <p class="text-xs text-gray-400">Service Provider</p>
-                    @if($canChangeServiceProvider && $serviceProviders->isNotEmpty())
-                    <button @click="editing = !editing" type="button"
-                            class="text-xs text-indigo-600 hover:text-indigo-800"
-                            x-text="editing ? 'Cancel' : 'Change'"></button>
-                    @endif
-                </div>
-                <div x-show="!editing">
-                    @if($lead->serviceProvider)
-                    <p class="text-sm font-medium text-gray-800">{{ $lead->serviceProvider->name }}</p>
-                    @else
-                    <p class="text-sm text-gray-400">Not set</p>
-                    @endif
-                </div>
-                @if($canChangeServiceProvider)
-                <div x-show="editing" x-cloak>
-                    <form method="POST" action="{{ route('leads.assign-company', $lead) }}" class="flex gap-2">
-                        @csrf @method('PATCH')
-                        <input type="hidden" name="field" value="service_provider_id">
-                        <select name="company_id"
-                                class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">— None —</option>
-                            @foreach($serviceProviders as $sp)
-                            <option value="{{ $sp->id }}" {{ $lead->service_provider_id === $sp->id ? 'selected' : '' }}>
-                                {{ $sp->name }}
-                            </option>
-                            @endforeach
-                        </select>
-                        <button type="submit"
-                                class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">
-                            Save
+                {{-- Service Provider --}}
+                <div x-data="{editing:false}">
+                    <div class="flex items-center justify-between mb-1">
+                        <p class="text-xs text-gray-400">Service Provider</p>
+                        @if($canChangeServiceProvider && $serviceProviders->isNotEmpty())
+                        <button @click="editing=!editing" type="button" class="text-gray-300 hover:text-indigo-500 transition-colors flex items-center">
+                            <span x-show="!editing">{!! $pencilSvg !!}</span>
+                            <span x-show="editing" x-cloak class="text-xs text-indigo-500 leading-none">✕</span>
                         </button>
-                    </form>
+                        @endif
+                    </div>
+                    <div x-show="!editing">
+                        <p class="text-sm font-medium text-gray-800">{{ $lead->serviceProvider?->name ?? '—' }}</p>
+                    </div>
+                    @if($canChangeServiceProvider)
+                    <div x-show="editing" x-cloak>
+                        <form method="POST" action="{{ route('leads.assign-company', $lead) }}" class="flex gap-1.5">
+                            @csrf @method('PATCH')
+                            <input type="hidden" name="field" value="service_provider_id">
+                            <select name="company_id" class="flex-1 min-w-0 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="">— None —</option>
+                                @foreach($serviceProviders as $sp)
+                                <option value="{{ $sp->id }}" {{ $lead->service_provider_id === $sp->id ? 'selected' : '' }}>{{ $sp->name }}</option>
+                                @endforeach
+                            </select>
+                            <button type="submit" class="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-2.5 py-1.5 rounded-lg transition-colors font-medium">✓</button>
+                        </form>
+                    </div>
+                    @endif
                 </div>
-                @endif
-            </div>
 
-            {{-- Agent --}}
-            <div class="border-t border-gray-100 mt-5 pt-4" x-data="{ editing: false }">
-                <div class="flex items-center justify-between mb-1">
-                    <p class="text-xs text-gray-400">Agent</p>
-                    @if($canManageAssignment && $agents->isNotEmpty())
-                    <button @click="editing = !editing" type="button"
-                            class="text-xs text-indigo-600 hover:text-indigo-800"
-                            x-text="editing ? 'Cancel' : 'Change'"></button>
-                    @endif
-                </div>
-                <div x-show="!editing">
-                    @if($lead->agent)
-                    <p class="text-sm font-medium text-gray-800">{{ $lead->agent->name }}</p>
-                    @else
-                    <p class="text-sm text-gray-400">Not set</p>
-                    @endif
-                </div>
-                @if($canManageAssignment)
-                <div x-show="editing" x-cloak>
-                    <form method="POST" action="{{ route('leads.assign-company', $lead) }}" class="flex gap-2">
-                        @csrf @method('PATCH')
-                        <input type="hidden" name="field" value="agent_id">
-                        <select name="company_id"
-                                class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">— None —</option>
-                            @foreach($agents as $ag)
-                            <option value="{{ $ag->id }}" {{ $lead->agent_id === $ag->id ? 'selected' : '' }}>
-                                {{ $ag->name }}
-                            </option>
-                            @endforeach
-                        </select>
-                        <button type="submit"
-                                class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium">
-                            Save
+                {{-- Agent --}}
+                <div x-data="{editing:false}">
+                    <div class="flex items-center justify-between mb-1">
+                        <p class="text-xs text-gray-400">Agent</p>
+                        @if($canManageAssignment && $agents->isNotEmpty())
+                        <button @click="editing=!editing" type="button" class="text-gray-300 hover:text-indigo-500 transition-colors flex items-center">
+                            <span x-show="!editing">{!! $pencilSvg !!}</span>
+                            <span x-show="editing" x-cloak class="text-xs text-indigo-500 leading-none">✕</span>
                         </button>
-                    </form>
+                        @endif
+                    </div>
+                    <div x-show="!editing">
+                        <p class="text-sm font-medium text-gray-800">{{ $lead->agent?->name ?? '—' }}</p>
+                    </div>
+                    @if($canManageAssignment)
+                    <div x-show="editing" x-cloak>
+                        <form method="POST" action="{{ route('leads.assign-company', $lead) }}" class="flex gap-1.5">
+                            @csrf @method('PATCH')
+                            <input type="hidden" name="field" value="agent_id">
+                            <select name="company_id" class="flex-1 min-w-0 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="">— None —</option>
+                                @foreach($agents as $ag)
+                                <option value="{{ $ag->id }}" {{ $lead->agent_id === $ag->id ? 'selected' : '' }}>{{ $ag->name }}</option>
+                                @endforeach
+                            </select>
+                            <button type="submit" class="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-2.5 py-1.5 rounded-lg transition-colors font-medium">✓</button>
+                        </form>
+                    </div>
+                    @endif
+                </div>
+
+                {{-- Stage --}}
+                @if($canManageAssignment)
+                <div x-data="{editing:false}">
+                    <div class="flex items-center justify-between mb-1">
+                        <p class="text-xs text-gray-400">Stage</p>
+                        <button @click="editing=!editing" type="button" class="text-gray-300 hover:text-indigo-500 transition-colors flex items-center">
+                            <span x-show="!editing">{!! $pencilSvg !!}</span>
+                            <span x-show="editing" x-cloak class="text-xs text-indigo-500 leading-none">✕</span>
+                        </button>
+                    </div>
+                    <div x-show="!editing">
+                        <p class="text-sm font-medium text-gray-800">{{ $lead->stage?->name ?? '—' }}</p>
+                        @if($lead->pipeline)
+                        <p class="text-xs text-gray-400 mt-0.5">{{ $lead->pipeline->name }}</p>
+                        @endif
+                    </div>
+                    <div x-show="editing" x-cloak>
+                        <form @submit.prevent="
+                            fetch('{{ route('leads.move', $lead) }}', {
+                                method: 'POST',
+                                headers: {'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}'},
+                                body: JSON.stringify({stage_id: $el.querySelector('[name=stage_id]').value})
+                            }).then(() => window.location.reload())
+                        " class="flex gap-1.5">
+                            <select name="stage_id" class="flex-1 min-w-0 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                @foreach($pipelines as $pl)
+                                <optgroup label="{{ $pl->name }}">
+                                    @foreach($pl->stages as $s)
+                                    <option value="{{ $s->id }}" @selected($s->id === $lead->stage_id)>{{ $s->name }}</option>
+                                    @endforeach
+                                </optgroup>
+                                @endforeach
+                            </select>
+                            <button type="submit" class="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-2.5 py-1.5 rounded-lg transition-colors font-medium">✓</button>
+                        </form>
+                    </div>
                 </div>
                 @endif
+
             </div>
         </div>
 

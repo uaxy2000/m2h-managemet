@@ -393,12 +393,14 @@ class LeadController extends Controller
 
         $waTemplates = \App\Models\WaTemplate::where('is_active', true)->orderBy('display_name')->orderBy('name')->get();
 
+        $pipelines = Pipeline::with(['stages' => fn ($q) => $q->orderBy('sort_order')])->orderBy('sort_order')->get();
+
         $canManageAssignment     = $user->isInternalAdmin();
         $canChangeServiceProvider = $canManageAssignment || $lead->assigned_to === $user->id;
 
         return view('leads.show', compact(
             'lead', 'internalUsers', 'serviceProviders', 'agents', 'allTags', 'availablePrograms',
-            'customFields', 'customValuesByKey', 'timeline', 'waTemplates',
+            'customFields', 'customValuesByKey', 'timeline', 'waTemplates', 'pipelines',
             'canManageAssignment', 'canChangeServiceProvider'
         ));
     }
