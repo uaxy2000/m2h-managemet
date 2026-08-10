@@ -283,7 +283,19 @@
 
         {{-- Contact --}}
         <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Contact</h3>
+            <div class="flex items-start justify-between mb-3">
+                <div>
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Contact</h3>
+                    <p class="text-sm font-semibold text-gray-800 mt-0.5">{{ $lead->fullName() }}</p>
+                </div>
+                <a href="{{ route('leads.edit', $lead) }}"
+                   class="text-gray-300 hover:text-indigo-500 transition-colors flex-shrink-0 mt-0.5"
+                   title="Edit lead">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z"/>
+                    </svg>
+                </a>
+            </div>
             <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
                 @if($lead->email)
                 <div>
@@ -337,7 +349,7 @@
             $pencilSvg = '<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z"/></svg>';
             @endphp
 
-            <div class="grid grid-cols-2 gap-x-5 gap-y-6">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem 1.25rem">
 
                 {{-- Internal --}}
                 <div x-data="{editing:false}">

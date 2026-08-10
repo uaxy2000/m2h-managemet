@@ -330,6 +330,7 @@
                     @foreach($stage->leads as $lead)
                     <div class="lead-card bg-white rounded-xl border border-gray-200 p-3.5 shadow-sm
                                 hover:shadow-md hover:border-gray-300 transition-all cursor-pointer select-none"
+                         style="position:relative"
                          data-id="{{ $lead->id }}"
                          data-href="{{ route('leads.show', $lead) }}">
 
@@ -355,15 +356,13 @@
                                 ${{ number_format((float) $lead->potential_value) }}
                             </span>
                             @endif
-                            @if($lead->assignedTo)
-                            <div class="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center
-                                        text-white text-xs font-semibold flex-shrink-0
-                                        {{ ($lead->potential_value || $lead->country_of_origin) ? '' : 'ml-auto' }}"
-                                 title="{{ $lead->assignedTo->name }}">
-                                {{ strtoupper(substr($lead->assignedTo->name, 0, 1)) }}
-                            </div>
-                            @endif
                         </div>
+                        @if($lead->assignedTo)
+                        <div style="position:absolute;bottom:10px;right:10px;width:22px;height:22px;border-radius:50%;background:#6366f1;display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:600;flex-shrink:0"
+                             title="{{ $lead->assignedTo->name }}">
+                            {{ strtoupper(substr($lead->assignedTo->name, 0, 1)) }}
+                        </div>
+                        @endif
 
                         @php $primaryProgram = $lead->programs->first(); @endphp
                         @if($primaryProgram)
