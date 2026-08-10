@@ -444,7 +444,7 @@
                 </div>
 
                 {{-- Stage --}}
-                @if($canManageAssignment)
+                @if($canManageAssignment || auth()->user()->isInternal())
                 <div x-data="{editing:false}">
                     <div class="flex items-center gap-1 mb-1">
                         <p class="text-xs text-gray-400">Stage</p>
