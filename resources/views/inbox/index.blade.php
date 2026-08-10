@@ -33,9 +33,9 @@
                class="flex items-start gap-3.5 px-5 py-4 hover:bg-gray-50 transition-colors">
 
                 {{-- Avatar --}}
-                <div class="w-9 h-9 rounded-full bg-indigo-500 flex items-center justify-center
-                            text-white text-sm font-semibold flex-shrink-0">
-                    {{ strtoupper(substr($lead->first_name, 0, 1)) }}
+                <div class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center
+                            text-white text-xs font-bold flex-shrink-0">
+                    {{ $lead->initials() }}
                 </div>
 
                 {{-- Content --}}
