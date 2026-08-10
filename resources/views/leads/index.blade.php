@@ -338,13 +338,6 @@
                             <span class="text-xs text-gray-300 flex-shrink-0 leading-tight">{{ $lead->created_at->format('d M Y') }}</span>
                         </div>
 
-                        @if($lead->email)
-                        <p class="text-xs text-gray-400 mt-0.5 truncate">{{ $lead->email }}</p>
-                        @endif
-                        @if($lead->phone)
-                        <p class="text-xs text-gray-400">{{ $lead->phone }}</p>
-                        @endif
-
                         @if($lead->subStage)
                         <div class="mt-2">
                             <span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
@@ -383,12 +376,21 @@
                         @endif
 
                         @if($lead->tags->isNotEmpty())
-                        <div class="mt-2 flex flex-wrap gap-1">
-                            @foreach($lead->tags as $t)
-                            <span class="inline-block w-2 h-2 rounded-full flex-shrink-0"
-                                  style="background-color:{{ $t->color }}"
-                                  title="{{ $t->name }}"></span>
-                            @endforeach
+                        <div class="mt-2" x-data="{open:false}" @mouseenter="open=true" @mouseleave="open=false" style="position:relative">
+                            <div class="flex flex-wrap gap-1">
+                                @foreach($lead->tags as $t)
+                                <span style="display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;background-color:{{ $t->color }}"></span>
+                                @endforeach
+                            </div>
+                            <div x-show="open" x-cloak
+                                 style="position:absolute;bottom:calc(100% + 5px);left:0;z-index:50;background:white;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;box-shadow:0 4px 14px rgba(0,0,0,.13);pointer-events:none;min-width:130px">
+                                @foreach($lead->tags as $t)
+                                <div style="display:flex;align-items:center;gap:7px;padding:2px 0">
+                                    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;background-color:{{ $t->color }}"></span>
+                                    <span style="font-size:12px;color:#374151;white-space:nowrap">{{ $t->name }}</span>
+                                </div>
+                                @endforeach
+                            </div>
                         </div>
                         @endif
 
