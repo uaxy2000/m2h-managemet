@@ -471,6 +471,9 @@
                                 @foreach($pipelines as $pl)
                                 <optgroup label="{{ $pl->name }}">
                                     @foreach($pl->stages as $s)
+                                    @if(strtolower($s->name) === 'lead received' && !auth()->user()->isAdmin())
+                                        @continue
+                                    @endif
                                     <option value="{{ $s->id }}" @selected($s->id === $lead->stage_id)>{{ $s->name }}</option>
                                     @endforeach
                                 </optgroup>
