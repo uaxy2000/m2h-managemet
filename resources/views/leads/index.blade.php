@@ -488,8 +488,34 @@ document.addEventListener('DOMContentLoaded', function () {
             if (Date.now() - lastDrag < 300) return;
             if (Date.now() - lastPan  < 300) return;
             const card = e.target.closest('.lead-card');
-            if (card && card.dataset.href) window.location.href = card.dataset.href;
+            if (!card || !card.dataset.href) return;
+
+            // Save scroll state before navigating
+            const colScrolls = {};
+            document.querySelectorAll('.stage-column').forEach(col => {
+                if (col.scrollTop > 0) colScrolls[col.dataset.stage] = col.scrollTop;
+            });
+            sessionStorage.setItem('kanban_scroll', JSON.stringify({
+                boardLeft: board.scrollLeft,
+                columns:   colScrolls,
+            }));
+
+            window.location.href = card.dataset.href;
         });
+    }
+
+    // Restore scroll state when returning from lead detail
+    const saved = sessionStorage.getItem('kanban_scroll');
+    if (saved && board) {
+        try {
+            const state = JSON.parse(saved);
+            board.scrollLeft = state.boardLeft || 0;
+            document.querySelectorAll('.stage-column').forEach(col => {
+                const top = state.columns?.[col.dataset.stage];
+                if (top) col.scrollTop = top;
+            });
+        } catch (_) {}
+        sessionStorage.removeItem('kanban_scroll');
     }
 });
 
