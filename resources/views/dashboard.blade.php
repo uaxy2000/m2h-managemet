@@ -53,8 +53,32 @@
        class="bg-white rounded-xl border border-gray-200 p-5 hover:border-indigo-300 transition-colors">
         <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Open Tasks</p>
         <p class="text-3xl font-bold text-gray-900 mt-1">{{ $openTasks }}</p>
-        <p class="text-xs text-indigo-600 mt-1.5">View tasks →</p>
+        <div class="mt-1.5 flex flex-col gap-1">
+            @if($todayTasks > 0)
+            <span class="inline-flex items-center gap-1 text-xs font-semibold text-amber-600">
+                <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#d97706;animation:pulse-dot 1.2s ease-in-out infinite"></span>
+                TODAY'S TASKS {{ $todayTasks }}
+            </span>
+            @endif
+            @if($overdueTasks > 0)
+            <span class="text-xs font-semibold text-red-600">
+                {{ $overdueTasks }} OVERDUE
+            </span>
+            @endif
+            @if($todayTasks === 0 && $overdueTasks === 0)
+            <span class="text-xs text-indigo-600">View tasks →</span>
+            @endif
+        </div>
     </a>
+
+    @once
+    <style>
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50%       { opacity: .4; transform: scale(.65); }
+    }
+    </style>
+    @endonce
 
     <div class="bg-white rounded-xl border border-gray-200 p-5">
         <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">New This Week</p>

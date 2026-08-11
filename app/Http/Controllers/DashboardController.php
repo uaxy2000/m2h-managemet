@@ -21,9 +21,12 @@ class DashboardController extends Controller
         $duplicates  = (clone $leadQuery)->where('is_duplicate_flag', true)->count();
         $newThisWeek = (clone $leadQuery)->where('created_at', '>=', now()->startOfWeek())->count();
 
-        $openTasks = Task::where('is_done', false)
-            ->when($ownOnly, fn ($q) => $q->where('assigned_to', $user->id))
-            ->count();
+        $taskBase = Task::where('is_done', false)
+            ->when($ownOnly, fn ($q) => $q->where('assigned_to', $user->id));
+
+        $openTasks   = (clone $taskBase)->count();
+        $todayTasks  = (clone $taskBase)->whereDate('due_at', today())->count();
+        $overdueTasks = (clone $taskBase)->whereDate('due_at', '<', today())->count();
 
         $recentLeads = (clone $leadQuery)
             ->with(['stage', 'assignedTo', 'tags'])
@@ -33,7 +36,7 @@ class DashboardController extends Controller
 
         return view('dashboard', compact(
             'totalLeads', 'metaLeads', 'duplicates', 'newThisWeek',
-            'openTasks', 'recentLeads', 'ownOnly'
+            'openTasks', 'todayTasks', 'overdueTasks', 'recentLeads', 'ownOnly'
         ));
     }
 

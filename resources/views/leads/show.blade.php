@@ -1039,10 +1039,11 @@
                 <div x-show="formTab === 'note'">
                     <form method="POST" action="{{ route('leads.notes.store', $lead) }}">
                         @csrf
-                        <textarea name="content" rows="3" required
+                        <textarea name="content" rows="6" required
                                   placeholder="Write a note…"
+                                  style="resize:vertical;min-height:9rem"
                                   class="block w-full rounded-lg border-gray-300 text-sm shadow-sm
-                                         focus:ring-indigo-500 focus:border-indigo-500 resize-none">{{ old('content') }}</textarea>
+                                         focus:ring-indigo-500 focus:border-indigo-500">{{ old('content') }}</textarea>
                         <div class="mt-2"
                              x-data="{
                                 sel: ['internal'],
