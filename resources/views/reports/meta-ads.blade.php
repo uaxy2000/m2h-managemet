@@ -6,25 +6,68 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
     {{-- Header --}}
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Meta Ads Report</h1>
             @if($lastSynced)
-                <p class="text-sm text-gray-500 mt-0.5">Last synced: {{ \Carbon\Carbon::parse($lastSynced)->diffForHumans() }}</p>
+                <p class="text-sm text-gray-500 mt-0.5">
+                    Last synced: {{ \Carbon\Carbon::parse($lastSynced)->diffForHumans() }}
+                    @if($lastSyncDate)
+                        · Data through: <strong>{{ \Carbon\Carbon::parse($lastSyncDate)->format('d M Y') }}</strong>
+                    @endif
+                    @if($missingDays > 0)
+                        · <span class="text-amber-600 font-medium">{{ $missingDays }} day(s) missing</span>
+                    @endif
+                </p>
             @else
                 <p class="text-sm text-gray-500 mt-0.5">No data synced yet.</p>
             @endif
         </div>
-        <form method="POST" action="{{ route('reports.meta-ads.sync') }}">
-            @csrf
-            <button type="submit"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                </svg>
-                Sync Now
+
+        <div class="flex flex-wrap items-center gap-2" x-data="{ showBackfill: false }">
+            {{-- Smart sync button --}}
+            <form method="POST" action="{{ route('reports.meta-ads.sync') }}">
+                @csrf
+                <button type="submit"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    @if($missingDays > 0)
+                        Sync {{ $missingDays }} Missing Day(s)
+                    @else
+                        Sync Now
+                    @endif
+                </button>
+            </form>
+
+            {{-- Backfill toggle --}}
+            <button type="button" @click="showBackfill = !showBackfill"
+                class="px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                Backfill…
             </button>
-        </form>
+
+            {{-- Backfill form --}}
+            <div x-show="showBackfill" x-cloak
+                class="absolute right-4 mt-12 z-10 bg-white border border-gray-200 rounded-xl shadow-lg p-4 w-72">
+                <p class="text-sm font-medium text-gray-700 mb-3">Sync from a specific date</p>
+                <form method="POST" action="{{ route('reports.meta-ads.sync') }}" class="flex flex-col gap-3">
+                    @csrf
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">From date</label>
+                        <input type="date" name="from_date"
+                            value="{{ now()->subDays(29)->toDateString() }}"
+                            max="{{ now()->toDateString() }}"
+                            class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <p class="text-xs text-gray-400">Max 60 days per sync run. Click multiple times for longer ranges.</p>
+                    <button type="submit"
+                        class="w-full px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
+                        Start Backfill
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 
     @if(session('success'))

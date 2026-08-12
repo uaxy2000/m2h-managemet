@@ -109,26 +109,51 @@ class MetaAdsController extends Controller
             ->selectRaw('date, spend, leads_count')
             ->get();
 
-        $lastSynced = MetaInsight::max('synced_at');
-        $hasData    = MetaInsight::exists();
+        $lastSynced   = MetaInsight::max('synced_at');
+        $lastSyncDate = MetaInsight::where('entity_type', 'account')->max('date');
+        $missingDays  = $lastSyncDate
+            ? max(0, Carbon::parse($lastSyncDate)->diffInDays(now()->toDateString()))
+            : null;
+        $hasData      = MetaInsight::exists();
         $isConfigured = app(MetaAdsService::class)->isConfigured();
 
         return view('reports.meta-ads', compact(
             'preset', 'from', 'to',
             'totalSpend', 'totalLeads', 'totalImpr', 'totalClicks', 'avgCpl', 'avgCtr',
             'campaigns', 'adsets', 'ads',
-            'trend', 'lastSynced', 'hasData', 'isConfigured'
+            'trend', 'lastSynced', 'lastSyncDate', 'missingDays', 'hasData', 'isConfigured'
         ));
     }
 
-    public function sync(): RedirectResponse
+    public function sync(Request $request): RedirectResponse
     {
         abort_unless(auth()->user()->isInternalAdmin(), 403);
 
-        Artisan::call('meta:sync-insights', ['--date' => 'yesterday']);
-        Artisan::call('meta:sync-insights', ['--date' => 'today']);
+        // Determine start date: custom override, last synced date + 1, or 30 days ago
+        if ($request->filled('from_date')) {
+            $start = Carbon::parse($request->input('from_date'));
+        } else {
+            $lastSyncDate = MetaInsight::where('entity_type', 'account')->max('date');
+            $start = $lastSyncDate
+                ? Carbon::parse($lastSyncDate)->addDay()
+                : now()->subDays(29);
+        }
 
-        return back()->with('success', 'Meta Ads data synced.');
+        $end     = now();
+        $current = $start->copy();
+        $synced  = 0;
+
+        while ($current->lte($end) && $synced < 60) {
+            Artisan::call('meta:sync-insights', ['--date' => $current->toDateString()]);
+            $current->addDay();
+            $synced++;
+        }
+
+        $msg = $synced === 0
+            ? 'Already up to date.'
+            : "Synced {$synced} day(s) — up to " . now()->toDateString() . '.';
+
+        return back()->with('success', $msg);
     }
 
     private function resolveRange(string $preset, Request $request): array
