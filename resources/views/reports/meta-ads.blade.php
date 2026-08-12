@@ -3,6 +3,42 @@
 @section('title', 'Meta Ads Report')
 
 @section('content')
+{{-- Ad Preview Modal --}}
+<div x-data="adPreview('{{ route('reports.meta-ads.preview', '__ID__') }}')"
+     @open-ad-preview.window="open($event.detail.adId, $event.detail.adName)"
+     x-show="show" x-cloak
+     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+     @keydown.escape.window="show = false" @click.self="show = false">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div>
+                <h3 class="font-semibold text-gray-900 text-sm" x-text="adName"></h3>
+                <p class="text-xs text-gray-400 mt-0.5">Ad Preview</p>
+            </div>
+            <div class="flex items-center gap-2">
+                {{-- Format switcher --}}
+                <select x-model="format" @change="loadPreview()"
+                    class="text-xs border border-gray-200 rounded-lg px-2 py-1 text-gray-600 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                    <option value="MOBILE_FEED_STANDARD">Mobile Feed</option>
+                    <option value="DESKTOP_FEED_STANDARD">Desktop Feed</option>
+                    <option value="INSTAGRAM_STANDARD">Instagram Feed</option>
+                    <option value="INSTAGRAM_STORY">Instagram Story</option>
+                </select>
+                <button @click="show = false" class="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="flex-1 overflow-auto p-4 flex items-start justify-center">
+            <div x-show="loading" class="py-12 text-gray-400 text-sm">Loading preview…</div>
+            <div x-show="error" class="py-12 text-red-500 text-sm" x-text="error"></div>
+            <div x-show="!loading && !error" x-html="previewHtml" class="w-full"></div>
+        </div>
+    </div>
+</div>
+
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
     {{-- Header --}}
@@ -99,6 +135,45 @@
 
     @once
     <script>
+    function adPreview(urlTemplate) {
+        return {
+            show:        false,
+            loading:     false,
+            error:       '',
+            previewHtml: '',
+            adName:      '',
+            adId:        '',
+            format:      'MOBILE_FEED_STANDARD',
+
+            open(adId, adName) {
+                this.adId   = adId;
+                this.adName = adName;
+                this.show   = true;
+                this.loadPreview();
+            },
+
+            async loadPreview() {
+                this.loading     = true;
+                this.error       = '';
+                this.previewHtml = '';
+                const url = urlTemplate.replace('__ID__', this.adId) + '?format=' + this.format;
+                try {
+                    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                    const data = await res.json();
+                    if (!res.ok || data.error) {
+                        this.error = data.error ?? 'Preview unavailable.';
+                    } else {
+                        this.previewHtml = data.html;
+                    }
+                } catch (e) {
+                    this.error = 'Network error: ' + e.message;
+                } finally {
+                    this.loading = false;
+                }
+            }
+        }
+    }
+
     function metaSync(syncDayUrl, missingDaysUrl, csrfToken) {
         return {
             showBackfill: {{ $missingDays > 0 ? 'true' : 'false' }},
@@ -396,7 +471,12 @@
                                                                                             <svg class="w-3 h-3 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                                                                                             </svg>
-                                                                                            <span class="truncate max-w-xs" title="{{ $ad->entity_name }}">{{ $ad->entity_name ?? $ad->entity_id }}</span>
+                                                                                            <button type="button"
+                                                                                                @click="$dispatch('open-ad-preview', { adId: '{{ $ad->entity_id }}', adName: '{{ addslashes($ad->entity_name ?? $ad->entity_id) }}' })"
+                                                                                                class="truncate max-w-xs text-left text-indigo-600 hover:underline cursor-pointer"
+                                                                                                title="Click to preview">
+                                                                                                {{ $ad->entity_name ?? $ad->entity_id }}
+                                                                                            </button>
                                                                                         </div>
                                                                                     </td>
                                                                                     <td class="px-4 py-2 text-right text-gray-700">₺{{ number_format($ad->spend, 2) }}</td>

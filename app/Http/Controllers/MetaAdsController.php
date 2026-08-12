@@ -155,6 +155,33 @@ class MetaAdsController extends Controller
         }
     }
 
+    public function preview(Request $request, string $adId): \Illuminate\Http\JsonResponse
+    {
+        abort_unless(auth()->user()->isInternalAdmin(), 403);
+
+        $format = $request->get('format', 'MOBILE_FEED_STANDARD');
+        $token  = config('services.meta_ads.access_token');
+
+        $response = \Illuminate\Support\Facades\Http::timeout(15)
+            ->get("https://graph.facebook.com/v20.0/{$adId}/previews", [
+                'ad_format'    => $format,
+                'access_token' => $token,
+            ]);
+
+        if (!$response->ok()) {
+            return response()->json(['error' => 'Preview unavailable'], 422);
+        }
+
+        $data = $response->json();
+        $body = $data['data'][0]['body'] ?? null;
+
+        if (!$body) {
+            return response()->json(['error' => 'No preview returned'], 422);
+        }
+
+        return response()->json(['html' => $body, 'format' => $format]);
+    }
+
     public function missingDays(): \Illuminate\Http\JsonResponse
     {
         abort_unless(auth()->user()->isInternalAdmin(), 403);
