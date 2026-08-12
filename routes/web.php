@@ -59,6 +59,8 @@ Route::middleware('auth')->group(function () {
     Route::get('reports/daily', [DailyReportController::class, 'index'])->name('reports.daily');
     Route::get('reports/meta-ads', [MetaAdsController::class, 'index'])->name('reports.meta-ads');
     Route::post('reports/meta-ads/sync', [MetaAdsController::class, 'sync'])->name('reports.meta-ads.sync');
+    Route::post('reports/meta-ads/sync-day', [MetaAdsController::class, 'syncDay'])->name('reports.meta-ads.sync-day');
+    Route::get('reports/meta-ads/missing-days', [MetaAdsController::class, 'missingDays'])->name('reports.meta-ads.missing-days');
 
     // Payments
     Route::get('payments', [PaymentsController::class, 'index'])->name('payments.index');

@@ -129,31 +129,55 @@ class MetaAdsController extends Controller
     {
         abort_unless(auth()->user()->isInternalAdmin(), 403);
 
-        // Determine start date: custom override, last synced date + 1, or 30 days ago
-        if ($request->filled('from_date')) {
-            $start = Carbon::parse($request->input('from_date'));
+        // Quick sync: just today + yesterday (used for the simple "Sync Now" button)
+        Artisan::call('meta:sync-insights', ['--date' => now()->toDateString()]);
+        Artisan::call('meta:sync-insights', ['--date' => now()->subDay()->toDateString()]);
+
+        return back()->with('success', 'Synced today and yesterday.');
+    }
+
+    // Called via AJAX — syncs a single date, returns JSON
+    public function syncDay(Request $request): \Illuminate\Http\JsonResponse
+    {
+        abort_unless(auth()->user()->isInternalAdmin(), 403);
+
+        $date = $request->input('date');
+        if (!$date || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            return response()->json(['error' => 'Invalid date'], 422);
+        }
+
+        try {
+            Artisan::call('meta:sync-insights', ['--date' => $date]);
+            $output = trim(Artisan::output());
+            return response()->json(['ok' => true, 'date' => $date, 'message' => $output]);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function missingDays(): \Illuminate\Http\JsonResponse
+    {
+        abort_unless(auth()->user()->isInternalAdmin(), 403);
+
+        $lastSyncDate = MetaInsight::where('entity_type', 'account')->max('date');
+
+        if (!$lastSyncDate) {
+            // No data at all — return last 30 days
+            $start = now()->subDays(29);
         } else {
-            $lastSyncDate = MetaInsight::where('entity_type', 'account')->max('date');
-            $start = $lastSyncDate
-                ? Carbon::parse($lastSyncDate)->addDay()
-                : now()->subDays(29);
+            $start = Carbon::parse($lastSyncDate)->addDay();
         }
 
-        $end     = now();
+        $days = [];
         $current = $start->copy();
-        $synced  = 0;
+        $end     = now();
 
-        while ($current->lte($end) && $synced < 60) {
-            Artisan::call('meta:sync-insights', ['--date' => $current->toDateString()]);
+        while ($current->lte($end)) {
+            $days[] = $current->toDateString();
             $current->addDay();
-            $synced++;
         }
 
-        $msg = $synced === 0
-            ? 'Already up to date.'
-            : "Synced {$synced} day(s) — up to " . now()->toDateString() . '.';
-
-        return back()->with('success', $msg);
+        return response()->json(['days' => $days]);
     }
 
     private function resolveRange(string $preset, Request $request): array

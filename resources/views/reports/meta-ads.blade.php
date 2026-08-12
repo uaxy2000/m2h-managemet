@@ -6,7 +6,10 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
     {{-- Header --}}
-    <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+    <div class="flex flex-wrap items-start justify-between gap-4 mb-6"
+         x-data="metaSync('{{ route('reports.meta-ads.sync-day') }}', '{{ route('reports.meta-ads.missing-days') }}', '{{ csrf_token() }}')"
+         @keydown.escape.window="showBackfill = false">
+
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Meta Ads Report</h1>
             @if($lastSynced)
@@ -16,7 +19,7 @@
                         · Data through: <strong>{{ \Carbon\Carbon::parse($lastSyncDate)->format('d M Y') }}</strong>
                     @endif
                     @if($missingDays > 0)
-                        · <span class="text-amber-600 font-medium">{{ $missingDays }} day(s) missing</span>
+                        · <span class="text-amber-600 font-medium">{{ $missingDays }} day(s) not yet synced</span>
                     @endif
                 </p>
             @else
@@ -24,8 +27,8 @@
             @endif
         </div>
 
-        <div class="flex flex-wrap items-center gap-2" x-data="{ showBackfill: false }">
-            {{-- Smart sync button --}}
+        <div class="relative flex flex-wrap items-center gap-2">
+            {{-- Sync Now (today + yesterday only, no timeout risk) --}}
             <form method="POST" action="{{ route('reports.meta-ads.sync') }}">
                 @csrf
                 <button type="submit"
@@ -33,42 +36,137 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                     </svg>
-                    @if($missingDays > 0)
-                        Sync {{ $missingDays }} Missing Day(s)
-                    @else
-                        Sync Now
-                    @endif
+                    Sync Today
                 </button>
             </form>
 
-            {{-- Backfill toggle --}}
+            {{-- Backfill button --}}
             <button type="button" @click="showBackfill = !showBackfill"
-                class="px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
-                Backfill…
+                class="px-3 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                :class="showBackfill ? 'bg-gray-100' : ''">
+                @if($missingDays > 0)
+                    <span class="text-amber-600">Backfill {{ $missingDays }} day(s)…</span>
+                @else
+                    Backfill…
+                @endif
             </button>
 
-            {{-- Backfill form --}}
-            <div x-show="showBackfill" x-cloak
-                class="absolute right-4 mt-12 z-10 bg-white border border-gray-200 rounded-xl shadow-lg p-4 w-72">
-                <p class="text-sm font-medium text-gray-700 mb-3">Sync from a specific date</p>
-                <form method="POST" action="{{ route('reports.meta-ads.sync') }}" class="flex flex-col gap-3">
-                    @csrf
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1">From date</label>
-                        <input type="date" name="from_date"
-                            value="{{ now()->subDays(29)->toDateString() }}"
-                            max="{{ now()->toDateString() }}"
-                            class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            {{-- Backfill panel --}}
+            <div x-show="showBackfill" x-cloak @click.outside="showBackfill = false"
+                class="absolute top-full right-0 mt-2 z-20 bg-white border border-gray-200 rounded-xl shadow-xl p-5 w-80">
+
+                <p class="text-sm font-semibold text-gray-800 mb-1">Backfill historical data</p>
+                <p class="text-xs text-gray-500 mb-4">Fetches day-by-day to avoid timeouts. Each day = ~3 sec.</p>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">From date</label>
+                    <input type="date" x-model="fromDate"
+                        max="{{ now()->toDateString() }}"
+                        class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                {{-- Progress --}}
+                <div x-show="running" class="mb-4">
+                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                        <span x-text="progressLabel"></span>
+                        <span x-text="doneCount + ' / ' + totalCount"></span>
                     </div>
-                    <p class="text-xs text-gray-400">Max 60 days per sync run. Click multiple times for longer ranges.</p>
-                    <button type="submit"
-                        class="w-full px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
-                        Start Backfill
+                    <div class="w-full bg-gray-100 rounded-full h-2">
+                        <div class="bg-blue-500 h-2 rounded-full transition-all"
+                            :style="'width:' + (totalCount > 0 ? Math.round(doneCount/totalCount*100) : 0) + '%'"></div>
+                    </div>
+                    <p x-show="currentDate" class="text-xs text-gray-400 mt-1" x-text="'Syncing ' + currentDate + '…'"></p>
+                </div>
+
+                <div x-show="doneMessage" class="mb-3 text-sm text-green-700 font-medium" x-text="doneMessage"></div>
+                <div x-show="errorMessage" class="mb-3 text-sm text-red-600" x-text="errorMessage"></div>
+
+                <div class="flex gap-2">
+                    <button type="button" @click="startBackfill()"
+                        :disabled="running"
+                        class="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span x-show="!running">Start Backfill</span>
+                        <span x-show="running">Running…</span>
                     </button>
-                </form>
+                    <button type="button" @click="showBackfill = false; running = false"
+                        class="px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                        Close
+                    </button>
+                </div>
             </div>
         </div>
     </div>
+
+    @once
+    <script>
+    function metaSync(syncDayUrl, missingDaysUrl, csrfToken) {
+        return {
+            showBackfill: {{ $missingDays > 0 ? 'true' : 'false' }},
+            fromDate:     '{{ now()->subDays(29)->toDateString() }}',
+            running:      false,
+            doneCount:    0,
+            totalCount:   0,
+            currentDate:  '',
+            progressLabel:'',
+            doneMessage:  '',
+            errorMessage: '',
+
+            async startBackfill() {
+                this.doneMessage  = '';
+                this.errorMessage = '';
+                this.doneCount    = 0;
+
+                // Build list of dates from fromDate to today
+                const start = new Date(this.fromDate);
+                const end   = new Date();
+                const days  = [];
+                for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                    days.push(d.toISOString().slice(0, 10));
+                }
+
+                if (days.length === 0) {
+                    this.errorMessage = 'No dates to sync.';
+                    return;
+                }
+
+                this.totalCount   = days.length;
+                this.running      = true;
+                this.progressLabel = 'Fetching from Meta API…';
+
+                for (const date of days) {
+                    this.currentDate = date;
+                    try {
+                        const res = await fetch(syncDayUrl, {
+                            method:  'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept':       'application/json',
+                            },
+                            body: JSON.stringify({ date }),
+                        });
+                        if (!res.ok) {
+                            const err = await res.json().catch(() => ({}));
+                            this.errorMessage = 'Error on ' + date + ': ' + (err.error ?? res.status);
+                            this.running = false;
+                            return;
+                        }
+                    } catch (e) {
+                        this.errorMessage = 'Network error on ' + date + ': ' + e.message;
+                        this.running = false;
+                        return;
+                    }
+                    this.doneCount++;
+                }
+
+                this.running      = false;
+                this.currentDate  = '';
+                this.doneMessage  = '✓ Backfill complete — ' + this.doneCount + ' day(s) synced. Reload to see updated data.';
+            }
+        }
+    }
+    </script>
+    @endonce
 
     @if(session('success'))
         <div class="mb-4 px-4 py-3 bg-green-50 border border-green-200 text-green-800 rounded-lg text-sm">
