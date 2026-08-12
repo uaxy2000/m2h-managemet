@@ -28,6 +28,7 @@ use App\Http\Controllers\UnifiedTaskController;
 use App\Http\Controllers\TodoListController;
 use App\Http\Controllers\TodoListItemController;
 use App\Http\Controllers\DailyReportController;
+use App\Http\Controllers\MetaAdsController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\PaymentsController;
 use Illuminate\Support\Facades\Route;
@@ -56,6 +57,8 @@ Route::middleware('auth')->group(function () {
     Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
     Route::get('performance', [ReportsController::class, 'performance'])->name('performance.index');
     Route::get('reports/daily', [DailyReportController::class, 'index'])->name('reports.daily');
+    Route::get('reports/meta-ads', [MetaAdsController::class, 'index'])->name('reports.meta-ads');
+    Route::post('reports/meta-ads/sync', [MetaAdsController::class, 'sync'])->name('reports.meta-ads.sync');
 
     // Payments
     Route::get('payments', [PaymentsController::class, 'index'])->name('payments.index');

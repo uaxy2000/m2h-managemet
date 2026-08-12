@@ -92,7 +92,7 @@ class MetaWebhookController extends Controller
         // Fetch lead data from Graph API
         $response = Http::get("https://graph.facebook.com/v19.0/{$leadgenId}", [
             'access_token' => $page->access_token,
-            'fields'       => 'id,created_time,field_data,platform,ad_id,ad_name,campaign_id,campaign_name,form_id',
+            'fields'       => 'id,created_time,field_data,platform,ad_id,ad_name,adset_id,campaign_id,campaign_name,form_id',
         ]);
 
         if (!$response->ok()) {
@@ -154,6 +154,7 @@ class MetaWebhookController extends Controller
             'source'            => 'meta_ad',
             'meta_lead_id'      => $leadgenId,
             'meta_ad_id'        => $data['ad_id'] ?? null,
+            'meta_adset_id'     => $data['adset_id'] ?? null,
             'meta_campaign_id'  => $data['campaign_id'] ?? null,
             'meta_form_id'      => $formId,
             'meta_ad_name'      => $data['ad_name'] ?? null,

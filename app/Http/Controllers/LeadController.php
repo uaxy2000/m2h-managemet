@@ -576,13 +576,16 @@ class LeadController extends Controller
         $authUser = auth()->user();
         $rawCf    = (array) $request->get('cf', []);
         return [
-            'search'      => trim((string) $request->get('search')),
-            'assigned_to' => $this->forceOwnLeads($authUser) ? $authUser->id : $request->get('assigned_to'),
-            'source'      => $request->get('source'),
-            'duplicate'   => $request->boolean('duplicate'),
-            'program_id'  => $request->get('program_id'),
-            'tags'        => array_values(array_filter((array) $request->get('tags', []))),
-            'cf'          => array_filter($rawCf, fn ($v) => $v !== '' && $v !== null),
+            'search'           => trim((string) $request->get('search')),
+            'assigned_to'      => $this->forceOwnLeads($authUser) ? $authUser->id : $request->get('assigned_to'),
+            'source'           => $request->get('source'),
+            'duplicate'        => $request->boolean('duplicate'),
+            'program_id'       => $request->get('program_id'),
+            'tags'             => array_values(array_filter((array) $request->get('tags', []))),
+            'cf'               => array_filter($rawCf, fn ($v) => $v !== '' && $v !== null),
+            'meta_campaign_id' => $request->get('meta_campaign_id'),
+            'meta_adset_id'    => $request->get('meta_adset_id'),
+            'meta_ad_id'       => $request->get('meta_ad_id'),
         ];
     }
 
@@ -612,6 +615,15 @@ class LeadController extends Controller
             )
             ->when($filters['duplicate'], fn ($q) =>
                 $q->where('is_duplicate_flag', true)
+            )
+            ->when($filters['meta_campaign_id'] ?? null, fn ($q, $v) =>
+                $q->where('meta_campaign_id', $v)
+            )
+            ->when($filters['meta_adset_id'] ?? null, fn ($q, $v) =>
+                $q->where('meta_adset_id', $v)
+            )
+            ->when($filters['meta_ad_id'] ?? null, fn ($q, $v) =>
+                $q->where('meta_ad_id', $v)
             )
             ->when($filters['program_id'], fn ($q, $progId) =>
                 str_starts_with($progId, 'country:')
