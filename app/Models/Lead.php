@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Lead extends Model
 {
@@ -98,6 +99,13 @@ class Lead extends Model
     public function activities(): HasMany
     {
         return $this->hasMany(LeadActivity::class)->orderBy('created_at');
+    }
+
+    public function latestWaActivity(): HasOne
+    {
+        return $this->hasOne(LeadActivity::class)
+            ->where('type', 'whatsapp_incoming')
+            ->latestOfMany('created_at');
     }
 
     public function fullName(): string
