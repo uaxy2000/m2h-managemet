@@ -319,7 +319,7 @@
                 @if($lead->phone)
                 <div>
                     <dt class="text-xs text-gray-400">Phone</dt>
-                    <dd class="text-sm text-gray-800 mt-0.5">{{ $lead->phone }}</dd>
+                    <dd class="mt-0.5"><x-phone-number :number="$lead->phone" /></dd>
                 </div>
                 @endif
                 @if($lead->whatsapp)
@@ -1173,7 +1173,7 @@
                                       class="block w-full rounded-lg border-gray-300 text-sm shadow-sm
                                              focus:ring-green-500 focus:border-green-500 resize-none">{{ old('message') }}</textarea>
                             <div class="mt-2 flex items-center justify-between">
-                                <span class="text-xs text-gray-400">{{ $lead->phone }}</span>
+                                <span class="text-gray-400"><x-phone-number :number="$lead->phone" /></span>
                                 <button type="submit"
                                         class="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1.5
                                                rounded-lg transition-colors font-medium">Gönder</button>
@@ -1203,7 +1203,7 @@
                             <div x-show="preview" class="mb-3 bg-green-50 border border-green-200 rounded-lg px-3 py-2.5 text-xs text-gray-700 whitespace-pre-wrap leading-relaxed" x-text="preview"></div>
 
                             <div class="flex items-center justify-between">
-                                <span class="text-xs text-gray-400">{{ $lead->phone }}</span>
+                                <span class="text-gray-400"><x-phone-number :number="$lead->phone" /></span>
                                 <button type="submit" :disabled="!selectedId"
                                         class="text-xs bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white px-3 py-1.5
                                                rounded-lg transition-colors font-medium">Gönder</button>
