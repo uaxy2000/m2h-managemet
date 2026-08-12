@@ -428,6 +428,7 @@ class LeadController extends Controller
                     ? 'Assigned to ' . $newName . ($oldName ? ' (was: ' . $oldName . ')' : '')
                     : 'Assignment removed' . ($oldName ? ' (was: ' . $oldName . ')' : ''),
                 'visible_to'  => ['internal'],
+                'created_at'  => now(),
             ]);
         }
 
@@ -468,6 +469,7 @@ class LeadController extends Controller
                     ? "{$label} set to {$newName}" . ($oldName ? " (was: {$oldName})" : '')
                     : "{$label} removed" . ($oldName ? " (was: {$oldName})" : ''),
                 'visible_to'  => ['internal'],
+                'created_at'  => now(),
             ]);
         }
 
@@ -494,6 +496,8 @@ class LeadController extends Controller
         }
 
         $fromStageId = $lead->stage_id;
+        $fromStage   = Stage::find($fromStageId);
+        $toStage     = Stage::find($validated['stage_id']);
 
         $lead->update([
             'stage_id'     => $validated['stage_id'],
@@ -506,6 +510,16 @@ class LeadController extends Controller
             'from_stage_id' => $fromStageId,
             'to_stage_id'   => $validated['stage_id'],
             'changed_at'    => now(),
+        ]);
+
+        LeadActivity::create([
+            'lead_id'     => $lead->id,
+            'user_id'     => auth()->id(),
+            'type'        => 'stage_changed',
+            'description' => 'Stage changed to ' . $toStage->name
+                . ($fromStage ? ' (from: ' . $fromStage->name . ')' : ''),
+            'visible_to'  => ['internal'],
+            'created_at'  => now(),
         ]);
 
         return response()->json(['ok' => true]);
