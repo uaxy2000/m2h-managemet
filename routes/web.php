@@ -27,6 +27,7 @@ use App\Http\Controllers\CardTaskController;
 use App\Http\Controllers\UnifiedTaskController;
 use App\Http\Controllers\TodoListController;
 use App\Http\Controllers\TodoListItemController;
+use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\PaymentsController;
 use Illuminate\Support\Facades\Route;
@@ -54,6 +55,7 @@ Route::middleware('auth')->group(function () {
     // Reports
     Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
     Route::get('performance', [ReportsController::class, 'performance'])->name('performance.index');
+    Route::get('reports/daily', [DailyReportController::class, 'index'])->name('reports.daily');
 
     // Payments
     Route::get('payments', [PaymentsController::class, 'index'])->name('payments.index');
