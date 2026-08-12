@@ -9,7 +9,8 @@
      x-show="show" x-cloak
      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
      @keydown.escape.window="show = false" @click.self="show = false">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+    <div class="bg-white rounded-2xl w-full max-w-lg flex flex-col max-h-[90vh]"
+         style="box-shadow: 0 0 0 1px rgba(0,0,0,0.08), 0 25px 60px rgba(0,0,0,0.45), 0 8px 20px rgba(0,0,0,0.25)">
         <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
             <div>
                 <h3 class="font-semibold text-gray-900 text-sm" x-text="adName"></h3>
