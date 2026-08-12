@@ -199,6 +199,7 @@ $phases = [
             ['label' => 'Meta Ads — ad creative preview modal (Mobile / Desktop / Instagram)', 'complete' => true],
             ['label' => 'Meta Ads — "View Leads" drill-down from campaign / adset / ad',  'complete' => true],
             ['label' => 'WhatsApp — send & receive messages per lead (incl. templates, sent/delivered/read ticks)', 'complete' => true],
+            ['label' => 'WhatsApp — template variable mapping ({{1}} → name etc. via Settings)', 'complete' => true],
             ['label' => 'Google Form pre-fill from lead note (partner referral form)',    'complete' => true],
             ['label' => 'Kommo CRM → M2H migration (leads, tags, notes)',                'complete' => true],
             ['label' => 'Google Form → CRM (auto lead import)',                           'complete' => false],
