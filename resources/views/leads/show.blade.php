@@ -939,7 +939,7 @@
                         <div class="space-y-2">
                             @foreach($entry['messages'] as $msg)
                             <div class="{{ !$loop->last ? 'pb-2 border-b border-gray-100' : '' }}">
-                                <p class="text-sm text-gray-800 leading-relaxed">{{ $msg->description }}</p>
+                                <p class="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{{ $msg->description }}</p>
                                 <div class="flex items-center gap-1 mt-0.5 {{ $isOutgoing ? 'justify-end' : '' }}">
                                     <span class="text-xs text-gray-400">{{ $msg->created_at->diffForHumans() }}</span>
                                     @if($isOutgoing)
