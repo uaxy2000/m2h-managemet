@@ -214,7 +214,7 @@
             <div x-show="addOpen" x-cloak class="border-t border-gray-100 px-4 py-3 bg-gray-50">
                 <form method="POST" action="{{ route('todo-lists.items.store', $list) }}"
                       x-data="{ rows: 1 }"
-                      @submit="addOpen = false; body = ''">
+                      @submit="addOpen = false">
                     @csrf
                     <textarea name="body" x-model="body"
                               @input="rows = Math.min(4, body.split('\n').length || 1)"

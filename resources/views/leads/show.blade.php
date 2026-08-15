@@ -307,7 +307,7 @@
                     </svg>
                 </a>
             </div>
-            <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
+            <dl class="grid grid-cols-1 gap-y-3">
                 @if($lead->email)
                 <div>
                     <dt class="text-xs text-gray-400">Email</dt>
