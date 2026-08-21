@@ -7,13 +7,20 @@ use App\Models\Expense;
 use App\Models\FinancialAccount;
 use App\Models\Income;
 use App\Models\TransactionCategory;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class FinanceController extends Controller
 {
-    public function index(): View
+    public function index(): View|RedirectResponse
     {
-        abort_unless(auth()->user()->isInternalAdmin(), 403);
+        $user = auth()->user();
+
+        if ($user->isInternalMember()) {
+            return redirect()->route('finance.my-account');
+        }
+
+        abort_unless($user->isInternalAdmin(), 403);
 
         // Account balances grouped by type
         $accounts = FinancialAccount::with(['user', 'company'])
@@ -71,5 +78,25 @@ class FinanceController extends Controller
             'recentExpenses', 'recentIncomes',
             'monthExpenses', 'monthIncomes', 'expenseByCategory'
         ));
+    }
+
+    public function myAccount(): View
+    {
+        $user = auth()->user();
+        abort_unless($user->isInternalMember() || $user->isInternalAdmin(), 403);
+
+        $myAccount = FinancialAccount::where('user_id', $user->id)->first();
+        $myBalance = $myAccount ? $myAccount->balance() : 0;
+
+        $myExpenses = Expense::with(['category.parent', 'createdBy'])
+            ->where('paid_by_user_id', $user->id)
+            ->orderByDesc('date')
+            ->orderByDesc('created_at')
+            ->limit(50)
+            ->get();
+
+        $expenseGroups = TransactionCategory::forExpenses()->with('children')->get();
+
+        return view('finance.my_account', compact('myAccount', 'myBalance', 'myExpenses', 'expenseGroups'));
     }
 }

@@ -45,7 +45,7 @@
              }
          }">
         <h2 class="text-sm font-semibold text-gray-700 mb-4">New Expense</h2>
-        <form method="POST" action="{{ route('finance.expenses.store') }}">
+        <form method="POST" action="{{ route('finance.expenses.store') }}" enctype="multipart/form-data">
             @csrf
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
@@ -117,6 +117,11 @@
                     <input type="text" name="description" value="{{ old('description') }}" maxlength="1000"
                            class="w-full rounded-lg border-gray-300 text-sm focus:ring-red-500 focus:border-red-500" placeholder="Optional notes">
                 </div>
+                <div class="sm:col-span-2 lg:col-span-3">
+                    <label class="block text-xs text-gray-500 mb-1">Receipt / Invoice <span class="text-gray-400">(jpg, jpeg, png, pdf — max 10 MB, optional)</span></label>
+                    <input type="file" name="document" accept=".jpg,.jpeg,.png,.pdf"
+                           class="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100">
+                </div>
             </div>
             <div class="mt-4 flex gap-3">
                 <button type="submit" class="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors">Save Expense</button>
@@ -187,6 +192,7 @@
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Paid by</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Source</th>
                         <th class="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Amount</th>
+                        <th class="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
                         <th class="px-4 py-3"></th>
                     </tr>
                 </thead>
@@ -210,19 +216,49 @@
                         <td class="px-4 py-3 text-gray-700 max-w-xs truncate">{{ $exp->description ?: '—' }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $exp->paidBy?->name ?? '—' }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $exp->sourceAccount?->name ?? '—' }}</td>
-                        <td class="px-4 py-3 text-right font-mono font-semibold text-red-600 whitespace-nowrap">
+                        <td class="px-4 py-3 text-right font-mono font-semibold whitespace-nowrap
+                            {{ $exp->status === 'approved' ? 'text-red-600' : 'text-gray-400' }}">
                             -{{ number_format($exp->amount, 2) }} {{ $exp->currency }}
                         </td>
+                        <td class="px-4 py-3 text-center">
+                            @if($exp->status === 'approved')
+                            <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Approved</span>
+                            @elseif($exp->status === 'pending')
+                            <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Pending</span>
+                            @elseif($exp->status === 'rejected')
+                            <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Rejected</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-right">
-                            <form method="POST" action="{{ route('finance.expenses.destroy', $exp) }}"
-                                  onsubmit="return confirm('Delete this expense?')">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="text-gray-300 hover:text-red-500 transition-colors">
+                            <div class="flex items-center justify-end gap-2">
+                                @if($exp->document_path)
+                                <a href="{{ route('finance.document', ['type' => 'expense', 'id' => $exp->id]) }}"
+                                   target="_blank" class="text-indigo-400 hover:text-indigo-600" title="View document">
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/>
                                     </svg>
-                                </button>
-                            </form>
+                                </a>
+                                @endif
+                                @if($exp->status === 'pending')
+                                <form method="POST" action="{{ route('finance.expenses.approve', $exp) }}">
+                                    @csrf
+                                    <button type="submit" class="text-xs text-green-600 hover:text-green-800 font-semibold" title="Approve">✓</button>
+                                </form>
+                                <form method="POST" action="{{ route('finance.expenses.reject', $exp) }}">
+                                    @csrf
+                                    <button type="submit" class="text-xs text-red-400 hover:text-red-600 font-semibold" title="Reject">✕</button>
+                                </form>
+                                @endif
+                                <form method="POST" action="{{ route('finance.expenses.destroy', $exp) }}"
+                                      onsubmit="return confirm('Delete this expense?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="text-gray-300 hover:text-red-500 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @endforeach

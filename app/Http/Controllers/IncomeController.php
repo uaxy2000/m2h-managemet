@@ -58,9 +58,20 @@ class IncomeController extends Controller
             'lead_id'           => 'nullable|uuid|exists:leads,id',
             'company_id'        => 'nullable|uuid|exists:companies,id',
             'target_account_id' => 'nullable|uuid|exists:financial_accounts,id',
+            'document'          => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
         ]);
 
         $income = Income::create([...$data, 'created_by' => auth()->id()]);
+
+        if ($request->hasFile('document')) {
+            $file = $request->file('document');
+            $path = $file->storeAs(
+                'finance-docs/incomes',
+                $income->id . '.' . $file->getClientOriginalExtension(),
+                'local'
+            );
+            $income->update(['document_path' => $path]);
+        }
 
         // SP cari: company owes us → positive movement
         if ($income->company_id) {
@@ -101,6 +112,10 @@ class IncomeController extends Controller
         AccountMovement::where('movable_type', Income::class)
             ->where('movable_id', $income->id)
             ->delete();
+
+        if ($income->document_path) {
+            \Storage::disk('local')->delete($income->document_path);
+        }
 
         $income->delete();
         return back()->with('success', 'Income deleted.');

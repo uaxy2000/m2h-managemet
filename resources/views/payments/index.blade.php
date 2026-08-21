@@ -116,6 +116,7 @@
                     <th class="text-right px-4 py-3 font-medium">Unit Price</th>
                     <th class="text-left px-4 py-3 font-medium">Note</th>
                     <th class="text-left px-4 py-3 font-medium">Recorded By</th>
+                    <th class="text-center px-4 py-3 font-medium">Doc</th>
                     <th class="px-5 py-3"></th>
                 </tr>
             </thead>
@@ -135,6 +136,18 @@
                     </td>
                     <td class="px-4 py-3 text-gray-500 max-w-xs truncate">{{ $p->note ?? '—' }}</td>
                     <td class="px-4 py-3 text-gray-400 text-xs">{{ $p->createdBy->name }}</td>
+                    <td class="px-4 py-3 text-center">
+                        @if($p->document_path)
+                        <a href="{{ route('finance.document', ['type' => 'payment', 'id' => $p->id]) }}"
+                           target="_blank" class="text-indigo-400 hover:text-indigo-600" title="View document">
+                            <svg class="w-4 h-4 inline" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/>
+                            </svg>
+                        </a>
+                        @else
+                        <span class="text-gray-300">—</span>
+                        @endif
+                    </td>
                     <td class="px-5 py-3 text-right">
                         <form method="POST" action="{{ route('payments.destroy', $p) }}"
                               onsubmit="return confirm('Delete this payment record?\nLinked leads will be marked as unpaid again.')">
@@ -167,7 +180,7 @@
             </button>
         </div>
 
-        <form method="POST" action="{{ route('payments.store') }}" class="space-y-4">
+        <form method="POST" action="{{ route('payments.store') }}" enctype="multipart/form-data" class="space-y-4">
             @csrf
 
             <div>
@@ -221,6 +234,11 @@
                 <input type="text" name="note" maxlength="500"
                        value="{{ old('note') }}" placeholder="Additional notes..."
                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Dekont / Fiş <span class="text-gray-400">(jpg, jpeg, png, pdf — max 10 MB, optional)</span></label>
+                <input type="file" name="document" accept=".jpg,.jpeg,.png,.pdf"
+                       class="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
             </div>
 
             <div class="flex justify-end gap-3 pt-1">

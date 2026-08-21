@@ -90,12 +90,23 @@ class PaymentsController extends Controller
             'lead_count' => 'required|integer|min:1',
             'paid_at'    => 'required|date',
             'note'       => 'nullable|string|max:500',
+            'document'   => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
         ]);
 
         $payment = Payment::create([
             ...$data,
             'created_by' => auth()->id(),
         ]);
+
+        if ($request->hasFile('document')) {
+            $file = $request->file('document');
+            $path = $file->storeAs(
+                'finance-docs/payments',
+                $payment->id . '.' . $file->getClientOriginalExtension(),
+                'local'
+            );
+            $payment->update(['document_path' => $path]);
+        }
 
         // En eski N ödenmemiş registered lead'i bul
         $leadIds = DB::table('lead_status_history as lsh')

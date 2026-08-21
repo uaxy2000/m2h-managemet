@@ -13,6 +13,7 @@ class Income extends Model
 
     protected $fillable = [
         'date', 'category_id', 'amount', 'currency', 'description',
+        'document_path',
         'lead_id', 'company_id', 'target_account_id', 'created_by',
     ];
 

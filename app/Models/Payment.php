@@ -12,7 +12,7 @@ class Payment extends Model
     use HasUuids;
 
     protected $fillable = [
-        'user_id', 'amount', 'currency', 'lead_count', 'paid_at', 'note', 'created_by',
+        'user_id', 'amount', 'currency', 'lead_count', 'paid_at', 'note', 'document_path', 'created_by',
     ];
 
     protected $casts = [
