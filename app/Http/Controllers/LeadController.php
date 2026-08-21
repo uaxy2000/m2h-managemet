@@ -655,9 +655,9 @@ class LeadController extends Controller
 
     private function withLeadKanbanEagers($q, string $sort = 'application_date')
     {
-        $q->addSelect(DB::raw(
+        $q->addSelect(['leads.*', DB::raw(
             '(SELECT MAX(lsh.changed_at) FROM lead_status_history lsh WHERE lsh.lead_id = leads.id AND lsh.to_stage_id = leads.stage_id) as stage_entered_at'
-        ))
+        )])
         ->withCount(['tasks as overdue_count' => fn ($q) => $q
                 ->where('is_done', false)
                 ->whereNotNull('due_at')
