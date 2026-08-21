@@ -1,7 +1,7 @@
-@extends('layouts.app')
+@extends('layouts.finance')
 @section('title', 'Finance Accounts')
 
-@section('content')
+@section('finance_content')
 <div class="p-6 max-w-5xl mx-auto space-y-6"
      x-data="{ showAccForm: {{ $errors->any() || old('name') ? 'true' : 'false' }} }">
 

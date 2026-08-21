@@ -1,7 +1,7 @@
-@extends('layouts.app')
+@extends('layouts.finance')
 @section('title', ($account->user?->name ?? $account->company?->name ?? $account->name) . ' — Ledger')
 
-@section('content')
+@section('finance_content')
 <div class="p-6 max-w-4xl mx-auto space-y-6">
 
     {{-- Header --}}

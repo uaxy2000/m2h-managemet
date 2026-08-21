@@ -1,7 +1,7 @@
-@extends('layouts.app')
+@extends('layouts.finance')
 @section('title', 'My Finance')
 
-@section('content')
+@section('finance_content')
 @php
 $groupsJson = $expenseGroups->map(fn($g) => [
     'id'       => $g->id,
