@@ -73,6 +73,7 @@ Route::middleware('auth')->group(function () {
     // Finance
     Route::get('finance', [FinanceController::class, 'index'])->name('finance.index');
     Route::get('finance/accounts', [FinanceAccountController::class, 'index'])->name('finance.accounts.index');
+    Route::get('finance/categories', [FinanceAccountController::class, 'categoriesIndex'])->name('finance.categories.index');
     Route::post('finance/accounts', [FinanceAccountController::class, 'store'])->name('finance.accounts.store');
     Route::put('finance/accounts/{account}', [FinanceAccountController::class, 'update'])->name('finance.accounts.update');
     Route::delete('finance/accounts/{account}', [FinanceAccountController::class, 'destroy'])->name('finance.accounts.destroy');

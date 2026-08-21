@@ -31,13 +31,8 @@ class FinanceAccountController extends Controller
 
         $serviceProviders = Company::where('type', 'service_provider')->orderBy('name')->get();
 
-        // Groups with their children for the category management UI
-        $expenseGroups = TransactionCategory::forExpenses()->with('children')->get();
-        $incomeGroups  = TransactionCategory::forIncomes()->with('children')->get();
-
         return view('finance.accounts.index', compact(
-            'accounts', 'internalUsers', 'serviceProviders',
-            'expenseGroups', 'incomeGroups'
+            'accounts', 'internalUsers', 'serviceProviders'
         ));
     }
 
@@ -99,6 +94,16 @@ class FinanceAccountController extends Controller
         $balance = $account->balance();
 
         return view('finance.accounts.show', compact('account', 'movements', 'balance'));
+    }
+
+    public function categoriesIndex(): View
+    {
+        abort_unless(auth()->user()->isInternalAdmin(), 403);
+
+        $expenseGroups = TransactionCategory::forExpenses()->with('children')->get();
+        $incomeGroups  = TransactionCategory::forIncomes()->with('children')->get();
+
+        return view('finance.categories.index', compact('expenseGroups', 'incomeGroups'));
     }
 
     // Group CRUD (parent_id = null)
