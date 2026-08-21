@@ -247,6 +247,21 @@
             Duplicate
         </label>
 
+        {{-- Sort --}}
+        <div class="flex items-center gap-1 flex-shrink-0 ml-auto">
+            <span class="text-xs text-gray-400">Sort:</span>
+            <div class="inline-flex rounded-lg border border-gray-200 overflow-hidden text-xs font-medium">
+                <button type="submit" name="sort" value="application_date"
+                        class="px-2.5 py-1.5 transition-colors {{ $filters['sort'] === 'application_date' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50' }}">
+                    Application Date
+                </button>
+                <button type="submit" name="sort" value="stage_entered_at"
+                        class="px-2.5 py-1.5 border-l border-gray-200 transition-colors {{ $filters['sort'] === 'stage_entered_at' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50' }}">
+                    Stage Entry Date
+                </button>
+            </div>
+        </div>
+
         {{-- Submit --}}
         <button type="submit"
                 class="flex-shrink-0 px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors">
@@ -269,7 +284,7 @@
         <span class="flex-shrink-0 text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
             {{ $activeCount }} active
         </span>
-        <a href="{{ route('leads.index', ['pipeline' => $currentPipeline?->id]) }}"
+        <a href="{{ route('leads.index', array_filter(['pipeline' => $currentPipeline?->id, 'sort' => $filters['sort'] !== 'application_date' ? $filters['sort'] : null])) }}"
            class="flex-shrink-0 text-xs text-gray-400 hover:text-red-500 transition-colors">
             × Clear
         </a>

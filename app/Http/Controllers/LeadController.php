@@ -44,7 +44,7 @@ class LeadController extends Controller
                 'stages'       => fn ($q) => $q->orderBy('sort_order'),
                 'stages.leads' => function ($q) use ($filters, $filterableFields) {
                     $this->applyLeadBaseFilters($q, $filters, $filterableFields);
-                    $this->withLeadKanbanEagers($q);
+                    $this->withLeadKanbanEagers($q, $filters['sort']);
                     $q->limit(100);
                 },
             ])->find($currentPipelineId)
@@ -545,7 +545,7 @@ class LeadController extends Controller
         // Paginated leads with all eager loads
         $leadsQ = $stage->leads();
         $this->applyLeadBaseFilters($leadsQ, $filters, $filterableFields);
-        $this->withLeadKanbanEagers($leadsQ);
+        $this->withLeadKanbanEagers($leadsQ, $filters['sort']);
         $leads = $leadsQ->forPage($page, $perPage)->get();
 
         $html = '';
@@ -586,6 +586,9 @@ class LeadController extends Controller
             'meta_campaign_id' => $request->get('meta_campaign_id'),
             'meta_adset_id'    => $request->get('meta_adset_id'),
             'meta_ad_id'       => $request->get('meta_ad_id'),
+            'sort'             => in_array($request->get('sort'), ['stage_entered_at'])
+                                    ? 'stage_entered_at'
+                                    : 'application_date',
         ];
     }
 
@@ -649,10 +652,9 @@ class LeadController extends Controller
             });
     }
 
-    private function withLeadKanbanEagers($q)
+    private function withLeadKanbanEagers($q, string $sort = 'application_date')
     {
-        return $q
-            ->withCount(['tasks as overdue_count' => fn ($q) => $q
+        $q->withCount(['tasks as overdue_count' => fn ($q) => $q
                 ->where('is_done', false)
                 ->whereNotNull('due_at')
                 ->where('due_at', '<', now())
@@ -670,7 +672,14 @@ class LeadController extends Controller
                 'subStage',
                 'programs' => fn ($q) => $q->wherePivot('is_primary', true),
             ])
-            ->orderByDesc('has_unread_wa')
-            ->orderByDesc('created_at');
+            ->orderByDesc('has_unread_wa');
+
+        if ($sort === 'stage_entered_at') {
+            $q->orderByRaw('(SELECT MAX(lsh.changed_at) FROM lead_status_history lsh WHERE lsh.lead_id = leads.id AND lsh.to_stage_id = leads.stage_id) DESC');
+        } else {
+            $q->orderByDesc('leads.created_at');
+        }
+
+        return $q;
     }
 }
