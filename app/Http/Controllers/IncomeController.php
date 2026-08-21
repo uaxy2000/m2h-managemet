@@ -17,7 +17,7 @@ class IncomeController extends Controller
     {
         abort_unless(auth()->user()->isInternalAdmin(), 403);
 
-        $from = $request->get('from', now()->startOfMonth()->toDateString());
+        $from = $request->get('from', now()->startOfYear()->toDateString());
         $to   = $request->get('to', now()->toDateString());
 
         $query = Income::with(['category', 'company', 'lead', 'targetAccount', 'createdBy'])

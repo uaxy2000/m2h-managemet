@@ -28,7 +28,7 @@
         @if(in_array($account->type, ['current_person','current_company']))
         <div class="text-right text-xs text-gray-400">
             @if($account->type === 'current_person')
-                <p>Positive = company owes this person</p>
+                <p>Negative = company owes this person (unreimbursed expenses)</p>
             @else
                 <p>Positive = this company owes us</p>
             @endif
@@ -56,7 +56,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                    @php $running = 0; $allMovements = $movements->getCollection()->sortBy('date')->sortBy('created_at'); $runningMap = []; $r = 0; foreach($allMovements as $m) { $r += $m->amount; $runningMap[$m->id] = $r; } @endphp
+                    @php $r = 0; $runningMap = []; foreach($movements as $m) { $r += $m->amount; $runningMap[$m->id] = $r; } @endphp
                     @foreach($movements as $mv)
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3 text-gray-600 whitespace-nowrap">{{ $mv->date->format('d M Y') }}</td>
@@ -75,9 +75,6 @@
                     @endforeach
                 </tbody>
             </table>
-        </div>
-        <div class="px-5 py-3 border-t border-gray-100">
-            {{ $movements->links() }}
         </div>
         @endif
     </div>

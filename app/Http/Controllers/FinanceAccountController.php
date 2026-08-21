@@ -91,9 +91,9 @@ class FinanceAccountController extends Controller
 
         $movements = AccountMovement::where('account_id', $account->id)
             ->with('createdBy')
-            ->orderByDesc('date')
-            ->orderByDesc('created_at')
-            ->paginate(50);
+            ->orderBy('date')
+            ->orderBy('created_at')
+            ->get();
 
         $balance = $account->balance();
 

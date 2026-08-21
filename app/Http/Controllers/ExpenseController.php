@@ -18,7 +18,7 @@ class ExpenseController extends Controller
         $user = auth()->user();
         abort_unless($user->isInternalAdmin(), 403);
 
-        $from = $request->get('from', now()->startOfMonth()->toDateString());
+        $from = $request->get('from', now()->startOfYear()->toDateString());
         $to   = $request->get('to', now()->toDateString());
 
         $query = Expense::with(['category.parent', 'paidBy', 'sourceAccount', 'lead', 'createdBy'])
@@ -152,7 +152,7 @@ class ExpenseController extends Controller
             AccountMovement::create([
                 'account_id'   => $account->id,
                 'date'         => $expense->date,
-                'amount'       => $expense->amount,
+                'amount'       => -$expense->amount,
                 'description'  => $desc,
                 'movable_type' => Expense::class,
                 'movable_id'   => $expense->id,
