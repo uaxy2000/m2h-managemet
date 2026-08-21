@@ -191,6 +191,7 @@ class ReportsController extends Controller
             ->join('leads', 'leads.id', '=', 'lead_status_history.lead_id')
             ->where('lead_status_history.to_stage_id', $REGISTERED_STAGE)
             ->whereIn('leads.assigned_to', $userIds)
+            ->where('leads.created_at', '>=', '2026-08-10')
             ->select(
                 'leads.assigned_to',
                 DB::raw('ROUND(AVG(TIMESTAMPDIFF(DAY,
@@ -317,6 +318,7 @@ class ReportsController extends Controller
             ->join('leads', 'leads.id', '=', 'lsh.lead_id')
             ->where('lsh.to_stage_id', $REGISTERED_STAGE)
             ->where('leads.assigned_to', $userId)
+            ->where('leads.created_at', '>=', '2026-08-10')
             ->select([
                 'leads.id',
                 DB::raw("CONCAT(leads.first_name, ' ', COALESCE(leads.last_name, '')) as name"),
