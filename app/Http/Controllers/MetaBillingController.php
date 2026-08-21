@@ -25,7 +25,10 @@ class MetaBillingController extends Controller
 
         if ($service->isConfigured()) {
             try {
-                [$transactions, $currency] = $service->fetchBillingTransactions(100);
+                [$transactions, $currency, $apiError] = $service->fetchBillingTransactions(100);
+                if ($apiError) {
+                    $fetchError = $apiError;
+                }
             } catch (\Throwable $e) {
                 $fetchError = $e->getMessage();
             }

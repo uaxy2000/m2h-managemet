@@ -156,29 +156,38 @@ class MetaAdsService
      * Returns [transactions[], currency] where transactions are billing charges
      * from the Meta Ads account ordered newest first.
      */
+    /**
+     * Returns [transactions[], currency, rawError|null]
+     */
     public function fetchBillingTransactions(int $limit = 100): array
     {
         $currency = $this->fetchAccountCurrency();
 
-        $response = $this->get("{$this->accountId}/transactions", [
-            'fields' => 'time_start,time_stop,amount,status,payment_option',
+        // Fetch with minimal core fields; payment_option is not available on all accounts
+        $response = $this->getRaw("{$this->accountId}/transactions", [
+            'fields' => 'time_start,time_stop,amount,status',
             'limit'  => $limit,
         ]);
 
+        // Surface API-level errors (Meta returns HTTP 200 with 'error' key in some cases)
+        if (isset($response['error'])) {
+            $msg = $response['error']['message'] ?? 'Unknown Meta API error';
+            return [[], $currency, $msg];
+        }
+
         $transactions = collect($response['data'] ?? [])
             ->map(fn($t) => [
-                'id'             => $t['id'] ?? '',
-                'date_start'     => date('Y-m-d', (int)($t['time_start'] ?? time())),
-                'date_stop'      => date('Y-m-d', (int)($t['time_stop']  ?? time())),
-                'amount'         => (float)($t['amount'] ?? 0),
-                'status'         => $t['status'] ?? 'UNKNOWN',
-                'payment_option' => $t['payment_option'] ?? '',
+                'id'         => $t['id'] ?? '',
+                'date_start' => isset($t['time_start']) ? date('Y-m-d', (int)$t['time_start']) : '—',
+                'date_stop'  => isset($t['time_stop'])  ? date('Y-m-d', (int)$t['time_stop'])  : '—',
+                'amount'     => (float)($t['amount'] ?? 0),
+                'status'     => $t['status'] ?? 'UNKNOWN',
             ])
             ->sortByDesc('date_stop')
             ->values()
             ->all();
 
-        return [$transactions, $currency];
+        return [$transactions, $currency, null];
     }
 
     public function fetchAccountCurrency(): string
@@ -187,11 +196,12 @@ class MetaAdsService
         return $response['currency'] ?? 'USD';
     }
 
-    private function get(string $endpoint, array $params): array
+    /** Returns raw JSON including any 'error' key; never throws. */
+    private function getRaw(string $endpoint, array $params): array
     {
         $params['access_token'] = $this->token;
-
         $response = Http::timeout(30)->get(self::BASE_URL . ltrim($endpoint, '/'), $params);
+        $json = $response->json() ?? [];
 
         if (!$response->ok()) {
             Log::error('MetaAdsService: API error', [
@@ -199,9 +209,16 @@ class MetaAdsService
                 'status'   => $response->status(),
                 'body'     => $response->body(),
             ]);
-            return [];
+            // Preserve the error body so callers can surface it
+            return $json ?: ['error' => ['message' => 'HTTP ' . $response->status()]];
         }
 
-        return $response->json() ?? [];
+        return $json;
+    }
+
+    private function get(string $endpoint, array $params): array
+    {
+        $json = $this->getRaw($endpoint, $params);
+        return isset($json['error']) ? [] : $json;
     }
 }
