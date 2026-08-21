@@ -26,7 +26,24 @@
     </div>
 
     {{-- Add Expense Form --}}
-    <div x-show="showForm" x-cloak class="bg-white rounded-xl border border-gray-200 p-5">
+    @php
+    $groupsJson = $categories->map(fn($g) => [
+        'id'       => $g->id,
+        'name'     => $g->name,
+        'children' => $g->children->map(fn($c) => ['id' => $c->id, 'name' => $c->name])->values()->toArray(),
+    ])->values()->toJson();
+    @endphp
+    <div x-show="showForm" x-cloak class="bg-white rounded-xl border border-gray-200 p-5"
+         x-data="{
+             groups: {{ $groupsJson }},
+             groupId: '',
+             categoryId: '',
+             get filteredTypes() {
+                 if (!this.groupId) return [];
+                 const g = this.groups.find(g => g.id === this.groupId);
+                 return g ? g.children : [];
+             }
+         }">
         <h2 class="text-sm font-semibold text-gray-700 mb-4">New Expense</h2>
         <form method="POST" action="{{ route('finance.expenses.store') }}">
             @csrf
@@ -37,12 +54,24 @@
                            class="w-full rounded-lg border-gray-300 text-sm focus:ring-red-500 focus:border-red-500">
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-500 mb-1">Category *</label>
-                    <select name="category_id" required class="w-full rounded-lg border-gray-300 text-sm focus:ring-red-500 focus:border-red-500">
-                        <option value="">— Select —</option>
-                        @foreach($categories as $cat)
-                        <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
-                        @endforeach
+                    <label class="block text-xs text-gray-500 mb-1">Group *</label>
+                    <select x-model="groupId" @change="categoryId = ''" required
+                            class="w-full rounded-lg border-gray-300 text-sm focus:ring-red-500 focus:border-red-500">
+                        <option value="">— Select group —</option>
+                        <template x-for="g in groups" :key="g.id">
+                            <option :value="g.id" x-text="g.name"></option>
+                        </template>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Type *</label>
+                    <select name="category_id" x-model="categoryId" required
+                            :disabled="!groupId || filteredTypes.length === 0"
+                            class="w-full rounded-lg border-gray-300 text-sm focus:ring-red-500 focus:border-red-500 disabled:opacity-50">
+                        <option value="">— Select type —</option>
+                        <template x-for="t in filteredTypes" :key="t.id">
+                            <option :value="t.id" x-text="t.name"></option>
+                        </template>
                     </select>
                 </div>
                 <div class="flex gap-2">
@@ -110,8 +139,12 @@
             <label class="block text-xs text-gray-500 mb-1">Category</label>
             <select name="category_id" class="rounded-lg border-gray-300 text-sm">
                 <option value="">All categories</option>
-                @foreach($categories as $cat)
-                <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                @foreach($categories as $group)
+                <optgroup label="{{ $group->name }}">
+                    @foreach($group->children as $cat)
+                    <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                    @endforeach
+                </optgroup>
                 @endforeach
             </select>
         </div>
@@ -162,7 +195,17 @@
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3 text-gray-600 whitespace-nowrap">{{ $exp->date->format('d M Y') }}</td>
                         <td class="px-4 py-3">
-                            <span class="inline-block bg-red-50 text-red-700 text-xs px-2 py-0.5 rounded-full">{{ $exp->category?->name }}</span>
+                            @if($exp->category)
+                            <div class="flex items-center gap-1 flex-wrap">
+                                @if($exp->category->parent)
+                                <span class="text-xs text-gray-400">{{ $exp->category->parent->name }}</span>
+                                <span class="text-gray-300">/</span>
+                                @endif
+                                <span class="inline-block bg-red-50 text-red-700 text-xs px-2 py-0.5 rounded-full">{{ $exp->category->name }}</span>
+                            </div>
+                            @else
+                            <span class="text-gray-400">—</span>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-gray-700 max-w-xs truncate">{{ $exp->description ?: '—' }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $exp->paidBy?->name ?? '—' }}</td>

@@ -2,7 +2,14 @@
 @section('title', 'Finance Accounts')
 
 @section('content')
-<div class="p-6 max-w-5xl mx-auto space-y-6" x-data="{ showForm: false, showCatForm: false }">
+<div class="p-6 max-w-5xl mx-auto space-y-6"
+     x-data="{
+         showAccForm: false,
+         showGroupForm: false,
+         groupDirection: 'expense',
+         catParentId: '',
+         catDirection: 'expense',
+     }">
 
     @if(session('success'))
     <div class="bg-green-50 border border-green-200 text-green-800 text-sm rounded-lg px-4 py-3">{{ session('success') }}</div>
@@ -19,38 +26,16 @@
             </a>
             <h1 class="text-xl font-semibold text-gray-900">Accounts & Categories</h1>
         </div>
-        <div class="flex gap-2">
-            <button @click="showCatForm = !showCatForm" class="px-3 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium">+ Category</button>
-            <button @click="showForm = !showForm" class="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">+ Account</button>
-        </div>
-    </div>
-
-    {{-- Add Category Form --}}
-    <div x-show="showCatForm" x-cloak class="bg-white rounded-xl border border-gray-200 p-5">
-        <h2 class="text-sm font-semibold text-gray-700 mb-4">New Category</h2>
-        <form method="POST" action="{{ route('finance.categories.store') }}" class="flex gap-3 items-end">
-            @csrf
-            <div>
-                <label class="block text-xs text-gray-500 mb-1">Name *</label>
-                <input type="text" name="name" required maxlength="100"
-                       class="rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g. Kira Gideri">
-            </div>
-            <div>
-                <label class="block text-xs text-gray-500 mb-1">Direction *</label>
-                <select name="direction" required class="rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="expense">Expense</option>
-                    <option value="income">Income</option>
-                </select>
-            </div>
-            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700">Add</button>
-            <button type="button" @click="showCatForm = false" class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
-        </form>
+        <button @click="showAccForm = !showAccForm"
+                class="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
+            + Account
+        </button>
     </div>
 
     {{-- Add Account Form --}}
-    <div x-show="showForm" x-cloak class="bg-white rounded-xl border border-gray-200 p-5">
+    <div x-show="showAccForm" x-cloak class="bg-white rounded-xl border border-gray-200 p-5">
         <h2 class="text-sm font-semibold text-gray-700 mb-4">New Account</h2>
-        <form method="POST" action="{{ route('finance.accounts.store') }}">
+        <form method="POST" action="{{ route('finance.accounts.store') }}" x-data="{ newType: 'bank' }">
             @csrf
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
@@ -76,7 +61,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div x-show="newType === 'current_person'" x-data="{ newType: 'bank' }" x-init="$watch('$parent.newType', v => newType = v)">
+                <div x-show="newType === 'current_person'">
                     <label class="block text-xs text-gray-500 mb-1">Person</label>
                     <select name="user_id" class="w-full rounded-lg border-gray-300 text-sm">
                         <option value="">— Select —</option>
@@ -85,7 +70,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div x-show="newType === 'current_company'" x-data="{ newType: 'bank' }" x-init="$watch('$parent.newType', v => newType = v)">
+                <div x-show="newType === 'current_company'">
                     <label class="block text-xs text-gray-500 mb-1">Company (SP)</label>
                     <select name="company_id" class="w-full rounded-lg border-gray-300 text-sm">
                         <option value="">— Select —</option>
@@ -97,15 +82,15 @@
             </div>
             <div class="mt-4 flex gap-3">
                 <button type="submit" class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700">Create Account</button>
-                <button type="button" @click="showForm = false" class="px-4 py-2 text-sm text-gray-500">Cancel</button>
+                <button type="button" @click="showAccForm = false" class="px-4 py-2 text-sm text-gray-500">Cancel</button>
             </div>
         </form>
     </div>
 
     {{-- Accounts list --}}
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden" x-data="{ newType: 'bank' }">
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div class="px-5 py-4 border-b border-gray-100">
-            <h2 class="text-sm font-semibold text-gray-700">All Accounts</h2>
+            <h2 class="text-sm font-semibold text-gray-700">Accounts</h2>
         </div>
         @if($accounts->isEmpty())
         <p class="text-sm text-gray-400 text-center py-8">No accounts yet.</p>
@@ -118,15 +103,12 @@
                         <span class="text-sm font-medium text-gray-800">{{ $acc->name }}</span>
                         <span class="text-xs px-2 py-0.5 rounded-full
                             {{ match($acc->type) {
-                                'bank' => 'bg-blue-50 text-blue-700',
-                                'cash' => 'bg-yellow-50 text-yellow-700',
-                                'current_person' => 'bg-purple-50 text-purple-700',
-                                'current_company' => 'bg-green-50 text-green-700',
-                                default => 'bg-gray-100 text-gray-600'
+                                'bank'             => 'bg-blue-50 text-blue-700',
+                                'cash'             => 'bg-yellow-50 text-yellow-700',
+                                'current_person'   => 'bg-purple-50 text-purple-700',
+                                'current_company'  => 'bg-green-50 text-green-700',
+                                default            => 'bg-gray-100 text-gray-600'
                             } }}">{{ $acc->typeLabel() }}</span>
-                        @if(!$acc->is_active)
-                        <span class="text-xs text-gray-400">(inactive)</span>
-                        @endif
                     </div>
                     @if($acc->user)
                     <p class="text-xs text-gray-400 mt-0.5">{{ $acc->user->name }}</p>
@@ -138,7 +120,7 @@
                     {{ number_format($acc->current_balance, 2) }} {{ $acc->currency }}
                 </span>
                 <a href="{{ route('finance.accounts.show', $acc) }}"
-                   class="text-xs text-indigo-600 hover:underline whitespace-nowrap">View ledger</a>
+                   class="text-xs text-indigo-600 hover:underline whitespace-nowrap">Ledger</a>
                 <form method="POST" action="{{ route('finance.accounts.destroy', $acc) }}"
                       onsubmit="return confirm('Delete account? Only possible if no movements exist.')">
                     @csrf @method('DELETE')
@@ -154,49 +136,155 @@
         @endif
     </div>
 
-    {{-- Categories --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Expense Categories</h2>
-            @if($expenseCategories->isEmpty())
-            <p class="text-sm text-gray-400">None yet.</p>
-            @else
-            <div class="space-y-1">
-                @foreach($expenseCategories as $cat)
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-700">{{ $cat->name }}</span>
-                    <form method="POST" action="{{ route('finance.categories.destroy', $cat) }}"
-                          onsubmit="return confirm('Delete category?')">
-                        @csrf @method('DELETE')
-                        <button type="submit" class="text-gray-300 hover:text-red-500 transition-colors">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
-                        </button>
+    {{-- Categories (grouped) --}}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {{-- Expense Groups & Categories --}}
+        <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Expense Categories</h2>
+                <button @click="showGroupForm = !showGroupForm; groupDirection = 'expense'"
+                        class="text-xs text-indigo-600 hover:underline">+ Add Group</button>
+            </div>
+
+            {{-- Add group inline --}}
+            <div x-show="showGroupForm && groupDirection === 'expense'" x-cloak>
+                <form method="POST" action="{{ route('finance.groups.store') }}" class="flex gap-2">
+                    @csrf
+                    <input type="hidden" name="direction" value="expense">
+                    <input type="text" name="name" required maxlength="100" placeholder="Group name…"
+                           class="flex-1 rounded-lg border-gray-300 text-sm focus:ring-red-500 focus:border-red-500">
+                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700">Add</button>
+                    <button type="button" @click="showGroupForm = false" class="px-2 py-1.5 text-xs text-gray-400 hover:text-gray-600">✕</button>
+                </form>
+            </div>
+
+            @forelse($expenseGroups as $group)
+            <div class="border border-gray-100 rounded-lg overflow-hidden">
+                {{-- Group header --}}
+                <div class="flex items-center justify-between bg-red-50 px-3 py-2">
+                    <span class="text-xs font-semibold text-red-700 uppercase tracking-wide">{{ $group->name }}</span>
+                    <div class="flex items-center gap-2">
+                        {{-- Add category under this group --}}
+                        <button @click="catParentId = '{{ $group->id }}'; catDirection = 'expense'"
+                                class="text-xs text-red-500 hover:text-red-700">+ type</button>
+                        <form method="POST" action="{{ route('finance.groups.destroy', $group) }}"
+                              onsubmit="return confirm('Delete group?')">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="text-red-300 hover:text-red-500">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                {{-- Inline add category form for this group --}}
+                <div x-show="catParentId === '{{ $group->id }}'" x-cloak class="px-3 py-2 bg-red-50/40 border-b border-gray-100">
+                    <form method="POST" action="{{ route('finance.categories.store') }}" class="flex gap-2">
+                        @csrf
+                        <input type="hidden" name="parent_id" value="{{ $group->id }}">
+                        <input type="text" name="name" required maxlength="100" placeholder="Type name…"
+                               class="flex-1 rounded-lg border-gray-300 text-xs focus:ring-red-500 focus:border-red-500">
+                        <button type="submit" class="px-3 py-1 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700">Add</button>
+                        <button type="button" @click="catParentId = ''" class="text-xs text-gray-400 hover:text-gray-600">✕</button>
                     </form>
                 </div>
-                @endforeach
+
+                {{-- Children --}}
+                @if($group->children->isEmpty())
+                <p class="text-xs text-gray-400 px-3 py-2 italic">No types yet.</p>
+                @else
+                <div class="divide-y divide-gray-50">
+                    @foreach($group->children as $cat)
+                    <div class="flex items-center justify-between px-3 py-1.5 hover:bg-gray-50">
+                        <span class="text-sm text-gray-700">{{ $cat->name }}</span>
+                        <form method="POST" action="{{ route('finance.categories.destroy', $cat) }}"
+                              onsubmit="return confirm('Delete type?')">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="text-gray-300 hover:text-red-500 transition-colors">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                            </button>
+                        </form>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
             </div>
-            @endif
+            @empty
+            <p class="text-sm text-gray-400 italic">No expense groups yet. Add a group first.</p>
+            @endforelse
         </div>
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Income Categories</h2>
-            @if($incomeCategories->isEmpty())
-            <p class="text-sm text-gray-400">None yet.</p>
-            @else
-            <div class="space-y-1">
-                @foreach($incomeCategories as $cat)
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-700">{{ $cat->name }}</span>
-                    <form method="POST" action="{{ route('finance.categories.destroy', $cat) }}"
-                          onsubmit="return confirm('Delete category?')">
-                        @csrf @method('DELETE')
-                        <button type="submit" class="text-gray-300 hover:text-red-500 transition-colors">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
-                        </button>
+
+        {{-- Income Groups & Categories --}}
+        <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Income Categories</h2>
+                <button @click="showGroupForm = !showGroupForm; groupDirection = 'income'"
+                        class="text-xs text-indigo-600 hover:underline">+ Add Group</button>
+            </div>
+
+            {{-- Add group inline --}}
+            <div x-show="showGroupForm && groupDirection === 'income'" x-cloak>
+                <form method="POST" action="{{ route('finance.groups.store') }}" class="flex gap-2">
+                    @csrf
+                    <input type="hidden" name="direction" value="income">
+                    <input type="text" name="name" required maxlength="100" placeholder="Group name…"
+                           class="flex-1 rounded-lg border-gray-300 text-sm focus:ring-green-500 focus:border-green-500">
+                    <button type="submit" class="px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700">Add</button>
+                    <button type="button" @click="showGroupForm = false" class="px-2 py-1.5 text-xs text-gray-400 hover:text-gray-600">✕</button>
+                </form>
+            </div>
+
+            @forelse($incomeGroups as $group)
+            <div class="border border-gray-100 rounded-lg overflow-hidden">
+                <div class="flex items-center justify-between bg-green-50 px-3 py-2">
+                    <span class="text-xs font-semibold text-green-700 uppercase tracking-wide">{{ $group->name }}</span>
+                    <div class="flex items-center gap-2">
+                        <button @click="catParentId = '{{ $group->id }}'; catDirection = 'income'"
+                                class="text-xs text-green-500 hover:text-green-700">+ type</button>
+                        <form method="POST" action="{{ route('finance.groups.destroy', $group) }}"
+                              onsubmit="return confirm('Delete group?')">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="text-green-300 hover:text-red-500">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div x-show="catParentId === '{{ $group->id }}'" x-cloak class="px-3 py-2 bg-green-50/40 border-b border-gray-100">
+                    <form method="POST" action="{{ route('finance.categories.store') }}" class="flex gap-2">
+                        @csrf
+                        <input type="hidden" name="parent_id" value="{{ $group->id }}">
+                        <input type="text" name="name" required maxlength="100" placeholder="Type name…"
+                               class="flex-1 rounded-lg border-gray-300 text-xs focus:ring-green-500 focus:border-green-500">
+                        <button type="submit" class="px-3 py-1 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700">Add</button>
+                        <button type="button" @click="catParentId = ''" class="text-xs text-gray-400 hover:text-gray-600">✕</button>
                     </form>
                 </div>
-                @endforeach
+
+                @if($group->children->isEmpty())
+                <p class="text-xs text-gray-400 px-3 py-2 italic">No types yet.</p>
+                @else
+                <div class="divide-y divide-gray-50">
+                    @foreach($group->children as $cat)
+                    <div class="flex items-center justify-between px-3 py-1.5 hover:bg-gray-50">
+                        <span class="text-sm text-gray-700">{{ $cat->name }}</span>
+                        <form method="POST" action="{{ route('finance.categories.destroy', $cat) }}"
+                              onsubmit="return confirm('Delete type?')">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="text-gray-300 hover:text-red-500 transition-colors">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                            </button>
+                        </form>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
             </div>
-            @endif
+            @empty
+            <p class="text-sm text-gray-400 italic">No income groups yet.</p>
+            @endforelse
         </div>
     </div>
 

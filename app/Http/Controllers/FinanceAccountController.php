@@ -31,12 +31,13 @@ class FinanceAccountController extends Controller
 
         $serviceProviders = Company::where('type', 'service_provider')->orderBy('name')->get();
 
-        $expenseCategories = TransactionCategory::forExpenses()->get();
-        $incomeCategories  = TransactionCategory::forIncomes()->get();
+        // Groups with their children for the category management UI
+        $expenseGroups = TransactionCategory::forExpenses()->with('children')->get();
+        $incomeGroups  = TransactionCategory::forIncomes()->with('children')->get();
 
         return view('finance.accounts.index', compact(
             'accounts', 'internalUsers', 'serviceProviders',
-            'expenseCategories', 'incomeCategories'
+            'expenseGroups', 'incomeGroups'
         ));
     }
 
@@ -99,8 +100,8 @@ class FinanceAccountController extends Controller
         return view('finance.accounts.show', compact('account', 'movements', 'balance'));
     }
 
-    // Categories CRUD
-    public function storeCategory(Request $request): RedirectResponse
+    // Group CRUD (parent_id = null)
+    public function storeGroup(Request $request): RedirectResponse
     {
         abort_unless(auth()->user()->isInternalAdmin(), 403);
 
@@ -109,7 +110,39 @@ class FinanceAccountController extends Controller
             'direction' => 'required|in:expense,income',
         ]);
 
-        TransactionCategory::create($data);
+        TransactionCategory::create([...$data, 'parent_id' => null]);
+        return back()->with('success', 'Group created.');
+    }
+
+    public function destroyGroup(TransactionCategory $group): RedirectResponse
+    {
+        abort_unless(auth()->user()->isInternalAdmin(), 403);
+
+        if ($group->children()->exists()) {
+            return back()->with('error', 'Cannot delete group with categories under it. Delete the categories first.');
+        }
+
+        $group->delete();
+        return back()->with('success', 'Group deleted.');
+    }
+
+    // Category CRUD (leaf — has parent_id)
+    public function storeCategory(Request $request): RedirectResponse
+    {
+        abort_unless(auth()->user()->isInternalAdmin(), 403);
+
+        $data = $request->validate([
+            'name'      => 'required|string|max:100',
+            'parent_id' => 'required|uuid|exists:transaction_categories,id',
+        ]);
+
+        $parent = TransactionCategory::findOrFail($data['parent_id']);
+        TransactionCategory::create([
+            'name'      => $data['name'],
+            'parent_id' => $parent->id,
+            'direction' => $parent->direction,
+        ]);
+
         return back()->with('success', 'Category created.');
     }
 
@@ -117,7 +150,7 @@ class FinanceAccountController extends Controller
     {
         abort_unless(auth()->user()->isInternalAdmin(), 403);
 
-        if ($category->expenses()->exists() || $category->incomes()->exists()) {
+        if ($category->expenseRecords()->exists() || $category->incomeRecords()->exists()) {
             return back()->with('error', 'Cannot delete category with existing records.');
         }
 

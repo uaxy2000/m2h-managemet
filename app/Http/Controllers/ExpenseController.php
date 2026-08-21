@@ -20,7 +20,7 @@ class ExpenseController extends Controller
         $from = $request->get('from', now()->startOfMonth()->toDateString());
         $to   = $request->get('to', now()->toDateString());
 
-        $query = Expense::with(['category', 'paidBy', 'sourceAccount', 'lead', 'createdBy'])
+        $query = Expense::with(['category.parent', 'paidBy', 'sourceAccount', 'lead', 'createdBy'])
             ->whereBetween('date', [$from, $to])
             ->orderByDesc('date')
             ->orderByDesc('created_at');
@@ -33,7 +33,7 @@ class ExpenseController extends Controller
         }
 
         $expenses   = $query->get();
-        $categories = TransactionCategory::forExpenses()->get();
+        $categories = TransactionCategory::forExpenses()->with('children')->get();
         $accounts   = FinancialAccount::whereIn('type', ['bank', 'cash'])->where('is_active', true)->orderBy('name')->get();
         $internalUsers = User::whereHas('company', fn ($q) => $q->where('type', 'internal'))->orderBy('name')->get();
 

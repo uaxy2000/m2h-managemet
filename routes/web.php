@@ -75,6 +75,8 @@ Route::middleware('auth')->group(function () {
     Route::put('finance/accounts/{account}', [FinanceAccountController::class, 'update'])->name('finance.accounts.update');
     Route::delete('finance/accounts/{account}', [FinanceAccountController::class, 'destroy'])->name('finance.accounts.destroy');
     Route::get('finance/accounts/{account}', [FinanceAccountController::class, 'show'])->name('finance.accounts.show');
+    Route::post('finance/groups', [FinanceAccountController::class, 'storeGroup'])->name('finance.groups.store');
+    Route::delete('finance/groups/{group}', [FinanceAccountController::class, 'destroyGroup'])->name('finance.groups.destroy');
     Route::post('finance/categories', [FinanceAccountController::class, 'storeCategory'])->name('finance.categories.store');
     Route::delete('finance/categories/{category}', [FinanceAccountController::class, 'destroyCategory'])->name('finance.categories.destroy');
     Route::get('finance/expenses', [ExpenseController::class, 'index'])->name('finance.expenses.index');
