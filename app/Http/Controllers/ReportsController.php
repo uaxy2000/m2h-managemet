@@ -185,14 +185,25 @@ class ReportsController extends Controller
             ->groupBy('leads.assigned_to')
             ->pluck('cnt', 'assigned_to');
 
-        // Average days from lead creation → LEAD REGISTERED
+        // Average days from assignment → LEAD REGISTERED
+        // Uses the latest assignment activity before registration; falls back to lead creation date.
         $avgDaysMap = DB::table('lead_status_history')
             ->join('leads', 'leads.id', '=', 'lead_status_history.lead_id')
             ->where('lead_status_history.to_stage_id', $REGISTERED_STAGE)
             ->whereIn('leads.assigned_to', $userIds)
             ->select(
                 'leads.assigned_to',
-                DB::raw('ROUND(AVG(TIMESTAMPDIFF(DAY, leads.created_at, lead_status_history.changed_at)), 1) as avg_days')
+                DB::raw('ROUND(AVG(TIMESTAMPDIFF(DAY,
+                    COALESCE(
+                        (SELECT MAX(la.created_at)
+                         FROM lead_activities la
+                         WHERE la.lead_id = leads.id
+                           AND la.type = \'assigned\'
+                           AND la.created_at <= lead_status_history.changed_at),
+                        leads.created_at
+                    ),
+                    lead_status_history.changed_at
+                )), 1) as avg_days')
             )
             ->groupBy('leads.assigned_to')
             ->pluck('avg_days', 'assigned_to');
