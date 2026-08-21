@@ -4,7 +4,7 @@
 @section('content')
 <div class="p-6 max-w-5xl mx-auto space-y-6"
      x-data="{
-         showAccForm: false,
+         showAccForm: {{ $errors->any() || old('name') ? 'true' : 'false' }},
          showGroupForm: false,
          groupDirection: 'expense',
          catParentId: '',
@@ -26,56 +26,74 @@
             </a>
             <h1 class="text-xl font-semibold text-gray-900">Accounts & Categories</h1>
         </div>
-        <button @click="showAccForm = !showAccForm"
-                class="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
-            + Account
-        </button>
+        <div class="flex items-center gap-3">
+            <a href="#categories" class="text-sm text-gray-400 hover:text-gray-600">Categories ↓</a>
+            <button @click="showAccForm = !showAccForm"
+                    class="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
+                + Account
+            </button>
+        </div>
     </div>
 
     {{-- Add Account Form --}}
     <div x-show="showAccForm" x-cloak class="bg-white rounded-xl border border-gray-200 p-5">
         <h2 class="text-sm font-semibold text-gray-700 mb-4">New Account</h2>
-        <form method="POST" action="{{ route('finance.accounts.store') }}" x-data="{ newType: 'bank' }">
+
+        @if($errors->any())
+        <div class="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+            <ul class="list-disc list-inside space-y-1">
+                @foreach($errors->all() as $err)
+                <li>{{ $err }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
+        <form method="POST" action="{{ route('finance.accounts.store') }}"
+              x-data="{ newType: '{{ old('type', 'bank') }}' }">
             @csrf
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">Name *</label>
-                    <input type="text" name="name" required maxlength="100"
+                    <input type="text" name="name" required maxlength="100" value="{{ old('name') }}"
                            class="w-full rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g. Garanti TRY">
                 </div>
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">Type *</label>
                     <select name="type" required x-model="newType"
                             class="w-full rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="bank">Bank</option>
-                        <option value="cash">Cash</option>
-                        <option value="current_person">Person Account</option>
-                        <option value="current_company">Company Account</option>
+                        <option value="bank" {{ old('type','bank') === 'bank' ? 'selected' : '' }}>Bank</option>
+                        <option value="cash" {{ old('type') === 'cash' ? 'selected' : '' }}>Cash</option>
+                        <option value="current_person" {{ old('type') === 'current_person' ? 'selected' : '' }}>Person Account</option>
+                        <option value="current_company" {{ old('type') === 'current_company' ? 'selected' : '' }}>Company Account</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">Currency *</label>
                     <select name="currency" class="w-full rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
                         @foreach(['TRY','EUR','USD','GBP'] as $c)
-                        <option value="{{ $c }}">{{ $c }}</option>
+                        <option value="{{ $c }}" {{ old('currency','TRY') === $c ? 'selected' : '' }}>{{ $c }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div x-show="newType === 'current_person'">
-                    <label class="block text-xs text-gray-500 mb-1">Person</label>
+                <div x-show="newType === 'current_person'" x-cloak>
+                    <label class="block text-xs text-gray-500 mb-1">Person (optional)</label>
                     <select name="user_id" class="w-full rounded-lg border-gray-300 text-sm">
                         <option value="">— Select —</option>
                         @foreach($internalUsers as $u)
-                        <option value="{{ $u->id }}">{{ $u->name }}</option>
+                        <option value="{{ $u->id }}" {{ old('user_id') === $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
                         @endforeach
                     </select>
+                    @if($internalUsers->isEmpty())
+                    <p class="text-xs text-amber-600 mt-1">No internal users found.</p>
+                    @endif
                 </div>
-                <div x-show="newType === 'current_company'">
-                    <label class="block text-xs text-gray-500 mb-1">Company (SP)</label>
+                <div x-show="newType === 'current_company'" x-cloak>
+                    <label class="block text-xs text-gray-500 mb-1">Company / SP (optional)</label>
                     <select name="company_id" class="w-full rounded-lg border-gray-300 text-sm">
                         <option value="">— Select —</option>
                         @foreach($serviceProviders as $sp)
-                        <option value="{{ $sp->id }}">{{ $sp->name }}</option>
+                        <option value="{{ $sp->id }}" {{ old('company_id') === $sp->id ? 'selected' : '' }}>{{ $sp->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -137,7 +155,7 @@
     </div>
 
     {{-- Categories (grouped) --}}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div id="categories" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {{-- Expense Groups & Categories --}}
         <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
