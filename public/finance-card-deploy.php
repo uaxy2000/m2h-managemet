@@ -1,7 +1,15 @@
 <?php
 if (($_GET['key'] ?? '') !== 'card2026') { http_response_code(403); die('Forbidden'); }
 
-$env = parse_ini_file(__DIR__ . '/../.env');
+// Manual .env parser — handles APP_KEY=base64:... and quoted values
+$env = [];
+foreach (file(__DIR__ . '/../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+    $line = trim($line);
+    if ($line === '' || $line[0] === '#' || !str_contains($line, '=')) continue;
+    [$k, $v] = explode('=', $line, 2);
+    $env[trim($k)] = trim($v, " \t\"'");
+}
+
 $pdo = new PDO(
     "mysql:host={$env['DB_HOST']};port={$env['DB_PORT']};dbname={$env['DB_DATABASE']};charset=utf8mb4",
     $env['DB_USERNAME'], $env['DB_PASSWORD'],
