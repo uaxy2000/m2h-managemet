@@ -38,7 +38,7 @@ class ExpenseController extends Controller
 
         $expenses      = $query->get();
         $categories    = TransactionCategory::forExpenses()->with('children')->get();
-        $accounts      = FinancialAccount::whereIn('type', ['bank', 'cash'])->where('is_active', true)->orderBy('name')->get();
+        $accounts      = FinancialAccount::whereIn('type', ['bank', 'cash', 'credit_card'])->where('is_active', true)->orderBy('name')->get();
         $internalUsers = User::whereHas('company', fn ($q) => $q->where('type', 'internal'))->orderBy('name')->get();
 
         $totalsByCurrency = $expenses->where('status', 'approved')->groupBy('currency')->map(fn ($g) => $g->sum('amount'));

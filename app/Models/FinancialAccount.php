@@ -11,7 +11,7 @@ class FinancialAccount extends Model
 {
     use HasUuids;
 
-    protected $fillable = ['name', 'type', 'currency', 'user_id', 'company_id', 'is_active'];
+    protected $fillable = ['name', 'type', 'currency', 'user_id', 'company_id', 'is_active', 'card_last6'];
 
     protected $casts = ['is_active' => 'boolean'];
 
@@ -40,6 +40,7 @@ class FinancialAccount extends Model
         return match ($this->type) {
             'bank'             => 'Bank',
             'cash'             => 'Cash',
+            'credit_card'      => 'Credit Card',
             'current_person'   => 'Person Account',
             'current_company'  => 'Company Account',
             default            => $this->type,

@@ -78,7 +78,7 @@ class PaymentsController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        $accounts = FinancialAccount::whereIn('type', ['bank', 'cash'])
+        $accounts = FinancialAccount::whereIn('type', ['bank', 'cash', 'credit_card'])
             ->where('is_active', true)
             ->orderBy('name')
             ->get();

@@ -18,7 +18,7 @@ class FinanceAccountController extends Controller
         abort_unless(auth()->user()->isInternalAdmin(), 403);
 
         $accounts = FinancialAccount::with(['user', 'company'])
-            ->orderByRaw("FIELD(type,'bank','cash','current_person','current_company')")
+            ->orderByRaw("FIELD(type,'bank','cash','credit_card','current_person','current_company')")
             ->orderBy('name')
             ->get()
             ->map(function ($a) {
@@ -47,8 +47,9 @@ class FinanceAccountController extends Controller
 
         $data = $request->validate([
             'name'       => 'required|string|max:100',
-            'type'       => 'required|in:bank,cash,current_person,current_company',
+            'type'       => 'required|in:bank,cash,credit_card,current_person,current_company',
             'currency'   => 'required|in:TRY,EUR,USD,GBP',
+            'card_last6' => 'nullable|string|digits:6',
             'user_id'    => 'nullable|uuid|exists:users,id',
             'company_id' => 'nullable|uuid|exists:companies,id',
         ]);

@@ -152,6 +152,41 @@ class MetaAdsService
         return 0;
     }
 
+    /**
+     * Returns [transactions[], currency] where transactions are billing charges
+     * from the Meta Ads account ordered newest first.
+     */
+    public function fetchBillingTransactions(int $limit = 100): array
+    {
+        $currency = $this->fetchAccountCurrency();
+
+        $response = $this->get("{$this->accountId}/transactions", [
+            'fields' => 'time_start,time_stop,amount,status,payment_option',
+            'limit'  => $limit,
+        ]);
+
+        $transactions = collect($response['data'] ?? [])
+            ->map(fn($t) => [
+                'id'             => $t['id'] ?? '',
+                'date_start'     => date('Y-m-d', (int)($t['time_start'] ?? time())),
+                'date_stop'      => date('Y-m-d', (int)($t['time_stop']  ?? time())),
+                'amount'         => (float)($t['amount'] ?? 0),
+                'status'         => $t['status'] ?? 'UNKNOWN',
+                'payment_option' => $t['payment_option'] ?? '',
+            ])
+            ->sortByDesc('date_stop')
+            ->values()
+            ->all();
+
+        return [$transactions, $currency];
+    }
+
+    public function fetchAccountCurrency(): string
+    {
+        $response = $this->get($this->accountId, ['fields' => 'currency']);
+        return $response['currency'] ?? 'USD';
+    }
+
     private function get(string $endpoint, array $params): array
     {
         $params['access_token'] = $this->token;

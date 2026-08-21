@@ -29,6 +29,7 @@ use App\Http\Controllers\TodoListController;
 use App\Http\Controllers\TodoListItemController;
 use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\MetaAdsController;
+use App\Http\Controllers\MetaBillingController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\PaymentsController;
 use App\Http\Controllers\FinanceController;
@@ -81,6 +82,8 @@ Route::middleware('auth')->group(function () {
     Route::post('finance/categories', [FinanceAccountController::class, 'storeCategory'])->name('finance.categories.store');
     Route::delete('finance/categories/{category}', [FinanceAccountController::class, 'destroyCategory'])->name('finance.categories.destroy');
     Route::get('finance/my-account', [FinanceController::class, 'myAccount'])->name('finance.my-account');
+    Route::get('finance/meta-billing', [MetaBillingController::class, 'index'])->name('finance.meta-billing');
+    Route::post('finance/meta-billing/import', [MetaBillingController::class, 'import'])->name('finance.meta-billing.import');
     Route::get('finance/document/{type}/{id}', [FinanceDocumentController::class, 'show'])->name('finance.document');
     Route::get('finance/expenses', [ExpenseController::class, 'index'])->name('finance.expenses.index');
     Route::post('finance/expenses', [ExpenseController::class, 'store'])->name('finance.expenses.store');

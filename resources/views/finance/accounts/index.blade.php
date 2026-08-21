@@ -64,6 +64,7 @@
                             class="w-full rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
                         <option value="bank" {{ old('type','bank') === 'bank' ? 'selected' : '' }}>Bank</option>
                         <option value="cash" {{ old('type') === 'cash' ? 'selected' : '' }}>Cash</option>
+                        <option value="credit_card" {{ old('type') === 'credit_card' ? 'selected' : '' }}>Credit Card</option>
                         <option value="current_person" {{ old('type') === 'current_person' ? 'selected' : '' }}>Person Account</option>
                         <option value="current_company" {{ old('type') === 'current_company' ? 'selected' : '' }}>Company Account</option>
                     </select>
@@ -75,6 +76,12 @@
                         <option value="{{ $c }}" {{ old('currency','TRY') === $c ? 'selected' : '' }}>{{ $c }}</option>
                         @endforeach
                     </select>
+                </div>
+                <div x-show="newType === 'credit_card'" x-cloak>
+                    <label class="block text-xs text-gray-500 mb-1">Card last 6 digits</label>
+                    <input type="text" name="card_last6" maxlength="6" pattern="\d{6}"
+                           value="{{ old('card_last6') }}" placeholder="123456"
+                           class="w-full rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 <div x-show="newType === 'current_person'" x-cloak>
                     <label class="block text-xs text-gray-500 mb-1">Person (optional)</label>

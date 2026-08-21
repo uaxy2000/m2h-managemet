@@ -34,7 +34,7 @@ class IncomeController extends Controller
 
         $incomes    = $query->get();
         $categories = TransactionCategory::forIncomes()->get();
-        $accounts   = FinancialAccount::whereIn('type', ['bank', 'cash'])->where('is_active', true)->orderBy('name')->get();
+        $accounts   = FinancialAccount::whereIn('type', ['bank', 'cash', 'credit_card'])->where('is_active', true)->orderBy('name')->get();
         $spCompanies = Company::where('type', 'service_provider')->orderBy('name')->get();
 
         $totalsByCurrency = $incomes->groupBy('currency')->map(fn ($g) => $g->sum('amount'));
