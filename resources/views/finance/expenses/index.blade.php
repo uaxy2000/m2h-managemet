@@ -2,7 +2,7 @@
 @section('title', 'Expenses')
 
 @section('content')
-<div class="p-6 max-w-7xl mx-auto space-y-6" x-data="{ showForm: false }">
+<div class="p-6 max-w-7xl mx-auto space-y-6">
 
     @if(session('success'))
     <div class="bg-green-50 border border-green-200 text-green-800 text-sm rounded-lg px-4 py-3">{{ session('success') }}</div>
@@ -19,25 +19,20 @@
             </a>
             <h1 class="text-xl font-semibold text-gray-900">Expenses</h1>
         </div>
-        <button @click="showForm = !showForm"
-                class="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium">
-            + Add Expense
+        <button onclick="var d=document.getElementById('addExpenseDetails'); d.open=!d.open; if(d.open) d.scrollIntoView({behavior:'smooth',block:'nearest'});"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+            Add Expense
         </button>
     </div>
 
     {{-- Add Expense Form --}}
-    @php
-    $groupsJson = $categories->map(fn($g) => [
-        'id'       => $g->id,
-        'name'     => $g->name,
-        'children' => $g->children->map(fn($c) => ['id' => $c->id, 'name' => $c->name])->values()->toArray(),
-    ])->values()->toJson();
-    @endphp
-    <div x-show="showForm" x-cloak class="bg-white rounded-xl border border-gray-200 p-5">
-        <h2 class="text-sm font-semibold text-gray-700 mb-4">New Expense</h2>
+    <details id="addExpenseDetails" class="bg-white rounded-xl border border-gray-200" {{ $errors->any() ? 'open' : '' }}>
+        <summary class="hidden"></summary>
+        <div class="px-5 pb-5 border-t border-gray-100 pt-4">
         <form method="POST" action="{{ route('finance.expenses.store') }}" enctype="multipart/form-data"
               x-data="{
-                  groups: {{ $groupsJson }},
+                  groups: {{ Js::from($categories->map(fn($g) => ['id' => $g->id, 'name' => $g->name, 'children' => $g->children->map(fn($c) => ['id' => $c->id, 'name' => $c->name])->values()->all()])->values()->all()) }},
                   groupId: '',
                   categoryId: '',
                   get filteredTypes() {
@@ -125,10 +120,10 @@
             </div>
             <div class="mt-4 flex gap-3">
                 <button type="submit" class="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors">Save Expense</button>
-                <button type="button" @click="showForm = false" class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
             </div>
         </form>
-    </div>
+        </div>
+    </details>
 
     {{-- Filters --}}
     <form method="GET" class="bg-white rounded-xl border border-gray-200 px-5 py-4 flex flex-wrap gap-3 items-end">
