@@ -33,19 +33,19 @@
         'children' => $g->children->map(fn($c) => ['id' => $c->id, 'name' => $c->name])->values()->toArray(),
     ])->values()->toJson();
     @endphp
-    <div x-show="showForm" x-cloak class="bg-white rounded-xl border border-gray-200 p-5"
-         x-data="{
-             groups: {{ $groupsJson }},
-             groupId: '',
-             categoryId: '',
-             get filteredTypes() {
-                 if (!this.groupId) return [];
-                 const g = this.groups.find(g => g.id === this.groupId);
-                 return g ? g.children : [];
-             }
-         }">
+    <div x-show="showForm" x-cloak class="bg-white rounded-xl border border-gray-200 p-5">
         <h2 class="text-sm font-semibold text-gray-700 mb-4">New Expense</h2>
-        <form method="POST" action="{{ route('finance.expenses.store') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('finance.expenses.store') }}" enctype="multipart/form-data"
+              x-data="{
+                  groups: {{ $groupsJson }},
+                  groupId: '',
+                  categoryId: '',
+                  get filteredTypes() {
+                      if (!this.groupId) return [];
+                      const g = this.groups.find(g => g.id === this.groupId);
+                      return g ? g.children : [];
+                  }
+              }">
             @csrf
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
