@@ -82,6 +82,55 @@
                 [$yes, 'Any'], [$yes, 'Any'], [$cond, 'If assigned'], [$cond, 'If assigned'], [$cond, 'If assigned'],
             ]],
         ],
+        'Finance' => [
+            ['Finance overview', 'Balances, recent transactions, expense breakdown', [
+                [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'], [$no, '✗'],
+            ]],
+            ['My account (current account)', 'Own expense list + balance', [
+                [$yes, '✓'], [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'],
+            ]],
+            ['Accounts — list & manage', 'Bank, cash, credit card, person/company cari', [
+                [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'], [$no, '✗'],
+            ]],
+            ['Account ledger', 'Chronological transaction list per account', [
+                [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'], [$no, '✗'],
+            ]],
+            ['Categories — manage', 'Expense/Income group & type hierarchy', [
+                [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'], [$no, '✗'],
+            ]],
+            ['Expenses — list & view', '', [
+                [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'], [$no, '✗'],
+            ]],
+            ['Expenses — submit (create)', 'Member submits; goes to pending', [
+                [$yes, '✓'], [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'],
+            ]],
+            ['Expenses — approve / reject / delete', '', [
+                [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'], [$no, '✗'],
+            ]],
+            ['Incomes — all operations', '', [
+                [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'], [$no, '✗'],
+            ]],
+            ['Transfers between accounts', '', [
+                [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'], [$no, '✗'],
+            ]],
+            ['Meta Billing', 'Monthly ad spend import from local insights', [
+                [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'], [$no, '✗'],
+            ]],
+            ['Finance document download', 'Attached files on expenses/incomes', [
+                [$yes, '✓'], [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'],
+            ]],
+        ],
+        'Reports & Performance' => [
+            ['Analytics / Reports', 'Stage distribution, source breakdown, trends', [
+                [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'], [$no, '✗'],
+            ]],
+            ['Performance page', 'Team summary: registered counts, conversion, avg days', [
+                [$yes, 'All users'], [$yes, 'All users'], [$cond, 'Own data only'], [$no, '✗'], [$no, '✗'],
+            ]],
+            ['Registered leads modal', 'Per-lead Rec.→Asgn.→Reg. timeline on click', [
+                [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'], [$no, '✗'],
+            ]],
+        ],
         'Settings' => [
             ['Pipeline / Stage / Sub-stage', '', [
                 [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'], [$no, '✗'],
