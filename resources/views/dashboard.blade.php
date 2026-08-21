@@ -239,6 +239,22 @@ $phases = [
         ],
     ],
     [
+        'title' => 'Finance',
+        'items' => [
+            ['label' => 'Financial accounts — bank, cash, credit card, person & company current accounts', 'complete' => true],
+            ['label' => 'Expense/Income categories — group + type hierarchy',                'complete' => true],
+            ['label' => 'Expenses — file attachment, approval workflow (pending/approved/rejected)', 'complete' => true],
+            ['label' => 'Incomes — file attachment',                                         'complete' => true],
+            ['label' => 'Account transfers',                                                  'complete' => true],
+            ['label' => 'Account ledger with chronological running balance',                  'complete' => true],
+            ['label' => 'Internal member: expense submit (pending → admin approves)',         'complete' => true],
+            ['label' => 'Payments → auto expense record + source account movement',          'complete' => true],
+            ['label' => 'Meta Billing — monthly ad spend import from local insights',        'complete' => true],
+            ['label' => 'Finance overview — account balances, recent transactions, expense breakdown', 'complete' => true],
+            ['label' => 'SP firm current account view (read-only)',                          'complete' => false],
+        ],
+    ],
+    [
         'title' => 'Productivity & Reporting',
         'items' => [
             ['label' => 'In-app notifications',                                           'complete' => false],
