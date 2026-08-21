@@ -9,9 +9,9 @@
         <h1 class="text-xl font-semibold text-gray-900">Finance Overview</h1>
         <div class="flex gap-2">
             <a href="{{ route('finance.accounts.index') }}" class="px-3 py-1.5 text-sm bg-gray-100 text-gray-600 rounded-lg border border-gray-200 hover:bg-gray-200 transition-colors font-medium">Accounts</a>
-            <a href="{{ route('finance.expenses.index') }}" class="px-3 py-1.5 text-sm bg-red-50 text-red-700 rounded-lg border border-red-200 hover:bg-red-100 transition-colors font-medium">+ Expense</a>
-            <a href="{{ route('finance.incomes.index') }}" class="px-3 py-1.5 text-sm bg-green-50 text-green-700 rounded-lg border border-green-200 hover:bg-green-100 transition-colors font-medium">+ Income</a>
-            <a href="{{ route('finance.transfers.index') }}" class="px-3 py-1.5 text-sm bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200 hover:bg-indigo-100 transition-colors font-medium">+ Transfer</a>
+            <a href="{{ route('finance.expenses.index') }}" class="px-3 py-1.5 text-sm bg-red-50 text-red-700 rounded-lg border border-red-200 hover:bg-red-100 transition-colors font-medium">+ Expenses</a>
+            <a href="{{ route('finance.incomes.index') }}" class="px-3 py-1.5 text-sm bg-green-50 text-green-700 rounded-lg border border-green-200 hover:bg-green-100 transition-colors font-medium">+ Incomes</a>
+            <a href="{{ route('finance.transfers.index') }}" class="px-3 py-1.5 text-sm bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200 hover:bg-indigo-100 transition-colors font-medium">+ Transfers</a>
         </div>
     </div>
 
