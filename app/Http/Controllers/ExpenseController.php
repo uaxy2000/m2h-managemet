@@ -23,8 +23,8 @@ class ExpenseController extends Controller
 
         $query = Expense::with(['category.parent', 'paidBy', 'sourceAccount', 'lead', 'createdBy'])
             ->whereBetween('date', [$from, $to])
-            ->orderByDesc('date')
-            ->orderByDesc('created_at');
+            ->orderBy('date')
+            ->orderBy('created_at');
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);

@@ -258,6 +258,31 @@
                     </tr>
                     @endforeach
                 </tbody>
+                @php
+                    $tfoot = $expenses->groupBy('currency')->map(fn($g) => [
+                        'total'    => $g->sum('amount'),
+                        'approved' => $g->where('status', 'approved')->sum('amount'),
+                        'pending'  => $g->where('status', 'pending')->sum('amount'),
+                    ]);
+                @endphp
+                <tfoot class="border-t-2 border-gray-300 bg-gray-50">
+                    <tr>
+                        <td colspan="5" class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            Total ({{ $expenses->count() }} items)
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            @foreach($tfoot as $cur => $sums)
+                            <div class="whitespace-nowrap tabular-nums">
+                                <span class="font-bold text-gray-800">{{ number_format($sums['total'], 2) }} {{ $cur }}</span>
+                                @if($sums['pending'] > 0)
+                                <span class="text-xs text-amber-600 ml-1">({{ number_format($sums['pending'], 2) }} pending)</span>
+                                @endif
+                            </div>
+                            @endforeach
+                        </td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
         @endif
