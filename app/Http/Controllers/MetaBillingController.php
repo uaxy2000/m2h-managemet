@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\AccountMovement;
 use App\Models\Expense;
 use App\Models\FinancialAccount;
+use App\Models\MetaInsight;
 use App\Models\TransactionCategory;
 use App\Services\MetaAdsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class MetaBillingController extends Controller
@@ -17,24 +19,32 @@ class MetaBillingController extends Controller
     {
         abort_unless(auth()->user()->isInternalAdmin(), 403);
 
-        $service = app(MetaAdsService::class);
+        // Use locally synced meta_insights data grouped by month (account level)
+        $months = MetaInsight::where('entity_type', 'account')
+            ->selectRaw("DATE_FORMAT(date, '%Y-%m') as month, SUM(spend) as total_spend, MIN(date) as date_start, MAX(date) as date_stop")
+            ->groupByRaw("DATE_FORMAT(date, '%Y-%m')")
+            ->orderByDesc('month')
+            ->get()
+            ->map(fn($r) => [
+                'id'         => 'meta-month-' . $r->month,
+                'month'      => $r->month,
+                'date_start' => $r->date_start,
+                'date_stop'  => $r->date_stop,
+                'amount'     => round((float)$r->total_spend, 2),
+                'status'     => 'SYNCED',
+            ])
+            ->all();
 
-        $transactions = [];
-        $currency     = 'USD';
-        $fetchError   = null;
-
-        if ($service->isConfigured()) {
-            try {
-                [$transactions, $currency, $apiError] = $service->fetchBillingTransactions(100);
-                if ($apiError) {
-                    $fetchError = $apiError;
-                }
-            } catch (\Throwable $e) {
-                $fetchError = $e->getMessage();
+        // Determine ad account currency
+        $currency = 'USD';
+        try {
+            $service = app(MetaAdsService::class);
+            if ($service->isConfigured()) {
+                $currency = $service->fetchAccountCurrency();
             }
-        }
+        } catch (\Throwable) {}
 
-        // Mark already-imported transactions
+        // Mark already-imported months
         $importedIds = Expense::where('description', 'LIKE', 'meta_billing:%')
             ->pluck('description')
             ->mapWithKeys(fn($d) => [substr($d, strlen('meta_billing:')) => true])
@@ -47,9 +57,11 @@ class MetaBillingController extends Controller
 
         $categories = TransactionCategory::forExpenses()->with('children')->get();
 
+        $lastSynced = MetaInsight::max('synced_at');
+
         return view('finance.meta-billing', compact(
-            'transactions', 'currency', 'fetchError',
-            'importedIds', 'accounts', 'categories'
+            'months', 'currency', 'importedIds',
+            'accounts', 'categories', 'lastSynced'
         ));
     }
 
