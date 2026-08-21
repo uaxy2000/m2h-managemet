@@ -39,22 +39,22 @@
 
 {{-- ── Registered Leads Modal ──────────────────────────────────────────── --}}
 <div x-data="{
-        open: false,
+        show: false,
         loading: false,
         userName: '',
         leads: [],
-        open(userId, userName) {
+        openModal(userId, userName) {
             this.userName = userName;
             this.leads = [];
             this.loading = true;
-            this.open = true;
+            this.show = true;
             fetch('/performance/registered-leads/' + userId, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                 .then(r => r.json())
                 .then(data => { this.leads = data; this.loading = false; })
                 .catch(() => { this.loading = false; });
         }
      }"
-     @keydown.escape.window="open = false">
+     @keydown.escape.window="show = false">
 
     {{-- ── Summary table ─────────────────────────────────────────────────── --}}
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
@@ -109,7 +109,7 @@
                         <td class="px-5 py-3 text-right">
                             @if($stat['avg_days'] !== null)
                             <button type="button"
-                                    @click="open('{{ $stat['user']->id }}', '{{ addslashes($stat['user']->name) }}')"
+                                    @click="openModal('{{ $stat['user']->id }}', '{{ addslashes($stat['user']->name) }}')"
                                     class="text-indigo-600 tabular-nums hover:text-indigo-800 hover:underline transition-colors cursor-pointer">
                                 {{ $stat['avg_days'] }} days
                             </button>
@@ -125,10 +125,10 @@
     </div>
 
     {{-- Modal --}}
-    <div x-show="open" x-cloak
+    <div x-show="show" x-cloak
          class="fixed inset-0 z-50 flex items-center justify-center p-4"
-         @click.self="open = false">
-        <div class="absolute inset-0 bg-black/30" @click="open = false"></div>
+         @click.self="show = false">
+        <div class="absolute inset-0 bg-black/30" @click="show = false"></div>
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col" @click.stop>
 
             {{-- Modal header --}}
@@ -137,7 +137,7 @@
                     <h2 class="text-base font-semibold text-gray-800" x-text="userName + ' — Registered Leads'"></h2>
                     <p class="text-xs text-gray-400 mt-0.5">Rec. = application date · Asgn. = assigned date · Reg. = registration date</p>
                 </div>
-                <button @click="open = false" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <button @click="show = false" class="text-gray-400 hover:text-gray-600 transition-colors">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
