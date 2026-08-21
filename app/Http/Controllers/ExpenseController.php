@@ -33,7 +33,7 @@ class ExpenseController extends Controller
         }
 
         $expenses   = $query->get();
-        $categories = TransactionCategory::expenses()->get();
+        $categories = TransactionCategory::forExpenses()->get();
         $accounts   = FinancialAccount::whereIn('type', ['bank', 'cash'])->where('is_active', true)->orderBy('name')->get();
         $internalUsers = User::whereHas('company', fn ($q) => $q->where('type', 'internal'))->orderBy('name')->get();
 

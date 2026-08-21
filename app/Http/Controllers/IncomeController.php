@@ -33,7 +33,7 @@ class IncomeController extends Controller
         }
 
         $incomes    = $query->get();
-        $categories = TransactionCategory::incomes()->get();
+        $categories = TransactionCategory::forIncomes()->get();
         $accounts   = FinancialAccount::whereIn('type', ['bank', 'cash'])->where('is_active', true)->orderBy('name')->get();
         $spCompanies = Company::where('type', 'service_provider')->orderBy('name')->get();
 

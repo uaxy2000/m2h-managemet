@@ -22,12 +22,12 @@ class TransactionCategory extends Model
         return $this->hasMany(Income::class, 'category_id');
     }
 
-    public function scopeExpenses($query)
+    public function scopeForExpenses($query)
     {
         return $query->where('direction', 'expense')->orderBy('sort_order')->orderBy('name');
     }
 
-    public function scopeIncomes($query)
+    public function scopeForIncomes($query)
     {
         return $query->where('direction', 'income')->orderBy('sort_order')->orderBy('name');
     }

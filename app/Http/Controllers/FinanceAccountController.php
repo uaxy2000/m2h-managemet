@@ -31,8 +31,8 @@ class FinanceAccountController extends Controller
 
         $serviceProviders = Company::where('type', 'service_provider')->orderBy('name')->get();
 
-        $expenseCategories = TransactionCategory::expenses()->get();
-        $incomeCategories  = TransactionCategory::incomes()->get();
+        $expenseCategories = TransactionCategory::forExpenses()->get();
+        $incomeCategories  = TransactionCategory::forIncomes()->get();
 
         return view('finance.accounts.index', compact(
             'accounts', 'internalUsers', 'serviceProviders',
