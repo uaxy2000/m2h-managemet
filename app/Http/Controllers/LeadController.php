@@ -549,9 +549,10 @@ class LeadController extends Controller
         $this->withLeadKanbanEagers($leadsQ, $filters['sort']);
         $leads = $leadsQ->forPage($page, $perPage)->get();
 
+        $sort = $filters['sort'];
         $html = '';
         foreach ($leads as $lead) {
-            $html .= view('leads._kanban_card', compact('lead'))->render();
+            $html .= view('leads._kanban_card', compact('lead', 'sort'))->render();
         }
 
         $shown = min(($page - 1) * $perPage + $leads->count(), $total);
