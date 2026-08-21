@@ -6,7 +6,12 @@
 
     <div class="flex items-start justify-between gap-1.5 mb-0.5">
         <p class="text-sm font-semibold text-gray-800 truncate">{{ $lead->fullName() }}</p>
-        <span class="text-xs text-gray-300 flex-shrink-0 leading-tight">{{ $lead->created_at->format('d M Y') }}</span>
+        <div class="flex flex-col items-end flex-shrink-0 gap-0.5">
+            <span class="text-xs text-gray-300 leading-tight whitespace-nowrap">Rec. {{ $lead->created_at->format('d/m/y') }}</span>
+            @if($lead->stage_entered_at)
+            <span class="text-xs text-gray-300 leading-tight whitespace-nowrap">Stg. {{ \Carbon\Carbon::parse($lead->stage_entered_at)->format('d/m/y') }}</span>
+            @endif
+        </div>
     </div>
 
     @if($lead->subStage)
