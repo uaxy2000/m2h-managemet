@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\AccountMovement;
+use App\Models\Expense;
 use App\Models\FinancialAccount;
 use App\Models\Payment;
+use App\Models\TransactionCategory;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -76,7 +78,12 @@ class PaymentsController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return view('payments.index', compact('userStats', 'payments', 'internalUsers'));
+        $accounts = FinancialAccount::whereIn('type', ['bank', 'cash'])
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('payments.index', compact('userStats', 'payments', 'internalUsers', 'accounts'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -84,13 +91,14 @@ class PaymentsController extends Controller
         abort_unless(auth()->user()->isInternalAdmin(), 403);
 
         $data = $request->validate([
-            'user_id'    => 'required|uuid|exists:users,id',
-            'amount'     => 'required|numeric|min:0.01',
-            'currency'   => 'required|in:TRY,EUR,USD',
-            'lead_count' => 'required|integer|min:1',
-            'paid_at'    => 'required|date',
-            'note'       => 'nullable|string|max:500',
-            'document'   => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
+            'user_id'           => 'required|uuid|exists:users,id',
+            'amount'            => 'required|numeric|min:0.01',
+            'currency'          => 'required|in:TRY,EUR,USD',
+            'lead_count'        => 'required|integer|min:1',
+            'paid_at'           => 'required|date',
+            'source_account_id' => 'nullable|uuid|exists:financial_accounts,id',
+            'note'              => 'nullable|string|max:500',
+            'document'          => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
         ]);
 
         $payment = Payment::create([
@@ -136,14 +144,15 @@ class PaymentsController extends Controller
             $msg .= " (Ödenmemiş lead sayısı {$data['lead_count']}'den az: yalnızca {$linked} lead bulundu.)";
         }
 
-        // Cari entegrasyonu: agent'ın current_person hesabına hakediş + ödeme
+        // Cari entegrasyonu
         try {
-            $agent   = User::find($data['user_id']);
-            $account = FinancialAccount::forUser($agent, $data['currency']);
-            $desc    = "{$linked} lead için";
+            $agent        = User::find($data['user_id']);
+            $agentAccount = FinancialAccount::forUser($agent, $data['currency']);
+            $desc         = "{$linked} lead için";
 
+            // Agent current_person: hakediş (+) sonra ödeme (-) → net 0
             AccountMovement::create([
-                'account_id'   => $account->id,
+                'account_id'   => $agentAccount->id,
                 'date'         => $data['paid_at'],
                 'amount'       => $data['amount'],
                 'description'  => $desc . ' hakediş',
@@ -153,7 +162,7 @@ class PaymentsController extends Controller
             ]);
 
             AccountMovement::create([
-                'account_id'   => $account->id,
+                'account_id'   => $agentAccount->id,
                 'date'         => $data['paid_at'],
                 'amount'       => -$data['amount'],
                 'description'  => $desc . ' ödeme',
@@ -161,6 +170,35 @@ class PaymentsController extends Controller
                 'movable_id'   => $payment->id,
                 'created_by'   => auth()->id(),
             ]);
+
+            // Kaynak kasa/banka: para çıkışı
+            if (!empty($data['source_account_id'])) {
+                AccountMovement::create([
+                    'account_id'   => $data['source_account_id'],
+                    'date'         => $data['paid_at'],
+                    'amount'       => -$data['amount'],
+                    'description'  => $desc . ' ödeme — ' . ($agent->name ?? ''),
+                    'movable_type' => Payment::class,
+                    'movable_id'   => $payment->id,
+                    'created_by'   => auth()->id(),
+                ]);
+            }
+
+            // Expenses tablosuna kayıt: "Lead Registration Payment" kategorisi
+            $category = TransactionCategory::where('name', 'Lead Registration Payment')->first();
+            if ($category) {
+                Expense::create([
+                    'date'              => $data['paid_at'],
+                    'category_id'       => $category->id,
+                    'amount'            => $data['amount'],
+                    'currency'          => $data['currency'],
+                    'description'       => $desc . ' — ' . ($agent->name ?? ''),
+                    'paid_by_user_id'   => $data['user_id'],
+                    'source_account_id' => $data['source_account_id'] ?? null,
+                    'status'            => 'approved',
+                    'created_by'        => auth()->id(),
+                ]);
+            }
         } catch (\Throwable) {
             // Finance tables may not exist yet; silently skip
         }
@@ -171,6 +209,23 @@ class PaymentsController extends Controller
     public function destroy(Payment $payment): RedirectResponse
     {
         abort_unless(auth()->user()->isInternalAdmin(), 403);
+
+        // İlgili cari hareketleri sil
+        AccountMovement::where('movable_type', Payment::class)
+            ->where('movable_id', $payment->id)
+            ->delete();
+
+        // İlgili expense kaydını sil (kategori + user + tarih + tutar eşleşmesiyle)
+        $category = TransactionCategory::where('name', 'Lead Registration Payment')->first();
+        if ($category) {
+            Expense::where('paid_by_user_id', $payment->user_id)
+                ->where('date', $payment->paid_at->toDateString())
+                ->where('amount', $payment->amount)
+                ->where('currency', $payment->currency)
+                ->where('category_id', $category->id)
+                ->delete();
+        }
+
         $payment->delete(); // payment_leads cascade ile silinir
         return back()->with('success', 'Ödeme kaydı silindi, ilgili leadler tekrar ödenmemiş sayılır.');
     }

@@ -230,6 +230,19 @@
             </div>
 
             <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Source Account <span class="text-gray-400">(bank / cash)</span></label>
+                <select name="source_account_id"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="">— None —</option>
+                    @foreach($accounts as $acc)
+                    <option value="{{ $acc->id }}" {{ old('source_account_id') == $acc->id ? 'selected' : '' }}>
+                        {{ $acc->name }} ({{ $acc->currency }})
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Note <span class="text-gray-400">(optional)</span></label>
                 <input type="text" name="note" maxlength="500"
                        value="{{ old('note') }}" placeholder="Additional notes..."
