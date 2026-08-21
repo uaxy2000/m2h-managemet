@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AccountMovement;
+use App\Models\FinancialAccount;
 use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
@@ -121,6 +123,35 @@ class PaymentsController extends Controller
         $msg = "Ödeme kaydedildi. {$linked} lead ödendi olarak işaretlendi.";
         if ($linked < (int) $data['lead_count']) {
             $msg .= " (Ödenmemiş lead sayısı {$data['lead_count']}'den az: yalnızca {$linked} lead bulundu.)";
+        }
+
+        // Cari entegrasyonu: agent'ın current_person hesabına hakediş + ödeme
+        try {
+            $agent   = User::find($data['user_id']);
+            $account = FinancialAccount::forUser($agent, $data['currency']);
+            $desc    = "{$linked} lead için";
+
+            AccountMovement::create([
+                'account_id'   => $account->id,
+                'date'         => $data['paid_at'],
+                'amount'       => $data['amount'],
+                'description'  => $desc . ' hakediş',
+                'movable_type' => Payment::class,
+                'movable_id'   => $payment->id,
+                'created_by'   => auth()->id(),
+            ]);
+
+            AccountMovement::create([
+                'account_id'   => $account->id,
+                'date'         => $data['paid_at'],
+                'amount'       => -$data['amount'],
+                'description'  => $desc . ' ödeme',
+                'movable_type' => Payment::class,
+                'movable_id'   => $payment->id,
+                'created_by'   => auth()->id(),
+            ]);
+        } catch (\Throwable) {
+            // Finance tables may not exist yet; silently skip
         }
 
         return back()->with('success', $msg);

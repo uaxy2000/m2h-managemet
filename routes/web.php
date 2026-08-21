@@ -31,6 +31,11 @@ use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\MetaAdsController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\PaymentsController;
+use App\Http\Controllers\FinanceController;
+use App\Http\Controllers\FinanceAccountController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\IncomeController;
+use App\Http\Controllers\AccountTransferController;
 use Illuminate\Support\Facades\Route;
 
 // Meta webhook routes are registered in bootstrap/app.php with no middleware
@@ -62,6 +67,25 @@ Route::middleware('auth')->group(function () {
     Route::post('reports/meta-ads/sync-day', [MetaAdsController::class, 'syncDay'])->name('reports.meta-ads.sync-day');
     Route::get('reports/meta-ads/missing-days', [MetaAdsController::class, 'missingDays'])->name('reports.meta-ads.missing-days');
     Route::get('reports/meta-ads/preview/{adId}', [MetaAdsController::class, 'preview'])->name('reports.meta-ads.preview');
+
+    // Finance
+    Route::get('finance', [FinanceController::class, 'index'])->name('finance.index');
+    Route::get('finance/accounts', [FinanceAccountController::class, 'index'])->name('finance.accounts.index');
+    Route::post('finance/accounts', [FinanceAccountController::class, 'store'])->name('finance.accounts.store');
+    Route::put('finance/accounts/{account}', [FinanceAccountController::class, 'update'])->name('finance.accounts.update');
+    Route::delete('finance/accounts/{account}', [FinanceAccountController::class, 'destroy'])->name('finance.accounts.destroy');
+    Route::get('finance/accounts/{account}', [FinanceAccountController::class, 'show'])->name('finance.accounts.show');
+    Route::post('finance/categories', [FinanceAccountController::class, 'storeCategory'])->name('finance.categories.store');
+    Route::delete('finance/categories/{category}', [FinanceAccountController::class, 'destroyCategory'])->name('finance.categories.destroy');
+    Route::get('finance/expenses', [ExpenseController::class, 'index'])->name('finance.expenses.index');
+    Route::post('finance/expenses', [ExpenseController::class, 'store'])->name('finance.expenses.store');
+    Route::delete('finance/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('finance.expenses.destroy');
+    Route::get('finance/incomes', [IncomeController::class, 'index'])->name('finance.incomes.index');
+    Route::post('finance/incomes', [IncomeController::class, 'store'])->name('finance.incomes.store');
+    Route::delete('finance/incomes/{income}', [IncomeController::class, 'destroy'])->name('finance.incomes.destroy');
+    Route::get('finance/transfers', [AccountTransferController::class, 'index'])->name('finance.transfers.index');
+    Route::post('finance/transfers', [AccountTransferController::class, 'store'])->name('finance.transfers.store');
+    Route::delete('finance/transfers/{transfer}', [AccountTransferController::class, 'destroy'])->name('finance.transfers.destroy');
 
     // Payments
     Route::get('payments', [PaymentsController::class, 'index'])->name('payments.index');

@@ -1,0 +1,204 @@
+@extends('layouts.app')
+@section('title', 'Finance Accounts')
+
+@section('content')
+<div class="p-6 max-w-5xl mx-auto space-y-6" x-data="{ showForm: false, showCatForm: false }">
+
+    @if(session('success'))
+    <div class="bg-green-50 border border-green-200 text-green-800 text-sm rounded-lg px-4 py-3">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+    <div class="bg-red-50 border border-red-200 text-red-800 text-sm rounded-lg px-4 py-3">{{ session('error') }}</div>
+    @endif
+
+    {{-- Header --}}
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <a href="{{ route('finance.index') }}" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+            </a>
+            <h1 class="text-xl font-semibold text-gray-900">Accounts & Categories</h1>
+        </div>
+        <div class="flex gap-2">
+            <button @click="showCatForm = !showCatForm" class="px-3 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium">+ Category</button>
+            <button @click="showForm = !showForm" class="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">+ Account</button>
+        </div>
+    </div>
+
+    {{-- Add Category Form --}}
+    <div x-show="showCatForm" x-cloak class="bg-white rounded-xl border border-gray-200 p-5">
+        <h2 class="text-sm font-semibold text-gray-700 mb-4">New Category</h2>
+        <form method="POST" action="{{ route('finance.categories.store') }}" class="flex gap-3 items-end">
+            @csrf
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">Name *</label>
+                <input type="text" name="name" required maxlength="100"
+                       class="rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g. Kira Gideri">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">Direction *</label>
+                <select name="direction" required class="rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                </select>
+            </div>
+            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700">Add</button>
+            <button type="button" @click="showCatForm = false" class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+        </form>
+    </div>
+
+    {{-- Add Account Form --}}
+    <div x-show="showForm" x-cloak class="bg-white rounded-xl border border-gray-200 p-5">
+        <h2 class="text-sm font-semibold text-gray-700 mb-4">New Account</h2>
+        <form method="POST" action="{{ route('finance.accounts.store') }}">
+            @csrf
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Name *</label>
+                    <input type="text" name="name" required maxlength="100"
+                           class="w-full rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g. Garanti TRY">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Type *</label>
+                    <select name="type" required x-model="newType"
+                            class="w-full rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="bank">Bank</option>
+                        <option value="cash">Cash</option>
+                        <option value="current_person">Person Account</option>
+                        <option value="current_company">Company Account</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Currency *</label>
+                    <select name="currency" class="w-full rounded-lg border-gray-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        @foreach(['TRY','EUR','USD','GBP'] as $c)
+                        <option value="{{ $c }}">{{ $c }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div x-show="newType === 'current_person'" x-data="{ newType: 'bank' }" x-init="$watch('$parent.newType', v => newType = v)">
+                    <label class="block text-xs text-gray-500 mb-1">Person</label>
+                    <select name="user_id" class="w-full rounded-lg border-gray-300 text-sm">
+                        <option value="">— Select —</option>
+                        @foreach($internalUsers as $u)
+                        <option value="{{ $u->id }}">{{ $u->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div x-show="newType === 'current_company'" x-data="{ newType: 'bank' }" x-init="$watch('$parent.newType', v => newType = v)">
+                    <label class="block text-xs text-gray-500 mb-1">Company (SP)</label>
+                    <select name="company_id" class="w-full rounded-lg border-gray-300 text-sm">
+                        <option value="">— Select —</option>
+                        @foreach($serviceProviders as $sp)
+                        <option value="{{ $sp->id }}">{{ $sp->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="mt-4 flex gap-3">
+                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700">Create Account</button>
+                <button type="button" @click="showForm = false" class="px-4 py-2 text-sm text-gray-500">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    {{-- Accounts list --}}
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden" x-data="{ newType: 'bank' }">
+        <div class="px-5 py-4 border-b border-gray-100">
+            <h2 class="text-sm font-semibold text-gray-700">All Accounts</h2>
+        </div>
+        @if($accounts->isEmpty())
+        <p class="text-sm text-gray-400 text-center py-8">No accounts yet.</p>
+        @else
+        <div class="divide-y divide-gray-100">
+            @foreach($accounts as $acc)
+            <div class="flex items-center gap-4 px-5 py-3 hover:bg-gray-50">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-medium text-gray-800">{{ $acc->name }}</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full
+                            {{ match($acc->type) {
+                                'bank' => 'bg-blue-50 text-blue-700',
+                                'cash' => 'bg-yellow-50 text-yellow-700',
+                                'current_person' => 'bg-purple-50 text-purple-700',
+                                'current_company' => 'bg-green-50 text-green-700',
+                                default => 'bg-gray-100 text-gray-600'
+                            } }}">{{ $acc->typeLabel() }}</span>
+                        @if(!$acc->is_active)
+                        <span class="text-xs text-gray-400">(inactive)</span>
+                        @endif
+                    </div>
+                    @if($acc->user)
+                    <p class="text-xs text-gray-400 mt-0.5">{{ $acc->user->name }}</p>
+                    @elseif($acc->company)
+                    <p class="text-xs text-gray-400 mt-0.5">{{ $acc->company->name }}</p>
+                    @endif
+                </div>
+                <span class="text-sm font-mono font-semibold {{ $acc->current_balance >= 0 ? 'text-gray-700' : 'text-red-600' }}">
+                    {{ number_format($acc->current_balance, 2) }} {{ $acc->currency }}
+                </span>
+                <a href="{{ route('finance.accounts.show', $acc) }}"
+                   class="text-xs text-indigo-600 hover:underline whitespace-nowrap">View ledger</a>
+                <form method="POST" action="{{ route('finance.accounts.destroy', $acc) }}"
+                      onsubmit="return confirm('Delete account? Only possible if no movements exist.')">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="text-gray-300 hover:text-red-500 transition-colors">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+            @endforeach
+        </div>
+        @endif
+    </div>
+
+    {{-- Categories --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Expense Categories</h2>
+            @if($expenseCategories->isEmpty())
+            <p class="text-sm text-gray-400">None yet.</p>
+            @else
+            <div class="space-y-1">
+                @foreach($expenseCategories as $cat)
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-700">{{ $cat->name }}</span>
+                    <form method="POST" action="{{ route('finance.categories.destroy', $cat) }}"
+                          onsubmit="return confirm('Delete category?')">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="text-gray-300 hover:text-red-500 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                        </button>
+                    </form>
+                </div>
+                @endforeach
+            </div>
+            @endif
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Income Categories</h2>
+            @if($incomeCategories->isEmpty())
+            <p class="text-sm text-gray-400">None yet.</p>
+            @else
+            <div class="space-y-1">
+                @foreach($incomeCategories as $cat)
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-700">{{ $cat->name }}</span>
+                    <form method="POST" action="{{ route('finance.categories.destroy', $cat) }}"
+                          onsubmit="return confirm('Delete category?')">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="text-gray-300 hover:text-red-500 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                        </button>
+                    </form>
+                </div>
+                @endforeach
+            </div>
+            @endif
+        </div>
+    </div>
+
+</div>
+@endsection
