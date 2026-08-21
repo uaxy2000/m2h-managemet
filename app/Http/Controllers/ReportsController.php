@@ -306,4 +306,46 @@ class ReportsController extends Controller
 
         return view('performance.index', compact('userStats', 'isAdmin', 'months', 'earnings'));
     }
+
+    public function registeredLeads(Request $request, string $userId): \Illuminate\Http\JsonResponse
+    {
+        abort_unless(auth()->user()->isInternalAdmin(), 403);
+
+        $REGISTERED_STAGE = 'a2663266-e3b6-42cd-b998-a479287c5256';
+
+        $rows = DB::table('lead_status_history as lsh')
+            ->join('leads', 'leads.id', '=', 'lsh.lead_id')
+            ->where('lsh.to_stage_id', $REGISTERED_STAGE)
+            ->where('leads.assigned_to', $userId)
+            ->select([
+                'leads.id',
+                DB::raw("CONCAT(leads.first_name, ' ', COALESCE(leads.last_name, '')) as name"),
+                'leads.created_at as application_date',
+                DB::raw("COALESCE(
+                    (SELECT MAX(la.created_at) FROM lead_activities la
+                     WHERE la.lead_id = leads.id AND la.type = 'assigned'
+                     AND la.created_at <= lsh.changed_at),
+                    leads.created_at
+                ) as assignment_date"),
+                'lsh.changed_at as registration_date',
+            ])
+            ->orderByDesc('lsh.changed_at')
+            ->get()
+            ->map(function ($r) {
+                $appDate  = Carbon::parse($r->application_date);
+                $asnDate  = Carbon::parse($r->assignment_date);
+                $regDate  = Carbon::parse($r->registration_date);
+                return [
+                    'id'               => $r->id,
+                    'name'             => trim($r->name),
+                    'application_date' => $appDate->format('d/m/y'),
+                    'assignment_date'  => $asnDate->format('d/m/y'),
+                    'registration_date'=> $regDate->format('d/m/y'),
+                    'days_app_to_asn'  => (int) $appDate->diffInDays($asnDate),
+                    'days_asn_to_reg'  => (int) $asnDate->diffInDays($regDate),
+                ];
+            });
+
+        return response()->json($rows);
+    }
 }

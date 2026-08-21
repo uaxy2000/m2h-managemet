@@ -63,6 +63,7 @@ Route::middleware('auth')->group(function () {
     // Reports
     Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
     Route::get('performance', [ReportsController::class, 'performance'])->name('performance.index');
+    Route::get('performance/registered-leads/{userId}', [ReportsController::class, 'registeredLeads'])->name('performance.registered-leads');
     Route::get('reports/daily', [DailyReportController::class, 'index'])->name('reports.daily');
     Route::get('reports/meta-ads', [MetaAdsController::class, 'index'])->name('reports.meta-ads');
     Route::post('reports/meta-ads/sync', [MetaAdsController::class, 'sync'])->name('reports.meta-ads.sync');
