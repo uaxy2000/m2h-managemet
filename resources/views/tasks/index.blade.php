@@ -71,6 +71,9 @@
                                class="text-[10px] {{ $task['type'] === 'lead' ? 'text-indigo-400' : 'text-purple-400' }} hover:underline truncate block leading-tight">
                                 {{ Str::limit($task['context'], 20) }}
                             </a>
+                            @if($task['due_at']->format('H:i') !== '00:00')
+                            <span class="text-[10px] text-gray-400 leading-tight">{{ $task['due_at']->format('H:i') }}</span>
+                            @endif
                         </div>
                     </div>
                     @empty
