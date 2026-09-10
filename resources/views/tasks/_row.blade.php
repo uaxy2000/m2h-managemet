@@ -33,7 +33,7 @@
     {{-- Due date --}}
     @if($task['due_at'])
     <span class="flex-shrink-0 text-xs {{ $accent === 'red' ? 'text-red-500 font-semibold' : 'text-gray-400' }}">
-        {{ $task['due_at']->format('d M') }}
+        {{ $task['due_at']->format('H:i') !== '00:00' ? $task['due_at']->format('d M · H:i') : $task['due_at']->format('d M') }}
     </span>
     @endif
 </div>

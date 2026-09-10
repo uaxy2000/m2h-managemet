@@ -245,7 +245,7 @@ $typeColor = [
                             → assigned to {{ $item->assignedTo->name }}
                             @endif
                             @if($item->due_at)
-                            · due {{ $item->due_at->format('d M') }}
+                            · due {{ $item->due_at->format('H:i') !== '00:00' ? $item->due_at->format('d M · H:i') : $item->due_at->format('d M') }}
                             @endif
                         </p>
                         @elseif(in_array($type, ['whatsapp_incoming', 'whatsapp_outgoing']))

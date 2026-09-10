@@ -892,7 +892,7 @@
                                   class="text-sm font-medium transition-all">{{ $item->title }}</span>
                             @if($item->due_at)
                             <span class="text-xs {{ $item->due_at->isPast() && !$item->is_done ? 'text-red-500 font-medium' : 'text-gray-400' }}">
-                                · due {{ $item->due_at->format('d M Y') }}
+                                · due {{ $item->due_at->format('H:i') !== '00:00' ? $item->due_at->format('d M Y · H:i') : $item->due_at->format('d M Y') }}
                                 @if($item->due_at->isPast() && !$item->is_done)
                                 <span class="text-red-400">(overdue)</span>
                                 @endif
