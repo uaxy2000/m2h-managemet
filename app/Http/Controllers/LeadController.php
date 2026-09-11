@@ -502,6 +502,26 @@ class LeadController extends Controller
         return back()->with('success', 'Lead updated.');
     }
 
+    public function clearDuplicateFlag(Lead $lead): RedirectResponse
+    {
+        abort_unless(auth()->user()->isInternalAdmin(), 403);
+
+        // Re-check: if another lead still shares the same email or phone, refuse
+        $stillDuplicate = ($lead->email || $lead->phone) && Lead::where('id', '!=', $lead->id)
+            ->where(function ($q) use ($lead) {
+                if ($lead->email) $q->orWhere('email', $lead->email);
+                if ($lead->phone) $q->orWhere('phone', $lead->phone);
+            })->exists();
+
+        if ($stillDuplicate) {
+            return back()->with('error', 'Cannot clear flag — another lead still shares the same email or phone.');
+        }
+
+        $lead->update(['is_duplicate_flag' => false]);
+
+        return back()->with('success', 'Duplicate flag cleared.');
+    }
+
     public function destroy(Lead $lead): RedirectResponse
     {
         $pipelineId = $lead->pipeline_id;

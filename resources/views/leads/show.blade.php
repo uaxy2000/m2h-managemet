@@ -120,11 +120,11 @@
                                 </svg>
                                 @endif
                             </button>
-                            @if($duplicateMatches->isNotEmpty())
                             <div x-show="open" x-cloak @click.outside="open = false"
                                  class="absolute left-0 top-full mt-1 z-20 bg-white border border-amber-200 rounded-xl shadow-lg p-3 min-w-[260px]">
+                                @if($duplicateMatches->isNotEmpty())
                                 <p class="text-[10px] font-semibold text-amber-600 uppercase tracking-wide mb-2">Matching leads</p>
-                                <div class="space-y-1.5">
+                                <div class="space-y-1.5 mb-3">
                                     @foreach($duplicateMatches as $dup)
                                     <a href="{{ route('leads.show', $dup) }}"
                                        class="flex items-start gap-2 p-2 rounded-lg hover:bg-amber-50 transition-colors group">
@@ -144,8 +144,21 @@
                                     </a>
                                     @endforeach
                                 </div>
+                                <div class="border-t border-amber-100 pt-2">
+                                @endif
+                                @if(auth()->user()->isInternalAdmin())
+                                <form method="POST" action="{{ route('leads.clear-duplicate', $lead) }}">
+                                    @csrf
+                                    <button type="submit"
+                                            class="w-full text-left text-[11px] text-gray-400 hover:text-red-500 transition-colors py-1 px-1">
+                                        Clear duplicate flag
+                                    </button>
+                                </form>
+                                @endif
+                                @if($duplicateMatches->isNotEmpty())
+                                </div>
+                                @endif
                             </div>
-                            @endif
                         </span>
                         @endif
                         @if($lead->meta_platform === 'ig')
