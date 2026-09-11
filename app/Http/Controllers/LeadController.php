@@ -342,10 +342,23 @@ class LeadController extends Controller
         $canManageAssignment     = $user->isInternalAdmin();
         $canChangeServiceProvider = $canManageAssignment || $lead->assigned_to === $user->id;
 
+        // Find leads sharing the same email or phone
+        $duplicateMatches = collect();
+        if ($lead->is_duplicate_flag && ($lead->email || $lead->phone)) {
+            $duplicateMatches = Lead::where('id', '!=', $lead->id)
+                ->where(function ($q) use ($lead) {
+                    if ($lead->email) $q->orWhere('email', $lead->email);
+                    if ($lead->phone) $q->orWhere('phone', $lead->phone);
+                })
+                ->select(['id', 'first_name', 'last_name', 'email', 'phone', 'created_at'])
+                ->latest()
+                ->get();
+        }
+
         return view('leads.show', compact(
             'lead', 'internalUsers', 'serviceProviders', 'agents', 'allTags', 'availablePrograms',
             'customFields', 'customValuesByKey', 'timeline', 'waTemplates', 'pipelines',
-            'canManageAssignment', 'canChangeServiceProvider'
+            'canManageAssignment', 'canChangeServiceProvider', 'duplicateMatches'
         ));
     }
 
@@ -386,8 +399,20 @@ class LeadController extends Controller
 
         $fromStageId    = $lead->stage_id;
         $fromSubStageId = $lead->sub_stage_id;
+        $emailChanged   = ($validated['email'] ?? null) !== $lead->email;
+        $phoneChanged   = ($validated['phone'] ?? null) !== $lead->phone;
 
         $lead->update($validated);
+
+        // Re-check duplicate flag if email or phone changed
+        if ($emailChanged || $phoneChanged) {
+            $isDuplicate = ($lead->email || $lead->phone) && Lead::where('id', '!=', $lead->id)
+                ->where(function ($q) use ($lead) {
+                    if ($lead->email) $q->orWhere('email', $lead->email);
+                    if ($lead->phone) $q->orWhere('phone', $lead->phone);
+                })->exists();
+            $lead->update(['is_duplicate_flag' => $isDuplicate]);
+        }
 
         if ($fromStageId !== $lead->stage_id) {
             LeadStatusHistory::create([

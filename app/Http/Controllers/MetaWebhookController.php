@@ -171,6 +171,18 @@ class MetaWebhookController extends Controller
             'changed_at'  => now(),
         ]);
 
+        // Duplicate detection — flag if another lead shares the same email or phone
+        if ($lead->email || $lead->phone) {
+            $isDuplicate = Lead::where('id', '!=', $lead->id)
+                ->where(function ($q) use ($lead) {
+                    if ($lead->email) $q->orWhere('email', $lead->email);
+                    if ($lead->phone) $q->orWhere('phone', $lead->phone);
+                })->exists();
+            if ($isDuplicate) {
+                $lead->update(['is_duplicate_flag' => true]);
+            }
+        }
+
         // Attach tags
         if (!empty($mapping->tag_ids)) {
             $lead->tags()->attach($mapping->tag_ids);

@@ -107,11 +107,45 @@
                     <div class="flex items-center gap-2 flex-wrap">
                         <h2 class="text-xl font-bold text-gray-900">{{ $lead->fullName() }}</h2>
                         @if($lead->is_duplicate_flag)
-                        <span class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
-                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/>
-                            </svg>
-                            Possible duplicate
+                        <span x-data="{ open: false }" class="relative">
+                            <button @click="open = !open"
+                                    class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded-full transition-colors">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/>
+                                </svg>
+                                Possible duplicate
+                                @if($duplicateMatches->isNotEmpty())
+                                <svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
+                                </svg>
+                                @endif
+                            </button>
+                            @if($duplicateMatches->isNotEmpty())
+                            <div x-show="open" x-cloak @click.outside="open = false"
+                                 class="absolute left-0 top-full mt-1 z-20 bg-white border border-amber-200 rounded-xl shadow-lg p-3 min-w-[260px]">
+                                <p class="text-[10px] font-semibold text-amber-600 uppercase tracking-wide mb-2">Matching leads</p>
+                                <div class="space-y-1.5">
+                                    @foreach($duplicateMatches as $dup)
+                                    <a href="{{ route('leads.show', $dup) }}"
+                                       class="flex items-start gap-2 p-2 rounded-lg hover:bg-amber-50 transition-colors group">
+                                        <div class="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 text-[10px] font-bold flex-shrink-0 mt-0.5">
+                                            {{ strtoupper(substr($dup->first_name, 0, 1)) }}
+                                        </div>
+                                        <div class="min-w-0">
+                                            <p class="text-xs font-medium text-gray-800 group-hover:text-amber-700 truncate">{{ trim($dup->first_name . ' ' . $dup->last_name) }}</p>
+                                            @if($dup->email)
+                                            <p class="text-[10px] text-gray-400 truncate">{{ $dup->email }}</p>
+                                            @endif
+                                            @if($dup->phone)
+                                            <p class="text-[10px] text-gray-400">{{ $dup->phone }}</p>
+                                            @endif
+                                            <p class="text-[10px] text-gray-300">{{ $dup->created_at->format('d M Y') }}</p>
+                                        </div>
+                                    </a>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
                         </span>
                         @endif
                         @if($lead->meta_platform === 'ig')
