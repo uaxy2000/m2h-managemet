@@ -244,13 +244,14 @@
                     <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{{ $groupName }}</p>
                     <div class="flex flex-wrap gap-2">
                         @foreach($groupTags as $tag)
+                        @php $tf = countryFlag($tag->name); @endphp
                         <button type="button" @click="toggle('{{ $tag->id }}')"
                                 :class="isSelected('{{ $tag->id }}')
-                                    ? 'text-white border-transparent'
+                                    ? '{{ $tf ? 'text-gray-900' : 'text-white' }} border-transparent'
                                     : 'text-gray-500 border-gray-200 bg-white hover:border-gray-400'"
                                 :style="isSelected('{{ $tag->id }}') ? 'background:{{ $tag->color }};border-color:{{ $tag->color }}' : ''"
-                                class="px-3 py-1 rounded-full text-xs font-medium border transition-all">
-                            {{ $tag->name }}
+                                class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border transition-all">
+                            @if($tf)<span class="fi fi-{{ $tf }}" style="border-radius:2px;font-size:10px;flex-shrink:0"></span>@endif{{ $tag->name }}
                         </button>
                         @endforeach
                     </div>
@@ -264,13 +265,14 @@
                     @endif
                     <div class="flex flex-wrap gap-2">
                         @foreach($tagsUngrouped as $tag)
+                        @php $tf = countryFlag($tag->name); @endphp
                         <button type="button" @click="toggle('{{ $tag->id }}')"
                                 :class="isSelected('{{ $tag->id }}')
-                                    ? 'text-white border-transparent'
+                                    ? '{{ $tf ? 'text-gray-900' : 'text-white' }} border-transparent'
                                     : 'text-gray-500 border-gray-200 bg-white hover:border-gray-400'"
                                 :style="isSelected('{{ $tag->id }}') ? 'background:{{ $tag->color }};border-color:{{ $tag->color }}' : ''"
-                                class="px-3 py-1 rounded-full text-xs font-medium border transition-all">
-                            {{ $tag->name }}
+                                class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border transition-all">
+                            @if($tf)<span class="fi fi-{{ $tf }}" style="border-radius:2px;font-size:10px;flex-shrink:0"></span>@endif{{ $tag->name }}
                         </button>
                         @endforeach
                     </div>
