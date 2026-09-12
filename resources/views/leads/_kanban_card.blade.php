@@ -59,7 +59,7 @@
             @foreach($lead->tags as $t)
             <div style="display:flex;align-items:center;gap:7px;padding:2px 0">
                 <span style="display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;background-color:{{ $t->color }}"></span>
-                <span style="font-size:12px;color:#374151;white-space:nowrap">{{ $t->name }}</span>
+                <span style="font-size:12px;color:#374151;white-space:nowrap">@php $cf = countryFlag($t->name); @endphp{{ $cf ? $cf . ' ' : '' }}{{ $t->name }}</span>
             </div>
             @endforeach
         </div>
