@@ -50,13 +50,17 @@
         <div class="mb-6">
             <label class="block text-sm font-medium text-gray-700 mb-2">Color</label>
             <input type="hidden" name="color" :value="color">
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap gap-2 items-center">
                 @foreach(\App\Models\Tag::COLORS as $c)
                 <button type="button" @click="color = '{{ $c }}'"
                         class="w-7 h-7 rounded-full border-2 transition-all"
                         :class="color === '{{ $c }}' ? 'border-gray-800 scale-110' : 'border-transparent hover:scale-105'"
                         style="background-color: {{ $c }}"></button>
                 @endforeach
+                <label class="w-7 h-7 rounded-full border-2 border-dashed border-gray-300 hover:border-gray-400 cursor-pointer flex items-center justify-center transition-all" title="Custom color">
+                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                    <input type="color" class="sr-only" :value="color" @input="color = $event.target.value">
+                </label>
             </div>
             <div class="flex items-center gap-2 mt-3">
                 <div class="w-5 h-5 rounded-full border border-gray-200" :style="'background-color:' + color"></div>
