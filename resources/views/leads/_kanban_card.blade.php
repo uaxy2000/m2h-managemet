@@ -60,7 +60,7 @@
             @php $cf = countryFlag($t->name); @endphp
             <div style="display:flex;align-items:center;gap:7px;padding:2px 0">
                 <span style="display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;background-color:{{ $t->color }}"></span>
-                <span style="font-size:12px;color:#374151;white-space:nowrap">{{ $cf ? $cf . ' ' : '' }}{{ $t->name }}</span>
+                <span style="font-size:12px;color:#374151;white-space:nowrap;display:flex;align-items:center;gap:4px">@if($cf)<span class="fi fi-{{ $cf }}" style="border-radius:2px;font-size:11px"></span>@endif{{ $t->name }}</span>
             </div>
             @endforeach
         </div>

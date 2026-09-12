@@ -200,8 +200,8 @@
                     <div class="flex flex-wrap gap-1.5 sm:justify-end mb-2">
                         @forelse($lead->tags as $tag)
                         @php $flag = countryFlag($tag->name); @endphp
-                        <span class="px-2.5 py-0.5 rounded-full text-xs font-medium text-white whitespace-nowrap"
-                              style="background: {{ $tag->color }}">{{ $flag ? $flag . ' ' : '' }}{{ $tag->name }}</span>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-medium text-white whitespace-nowrap inline-flex items-center gap-1"
+                              style="background: {{ $tag->color }}">@if($flag)<span class="fi fi-{{ $flag }}" style="border-radius:2px"></span>@endif{{ $tag->name }}</span>
                         @empty
                         <span class="text-xs text-gray-400">No tags</span>
                         @endforelse

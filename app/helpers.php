@@ -2,7 +2,9 @@
 
 if (!function_exists('countryFlag')) {
     /**
-     * Returns the flag emoji for a country name, or empty string if not found.
+     * Returns the ISO 3166-1 alpha-2 code (lowercase) for a country name,
+     * for use with flag-icons CSS: <span class="fi fi-{code}"></span>
+     * Returns empty string if not found.
      */
     function countryFlag(string $name): string
     {
@@ -84,17 +86,7 @@ if (!function_exists('countryFlag')) {
         ];
 
         $key = mb_strtolower(trim($name), 'UTF-8');
-        $iso = $map[$key] ?? null;
 
-        if (!$iso) {
-            return '';
-        }
-
-        $flag = '';
-        foreach (str_split(strtoupper($iso)) as $char) {
-            $flag .= mb_chr(ord($char) - ord('A') + 0x1F1E6, 'UTF-8');
-        }
-
-        return $flag;
+        return strtolower($map[$key] ?? '');
     }
 }

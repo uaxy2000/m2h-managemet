@@ -6,6 +6,7 @@
     <title>@yield('title', 'Dashboard') — M2H Management</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css">
     @stack('styles')
 </head>
 <body class="h-full"
