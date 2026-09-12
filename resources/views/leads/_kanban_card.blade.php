@@ -57,9 +57,10 @@
         <div x-show="open" x-cloak
              style="position:absolute;bottom:calc(100% + 5px);left:0;z-index:50;background:white;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;box-shadow:0 4px 14px rgba(0,0,0,.13);pointer-events:none;min-width:130px">
             @foreach($lead->tags as $t)
+            @php $cf = countryFlag($t->name); @endphp
             <div style="display:flex;align-items:center;gap:7px;padding:2px 0">
                 <span style="display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;background-color:{{ $t->color }}"></span>
-                <span style="font-size:12px;color:#374151;white-space:nowrap">@php $cf = countryFlag($t->name); @endphp{{ $cf ? $cf . ' ' : '' }}{{ $t->name }}</span>
+                <span style="font-size:12px;color:#374151;white-space:nowrap">{{ $cf ? $cf . ' ' : '' }}{{ $t->name }}</span>
             </div>
             @endforeach
         </div>
