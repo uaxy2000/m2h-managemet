@@ -23,7 +23,7 @@
     @if($countryTags->isNotEmpty())
     <div class="flex flex-wrap gap-1 mt-1">
         @foreach($countryTags as $t)
-        <span class="inline-flex items-center gap-1 text-xs font-medium text-white px-1.5 py-0.5 rounded-full"
+        <span class="inline-flex items-center gap-1 text-xs font-medium text-gray-900 px-1.5 py-0.5 rounded-full"
               style="background-color:{{ $t->color }}">
             <span class="fi fi-{{ countryFlag($t->name) }}" style="border-radius:2px;font-size:10px;flex-shrink:0"></span>
             {{ $t->name }}
