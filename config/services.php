@@ -43,6 +43,15 @@ return [
         'app_id'       => env('META_ADS_APP_ID', '931856815899153'),
     ],
 
+    'backup' => [
+        'key'    => env('BACKUP_AWS_KEY'),
+        'secret' => env('BACKUP_AWS_SECRET'),
+        'region' => env('BACKUP_AWS_REGION', 'eu-west-1'),
+        'bucket' => env('BACKUP_AWS_BUCKET', 'zrr01'),
+        'prefix' => env('BACKUP_AWS_PREFIX', 'm2h-backups'),
+        'token'  => env('BACKUP_TOKEN'),
+    ],
+
     'whatsapp' => [
         'phone_number_id'      => env('WHATSAPP_PHONE_NUMBER_ID'),
         'business_account_id'  => env('WHATSAPP_BUSINESS_ACCOUNT_ID'),

@@ -38,7 +38,31 @@ use App\Http\Controllers\FinanceAccountController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\AccountTransferController;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+
+// ─── DB Backup (token-protected, no auth session required) ───────────────────
+Route::get('/system/db-backup', function () {
+    $token = request('token', '');
+    $configured = config('services.backup.token', '');
+
+    if (!$token || !$configured || !hash_equals($configured, $token)) {
+        abort(403, 'Forbidden');
+    }
+
+    ini_set('memory_limit', '512M');
+    set_time_limit(300);
+
+    try {
+        Artisan::call('db:backup');
+        $output = Artisan::output();
+        return response("OK\n\n" . $output, 200)->header('Content-Type', 'text/plain');
+    } catch (\Throwable $e) {
+        Log::error('DB backup failed via URL', ['error' => $e->getMessage()]);
+        return response("ERROR: " . $e->getMessage(), 500)->header('Content-Type', 'text/plain');
+    }
+})->middleware('throttle:3,60');
 
 // Meta webhook routes are registered in bootstrap/app.php with no middleware
 
