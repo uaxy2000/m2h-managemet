@@ -4,9 +4,14 @@
      data-id="{{ $lead->id }}"
      data-href="{{ route('leads.show', $lead) }}">
 
+    @php
+        $activeSort   = $sort ?? ($filters['sort'] ?? 'application_date');
+        $countryTags  = $lead->tags->filter(fn($t) => countryFlag($t->name) !== '');
+        $otherTags    = $lead->tags->reject(fn($t) => countryFlag($t->name) !== '');
+    @endphp
+
     <div class="flex items-start justify-between gap-1.5 mb-0.5">
         <p class="text-sm font-semibold text-gray-800 truncate">{{ $lead->fullName() }}</p>
-        @php $activeSort = $sort ?? ($filters['sort'] ?? 'application_date'); @endphp
         <div class="flex flex-col items-end flex-shrink-0 gap-0.5">
             <span class="text-xs leading-tight whitespace-nowrap {{ $activeSort === 'application_date' ? 'text-gray-500 font-medium' : 'text-gray-300' }}">Rec. {{ $lead->created_at->format('d/m/y') }}</span>
             @if($lead->stage_entered_at)
@@ -14,6 +19,18 @@
             @endif
         </div>
     </div>
+
+    @if($countryTags->isNotEmpty())
+    <div class="flex flex-wrap gap-1 mt-1">
+        @foreach($countryTags as $t)
+        <span class="inline-flex items-center gap-1 text-xs font-medium text-white px-1.5 py-0.5 rounded-full"
+              style="background-color:{{ $t->color }}">
+            <span class="fi fi-{{ countryFlag($t->name) }}" style="border-radius:2px;font-size:10px;flex-shrink:0"></span>
+            {{ $t->name }}
+        </span>
+        @endforeach
+    </div>
+    @endif
 
     @if($lead->subStage)
     <div class="mt-2">
@@ -47,20 +64,19 @@
     </div>
     @endif
 
-    @if($lead->tags->isNotEmpty())
+    @if($otherTags->isNotEmpty())
     <div class="mt-2" x-data="{open:false}" @mouseenter="open=true" @mouseleave="open=false" style="position:relative">
         <div class="flex flex-wrap gap-1">
-            @foreach($lead->tags as $t)
+            @foreach($otherTags as $t)
             <span style="display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;background-color:{{ $t->color }}"></span>
             @endforeach
         </div>
         <div x-show="open" x-cloak
              style="position:absolute;bottom:calc(100% + 5px);left:0;z-index:50;background:white;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;box-shadow:0 4px 14px rgba(0,0,0,.13);pointer-events:none;min-width:130px">
-            @foreach($lead->tags as $t)
-            @php $cf = countryFlag($t->name); @endphp
+            @foreach($otherTags as $t)
             <div style="display:flex;align-items:center;gap:7px;padding:2px 0">
                 <span style="display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;background-color:{{ $t->color }}"></span>
-                <span style="font-size:12px;color:#374151;white-space:nowrap;display:flex;align-items:center;gap:4px">@if($cf)<span class="fi fi-{{ $cf }}" style="border-radius:2px;font-size:11px"></span>@endif{{ $t->name }}</span>
+                <span style="font-size:12px;color:#374151;white-space:nowrap">{{ $t->name }}</span>
             </div>
             @endforeach
         </div>
