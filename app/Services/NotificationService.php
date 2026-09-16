@@ -18,8 +18,8 @@ class NotificationService
         ?string $url   = null,
         array   $meta  = [],
     ): void {
+        // Dedup: skip if an identical unread notification exists within the last hour
         try {
-            // Dedup: skip if an identical unread notification exists within the last hour
             $exists = Notification::where('user_id', $userId)
                 ->where('type', $type)
                 ->whereNull('read_at')
@@ -34,7 +34,11 @@ class NotificationService
             if ($exists) {
                 return;
             }
+        } catch (\Throwable) {
+            // Dedup query failed (e.g. schema issue) — skip dedup, still create
+        }
 
+        try {
             Notification::create([
                 'user_id' => $userId,
                 'type'    => $type,
@@ -47,7 +51,6 @@ class NotificationService
             \Illuminate\Support\Facades\Log::warning('NotificationService::send failed', [
                 'userId' => $userId, 'type' => $type, 'error' => $e->getMessage(),
             ]);
-            return;
         }
     }
 
