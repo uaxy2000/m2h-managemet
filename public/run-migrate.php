@@ -25,9 +25,11 @@ $kernel->bootstrap();
 
 header('Content-Type: text/plain');
 
-$exit = \Illuminate\Support\Facades\Artisan::call('migrate', [
-    '--path'  => 'database/migrations/2026_09_16_000001_create_notifications_table.php',
+// Run the UUID fix migration (alters user_id column from bigint to varchar)
+$exit2 = \Illuminate\Support\Facades\Artisan::call('migrate', [
+    '--path'  => 'database/migrations/2026_09_16_000002_fix_notifications_user_id_uuid.php',
     '--force' => true,
 ]);
+echo "--- fix user_id column ---\n";
 echo \Illuminate\Support\Facades\Artisan::output();
-echo "\nExit code: " . $exit;
+echo "Exit code: " . $exit2 . "\n";

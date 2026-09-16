@@ -11,7 +11,7 @@ class NotificationService
      * Deduplicates: won't create the same type+meta combo within 1 hour.
      */
     public static function send(
-        int     $userId,
+        string  $userId,
         string  $type,
         string  $title,
         ?string $body  = null,
@@ -47,7 +47,7 @@ class NotificationService
     /**
      * Send to multiple users at once.
      */
-    public static function sendToAll(array $userIds, string $type, string $title, ?string $body = null, ?string $url = null, array $meta = []): void
+    public static function sendToAll(array $userIds, string $type, string $title, ?string $body = null, ?string $url = null, array $meta = []): void  // $userIds are UUID strings
     {
         foreach (array_unique($userIds) as $userId) {
             static::send($userId, $type, $title, $body, $url, $meta);

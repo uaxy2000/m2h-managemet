@@ -62,7 +62,7 @@ class NotificationController extends Controller
 
     // ─── Task due / overdue ───────────────────────────────────────────────────
 
-    private function checkTaskNotifications(int $userId): void
+    private function checkTaskNotifications(string $userId): void
     {
         $today    = now()->toDateString();
         $todayDt  = now()->startOfDay();
