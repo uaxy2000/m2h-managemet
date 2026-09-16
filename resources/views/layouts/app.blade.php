@@ -345,6 +345,98 @@
             </button>
             <h1 class="text-lg font-semibold text-gray-800 flex-1 truncate">@yield('heading', 'Dashboard')</h1>
             <div class="flex items-center gap-3 flex-shrink-0">
+
+                {{-- Notification Bell --}}
+                <div x-data="{
+                        open: false,
+                        unread: 0,
+                        items: [],
+                        pollUrl: '{{ route('notifications.poll') }}',
+                        readAllUrl: '{{ route('notifications.read-all') }}',
+                        csrfToken: '{{ csrf_token() }}',
+                        poll() {
+                            fetch(this.pollUrl, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+                                .then(r => r.ok ? r.json() : null)
+                                .then(d => { if (d) { this.unread = d.unread; this.items = d.notifications; } })
+                                .catch(() => {});
+                        },
+                        markRead(id) {
+                            const item = this.items.find(n => n.id === id);
+                            if (item && !item.read) {
+                                item.read = true;
+                                this.unread = Math.max(0, this.unread - 1);
+                                fetch('/api/notifications/' + id + '/read', {
+                                    method: 'POST',
+                                    headers: {'X-CSRF-TOKEN': this.csrfToken, 'X-Requested-With': 'XMLHttpRequest'}
+                                }).catch(() => {});
+                            }
+                        },
+                        markAllRead() {
+                            this.items.forEach(n => n.read = true);
+                            this.unread = 0;
+                            fetch(this.readAllUrl, {
+                                method: 'POST',
+                                headers: {'X-CSRF-TOKEN': this.csrfToken, 'X-Requested-With': 'XMLHttpRequest'}
+                            }).catch(() => {});
+                        },
+                        clickNotification(n) {
+                            this.markRead(n.id);
+                            this.open = false;
+                            if (n.url) window.location.href = n.url;
+                        },
+                        init() {
+                            this.poll();
+                            setInterval(() => this.poll(), 50000);
+                        }
+                    }"
+                     @click.outside="open = false"
+                     class="relative">
+
+                    <button @click="open = !open" type="button"
+                            class="relative p-2 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/>
+                        </svg>
+                        <span x-show="unread > 0"
+                              x-text="unread > 99 ? '99+' : unread"
+                              x-cloak
+                              class="absolute -top-0.5 -right-0.5 text-[10px] font-bold bg-red-500 text-white rounded-full min-w-[1.1rem] h-[1.1rem] flex items-center justify-center px-0.5 leading-none"></span>
+                    </button>
+
+                    {{-- Dropdown --}}
+                    <div x-show="open" x-cloak
+                         class="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-50">
+                        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                            <span class="text-sm font-semibold text-gray-700">Notifications</span>
+                            <button @click="markAllRead()" x-show="unread > 0" type="button"
+                                    class="text-xs text-indigo-600 hover:text-indigo-800 font-medium transition-colors">
+                                Mark all read
+                            </button>
+                        </div>
+                        <ul class="max-h-96 overflow-y-auto divide-y divide-gray-50">
+                            <template x-if="items.length === 0">
+                                <li class="px-4 py-8 text-center text-sm text-gray-400">No notifications</li>
+                            </template>
+                            <template x-for="n in items" :key="n.id">
+                                <li @click="clickNotification(n)"
+                                    class="px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                                    :class="!n.read ? 'bg-indigo-50/40' : ''">
+                                    <div class="flex items-start gap-2.5">
+                                        <div class="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0 transition-colors"
+                                             :class="!n.read ? 'bg-indigo-500' : 'bg-transparent'"></div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-medium text-gray-800 leading-snug" x-text="n.title"></p>
+                                            <p class="text-xs text-gray-500 mt-0.5 line-clamp-2" x-show="n.body" x-text="n.body"></p>
+                                            <p class="text-[11px] text-gray-400 mt-1" x-text="n.created_at"></p>
+                                        </div>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+
+                </div>
+
                 <span class="text-xs font-medium px-2.5 py-1 rounded-full {{ auth()->user()->roleBadgeColor() }}">
                     {{ auth()->user()->roleLabel() }}
                 </span>

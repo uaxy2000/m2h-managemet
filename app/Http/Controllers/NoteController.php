@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Lead;
 use App\Models\Note;
+use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -31,6 +32,17 @@ class NoteController extends Controller
             'visibility' => $validated['visibility'],
             'created_at' => now(),
         ]);
+
+        if ($lead->assigned_to && $lead->assigned_to !== auth()->id()) {
+            NotificationService::send(
+                userId: $lead->assigned_to,
+                type:   'note_added',
+                title:  'New note on your lead',
+                body:   $lead->first_name . ' ' . $lead->last_name . ': ' . mb_strimwidth($validated['content'], 0, 80, '…'),
+                url:    route('leads.show', $lead->id),
+                meta:   ['lead_id' => $lead->id],
+            );
+        }
 
         return back()->with('note_success', 'Note added.')->withFragment('timeline');
     }

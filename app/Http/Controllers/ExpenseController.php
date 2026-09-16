@@ -7,6 +7,7 @@ use App\Models\Expense;
 use App\Models\FinancialAccount;
 use App\Models\TransactionCategory;
 use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -99,6 +100,18 @@ class ExpenseController extends Controller
             $this->createMovements($expense);
         }
 
+        if ($isMember) {
+            $adminIds = User::where('role', 'internal_admin')->pluck('id')->toArray();
+            NotificationService::sendToAll(
+                userIds: $adminIds,
+                type:    'expense_submitted',
+                title:   'New expense pending approval',
+                body:    auth()->user()->name . ': ' . number_format($expense->amount, 2) . ' ' . $expense->currency,
+                url:     route('finance.expenses.index'),
+                meta:    ['expense_id' => $expense->id],
+            );
+        }
+
         $message = $isMember
             ? 'Expense submitted and pending admin approval.'
             : 'Expense recorded.';
@@ -114,6 +127,17 @@ class ExpenseController extends Controller
         $expense->update(['status' => 'approved']);
         $this->createMovements($expense);
 
+        if ($expense->created_by && $expense->created_by !== auth()->id()) {
+            NotificationService::send(
+                userId: $expense->created_by,
+                type:   'expense_decision',
+                title:  'Your expense was approved',
+                body:   number_format($expense->amount, 2) . ' ' . $expense->currency,
+                url:    route('finance.expenses.index'),
+                meta:   ['expense_id' => $expense->id],
+            );
+        }
+
         return back()->with('success', 'Expense approved.');
     }
 
@@ -122,6 +146,18 @@ class ExpenseController extends Controller
         abort_unless(auth()->user()->isInternalAdmin(), 403);
 
         $expense->update(['status' => 'rejected']);
+
+        if ($expense->created_by && $expense->created_by !== auth()->id()) {
+            NotificationService::send(
+                userId: $expense->created_by,
+                type:   'expense_decision',
+                title:  'Your expense was rejected',
+                body:   number_format($expense->amount, 2) . ' ' . $expense->currency,
+                url:    route('finance.expenses.index'),
+                meta:   ['expense_id' => $expense->id],
+            );
+        }
+
         return back()->with('success', 'Expense rejected.');
     }
 

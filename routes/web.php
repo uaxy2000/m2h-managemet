@@ -38,6 +38,7 @@ use App\Http\Controllers\FinanceAccountController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\AccountTransferController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
@@ -76,6 +77,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/inbox', [InboxController::class, 'index'])->name('inbox');
     Route::get('/tasks', [UnifiedTaskController::class, 'index'])->name('tasks.index');
+
+    // Notifications
+    Route::get('/api/notifications/poll', [NotificationController::class, 'poll'])->name('notifications.poll');
+    Route::post('/api/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/api/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 
     // ToDo Lists
     Route::resource('todo-lists', TodoListController::class)->except(['edit']);

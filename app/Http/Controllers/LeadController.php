@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\CustomField;
 use App\Models\Lead;
+use App\Services\NotificationService;
 use App\Models\LeadActivity;
 use App\Models\LeadCustomValue;
 use App\Models\LeadStatusHistory;
@@ -424,6 +425,18 @@ class LeadController extends Controller
                 'to_sub_stage_id'   => $lead->sub_stage_id,
                 'changed_at'        => now(),
             ]);
+
+            if ($lead->assigned_to && $lead->assigned_to !== auth()->id()) {
+                $stageName = Stage::find($lead->stage_id)?->name ?? 'new stage';
+                NotificationService::send(
+                    userId: $lead->assigned_to,
+                    type:   'lead_stage_changed',
+                    title:  'Lead stage changed',
+                    body:   $lead->first_name . ' ' . $lead->last_name . ' → ' . $stageName,
+                    url:    route('leads.show', $lead->id),
+                    meta:   ['lead_id' => $lead->id],
+                );
+            }
         }
 
         return redirect()->route('leads.show', $lead)->with('success', 'Lead updated.');
@@ -456,6 +469,17 @@ class LeadController extends Controller
                 'visible_to'  => ['internal'],
                 'created_at'  => now(),
             ]);
+
+            if ($newId && $newId !== auth()->id()) {
+                NotificationService::send(
+                    userId: $newId,
+                    type:   'lead_assigned',
+                    title:  'Lead assigned to you',
+                    body:   $lead->first_name . ' ' . $lead->last_name,
+                    url:    route('leads.show', $lead->id),
+                    meta:   ['lead_id' => $lead->id],
+                );
+            }
         }
 
         return back()->with('success', 'Assignment updated.');

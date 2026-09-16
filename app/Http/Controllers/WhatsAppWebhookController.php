@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\Lead;
 use App\Models\LeadActivity;
 use App\Models\Pipeline;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -111,6 +112,17 @@ class WhatsAppWebhookController extends Controller
             'meta'        => ['wa_message_id' => $waId, 'from' => $from, 'sent_at' => $sentAt],
             'is_read'     => false,
         ]);
+
+        if ($lead->assigned_to) {
+            NotificationService::send(
+                userId: $lead->assigned_to,
+                type:   'wa_incoming',
+                title:  'New WhatsApp message',
+                body:   $lead->first_name . ' ' . $lead->last_name . ': ' . mb_strimwidth($text, 0, 80, '…'),
+                url:    route('leads.show', $lead->id),
+                meta:   ['lead_id' => $lead->id],
+            );
+        }
 
         Log::info('WhatsApp webhook: message logged', ['lead_id' => $lead->id, 'from' => $from]);
     }
