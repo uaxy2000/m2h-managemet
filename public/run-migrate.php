@@ -25,7 +25,13 @@ $kernel->bootstrap();
 
 header('Content-Type: text/plain');
 
-// Run the UUID fix migration (alters user_id column from bigint to varchar)
+// Remove any failed record of the fix migration so it can re-run cleanly
+\Illuminate\Support\Facades\DB::table('migrations')
+    ->where('migration', '2026_09_16_000002_fix_notifications_user_id_uuid')
+    ->delete();
+echo "Cleared stale migration record.\n";
+
+// Run the UUID fix migration (drop FK → alter column → re-add FK)
 $exit2 = \Illuminate\Support\Facades\Artisan::call('migrate', [
     '--path'  => 'database/migrations/2026_09_16_000002_fix_notifications_user_id_uuid.php',
     '--force' => true,

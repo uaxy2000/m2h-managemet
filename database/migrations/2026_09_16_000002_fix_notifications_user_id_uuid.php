@@ -7,10 +7,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // foreignId() created bigint; users table uses UUID — change to varchar(36)
-        DB::statement('ALTER TABLE notifications MODIFY COLUMN user_id VARCHAR(36) NOT NULL');
-
-        // Drop the auto-generated bigint FK if it exists
+        // 1. Drop any existing FK on user_id first (prevents ALTER from being blocked)
         try {
             $fks = DB::select("
                 SELECT CONSTRAINT_NAME
@@ -25,7 +22,10 @@ return new class extends Migration
             }
         } catch (\Throwable) {}
 
-        // Re-add FK pointing to uuid primary key on users
+        // 2. Change column type from bigint to varchar(36) for UUID
+        DB::statement('ALTER TABLE notifications MODIFY COLUMN user_id VARCHAR(36) NOT NULL');
+
+        // 3. Re-add FK pointing to uuid primary key on users
         DB::statement('ALTER TABLE notifications ADD CONSTRAINT notifications_user_id_foreign FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE');
     }
 
