@@ -25,6 +25,9 @@ $kernel->bootstrap();
 
 header('Content-Type: text/plain');
 
-$exit = Artisan::call('migrate', ['--force' => true]);
-echo Artisan::output();
+$exit = \Illuminate\Support\Facades\Artisan::call('migrate', [
+    '--path'  => 'database/migrations/2026_09_16_000001_create_notifications_table.php',
+    '--force' => true,
+]);
+echo \Illuminate\Support\Facades\Artisan::output();
 echo "\nExit code: " . $exit;
