@@ -452,10 +452,10 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/>
                         </svg>
                     </button>
-                    {{-- Badge outside button to avoid overflow clipping --}}
+                    {{-- Badge: standard corner positioning with z-index --}}
                     <span x-show="unread > 0"
                           x-text="unread > 99 ? '99+' : unread"
-                          class="absolute -top-1 -right-1 text-[10px] font-bold bg-red-500 text-white rounded-full min-w-[1.25rem] h-5 flex items-center justify-center px-1 leading-none tabular-nums pointer-events-none"></span>
+                          class="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 z-10 text-[10px] font-bold bg-red-500 text-white rounded-full min-w-[1.25rem] h-5 flex items-center justify-center px-1 leading-none tabular-nums pointer-events-none"></span>
 
                     {{-- Dropdown --}}
                     <div x-show="open" x-cloak
