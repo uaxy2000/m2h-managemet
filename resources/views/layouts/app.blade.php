@@ -265,6 +265,18 @@
             @if(auth()->user()->isAdmin())
             <div class="pt-4 mt-4 border-t border-slate-700/60 space-y-0.5">
 
+                {{-- Automations --}}
+                <a href="{{ route('automations.index') }}"
+                   :class="(sidebar || mobileNav) ? 'px-3 gap-3' : 'lg:justify-center lg:px-0 px-3 gap-3'"
+                   class="group flex items-center py-2 rounded-lg text-sm font-medium transition-colors
+                          {{ request()->is('automations*') ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}"
+                   :title="(!sidebar && !mobileNav) ? 'Automations' : ''">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"/>
+                    </svg>
+                    <span x-show="sidebar || mobileNav" class="whitespace-nowrap">Automations</span>
+                </a>
+
                 {{-- Users --}}
                 <a href="{{ route('settings.users.index') }}"
                    :class="(sidebar || mobileNav) ? 'px-3 gap-3' : 'lg:justify-center lg:px-0 px-3 gap-3'"

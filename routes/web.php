@@ -39,6 +39,7 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\AccountTransferController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\AutomationController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
@@ -183,6 +184,14 @@ Route::middleware('auth')->group(function () {
     Route::post('leads/{lead}/programs', [LeadProgramController::class, 'store'])->name('leads.programs.store');
     Route::post('leads/{lead}/programs/{leadProgram}/primary', [LeadProgramController::class, 'setPrimary'])->name('leads.programs.primary');
     Route::delete('leads/{lead}/programs/{leadProgram}', [LeadProgramController::class, 'destroy'])->name('leads.programs.destroy');
+
+    // Automations (admin only)
+    Route::middleware('role:super_admin,admin')->group(function () {
+        Route::resource('automations', AutomationController::class);
+        Route::post('automations/{automation}/toggle', [AutomationController::class, 'toggleActive'])->name('automations.toggle');
+        Route::get('automations/{automation}/preview', [AutomationController::class, 'preview'])->name('automations.preview');
+        Route::post('automations/{automation}/run', [AutomationController::class, 'run'])->name('automations.run');
+    });
 
     Route::middleware('role:super_admin,admin')
         ->prefix('settings')

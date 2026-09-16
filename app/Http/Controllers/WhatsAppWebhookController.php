@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\Lead;
 use App\Models\LeadActivity;
 use App\Models\Pipeline;
+use App\Services\AutomationService;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -101,6 +102,8 @@ class WhatsAppWebhookController extends Controller
             Log::info('WhatsApp webhook: new lead created from unknown number', [
                 'phone' => $from, 'lead_id' => $lead->id,
             ]);
+
+            AutomationService::evaluate($lead, 'lead_created');
         }
 
         LeadActivity::create([

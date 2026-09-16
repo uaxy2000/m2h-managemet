@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\CustomField;
 use App\Models\Lead;
+use App\Services\AutomationService;
 use App\Services\NotificationService;
 use App\Models\LeadActivity;
 use App\Models\LeadCustomValue;
@@ -152,6 +153,8 @@ class LeadController extends Controller
             'to_sub_stage_id' => $lead->sub_stage_id,
             'changed_at'  => now(),
         ]);
+
+        AutomationService::evaluate($lead, 'lead_created');
 
         $message = $isDuplicate
             ? 'Lead created — flagged as potential duplicate (matching email or phone found).'
@@ -438,6 +441,8 @@ class LeadController extends Controller
                 );
             }
         }
+
+        AutomationService::evaluate($lead, 'lead_updated');
 
         return redirect()->route('leads.show', $lead)->with('success', 'Lead updated.');
     }
