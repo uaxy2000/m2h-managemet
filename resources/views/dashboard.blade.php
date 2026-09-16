@@ -259,7 +259,8 @@ $phases = [
     [
         'title' => 'Productivity & Reporting',
         'items' => [
-            ['label' => 'In-app notifications',                                           'complete' => false],
+            ['label' => 'In-app notifications — bell, badge, sound, polling, mark-read',   'complete' => true],
+            ['label' => 'Automation rules — condition builder (AND/OR), actions, conflict detection, preview', 'complete' => true],
             ['label' => 'Email notifications (lead assigned, stage changed)',              'complete' => false],
             ['label' => 'Lead bulk actions (assign, tag, move stage)',                    'complete' => false],
             ['label' => 'Reporting & analytics — stage, source, assignee, monthly trend (initial)', 'complete' => true],
