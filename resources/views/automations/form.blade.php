@@ -7,6 +7,19 @@
     $isEdit      = isset($rule);
     $stagesJson  = $stages->map(fn($s) => ['id' => $s->id, 'name' => $s->name, 'pipeline' => $s->pipeline?->name])->toJson();
     $tagsJson    = $tags->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'color' => $t->color])->toJson();
+
+    // Grouped tags for optgroup select
+    $tagsGroupedArr = [];
+    foreach ($tagGroups as $tg) {
+        if ($tg->tags->isNotEmpty()) {
+            $tagsGroupedArr[] = ['name' => $tg->name, 'tags' => $tg->tags->sortBy('name')->map(fn($t) => ['id' => $t->id, 'name' => $t->name])->values()];
+        }
+    }
+    $ungroupedTagsList = $tags->filter(fn($t) => is_null($t->tag_group_id))->sortBy('name');
+    if ($ungroupedTagsList->isNotEmpty()) {
+        $tagsGroupedArr[] = ['name' => 'Other', 'tags' => $ungroupedTagsList->map(fn($t) => ['id' => $t->id, 'name' => $t->name])->values()];
+    }
+    $tagsGroupedJson = json_encode($tagsGroupedArr);
     $usersJson   = $users->map(fn($u) => ['id' => $u->id, 'name' => $u->name])->toJson();
     $waJson      = $waTemplates->map(fn($t) => ['id' => $t->id, 'name' => $t->display_name ?: $t->name])->toJson();
     $cfJson      = $customFields->map(fn($f) => [
@@ -44,7 +57,7 @@
 @endphp
 
 <div class="max-w-3xl mx-auto"
-     x-data="ruleBuilder({{ $stagesJson }}, {{ $tagsJson }}, {{ $usersJson }}, {{ $waJson }}, {{ $cfJson }}, {{ $initConditions }}, {{ $initActions }})">
+     x-data="ruleBuilder({{ $stagesJson }}, {{ $tagsJson }}, {{ $usersJson }}, {{ $waJson }}, {{ $cfJson }}, {{ $initConditions }}, {{ $initActions }}, {{ $tagsGroupedJson }})">
 
     <form method="POST"
           action="{{ $isEdit ? route('automations.update', $rule) : route('automations.store') }}"
@@ -180,24 +193,32 @@
                                             </select>
                                         </template>
 
-                                        {{-- Value — stage --}}
+                                        {{-- Value — stage (grouped by pipeline) --}}
                                         <template x-if="cond.field === 'stage' && !['is_empty','is_not_empty'].includes(cond.operator)">
                                             <select x-model="cond.value[0]"
                                                     class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
                                                 <option value="">Select stage…</option>
-                                                <template x-for="s in stages" :key="s.id">
-                                                    <option :value="s.id" x-text="(s.pipeline ? s.pipeline + ' → ' : '') + s.name"></option>
+                                                <template x-for="group in stagesGrouped" :key="group.pipeline">
+                                                    <optgroup :label="group.pipeline">
+                                                        <template x-for="s in group.stages" :key="s.id">
+                                                            <option :value="s.id" x-text="s.name"></option>
+                                                        </template>
+                                                    </optgroup>
                                                 </template>
                                             </select>
                                         </template>
 
-                                        {{-- Value — tag --}}
+                                        {{-- Value — tag (grouped by tag group) --}}
                                         <template x-if="cond.field === 'tag' && !['is_empty','is_not_empty'].includes(cond.operator)">
                                             <select x-model="cond.value[0]"
                                                     class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
                                                 <option value="">Select tag…</option>
-                                                <template x-for="t in tags" :key="t.id">
-                                                    <option :value="t.id" x-text="t.name"></option>
+                                                <template x-for="group in tagsGrouped" :key="group.name">
+                                                    <optgroup :label="group.name">
+                                                        <template x-for="t in group.tags" :key="t.id">
+                                                            <option :value="t.id" x-text="t.name"></option>
+                                                        </template>
+                                                    </optgroup>
                                                 </template>
                                             </select>
                                         </template>
@@ -304,8 +325,12 @@
                                 <select x-model="action.parameters.stage_id"
                                         class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
                                     <option value="">Select stage…</option>
-                                    <template x-for="s in stages" :key="s.id">
-                                        <option :value="s.id" x-text="(s.pipeline ? s.pipeline + ' → ' : '') + s.name"></option>
+                                    <template x-for="group in stagesGrouped" :key="group.pipeline">
+                                        <optgroup :label="group.pipeline">
+                                            <template x-for="s in group.stages" :key="s.id">
+                                                <option :value="s.id" x-text="s.name"></option>
+                                            </template>
+                                        </optgroup>
                                     </template>
                                 </select>
                             </template>
@@ -326,8 +351,12 @@
                                 <select x-model="action.parameters.tag_id"
                                         class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
                                     <option value="">Select tag…</option>
-                                    <template x-for="t in tags" :key="t.id">
-                                        <option :value="t.id" x-text="t.name"></option>
+                                    <template x-for="group in tagsGrouped" :key="group.name">
+                                        <optgroup :label="group.name">
+                                            <template x-for="t in group.tags" :key="t.id">
+                                                <option :value="t.id" x-text="t.name"></option>
+                                            </template>
+                                        </optgroup>
                                     </template>
                                 </select>
                             </template>
@@ -395,10 +424,12 @@
 
 @push('scripts')
 <script>
-function ruleBuilder(stages, tags, users, waTemplates, customFields, initConditions, initActions) {
+function ruleBuilder(stages, tags, users, waTemplates, customFields, initConditions, initActions, tagsGrouped) {
     return {
         stages,
         tags,
+        tagsGrouped,
+        stagesGrouped: [],
         users,
         waTemplates,
         customFields,
@@ -408,6 +439,15 @@ function ruleBuilder(stages, tags, users, waTemplates, customFields, initConditi
         actions: [],
 
         init() {
+            // Group stages by pipeline
+            const stageMap = {};
+            this.stages.forEach(s => {
+                const p = s.pipeline || 'No Pipeline';
+                if (!stageMap[p]) stageMap[p] = { pipeline: p, stages: [] };
+                stageMap[p].stages.push(s);
+            });
+            this.stagesGrouped = Object.values(stageMap);
+
             if (initConditions && initConditions.length > 0) {
                 // Rebuild groups from flat list
                 const grouped = {};
