@@ -7,6 +7,18 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css">
+    <style>
+        @keyframes bell-ring {
+            0%,100% { transform: rotate(0deg); }
+            10%      { transform: rotate(18deg); }
+            25%      { transform: rotate(-15deg); }
+            40%      { transform: rotate(12deg); }
+            55%      { transform: rotate(-9deg); }
+            70%      { transform: rotate(5deg); }
+            85%      { transform: rotate(-2deg); }
+        }
+        .bell-ring { animation: bell-ring 0.9s ease-in-out; }
+    </style>
     @stack('styles')
 </head>
 <body class="h-full"
@@ -350,6 +362,7 @@
                 <div x-data="{
                         open: false,
                         unread: 0,
+                        ringing: false,
                         items: [],
                         pollUrl: '{{ route('notifications.poll') }}',
                         readAllUrl: '{{ route('notifications.read-all') }}',
@@ -357,8 +370,35 @@
                         poll() {
                             fetch(this.pollUrl, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
                                 .then(r => r.ok ? r.json() : null)
-                                .then(d => { if (d) { this.unread = d.unread; this.items = d.notifications; } })
+                                .then(d => {
+                                    if (!d) return;
+                                    const prev = this.unread;
+                                    this.unread = d.unread;
+                                    this.items = d.notifications;
+                                    if (d.unread > prev) {
+                                        this.ringing = true;
+                                        this.playSound();
+                                        setTimeout(() => this.ringing = false, 900);
+                                    }
+                                })
                                 .catch(() => {});
+                        },
+                        playSound() {
+                            try {
+                                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                                const now = ctx.currentTime;
+                                [880, 660].forEach((freq, i) => {
+                                    const o = ctx.createOscillator();
+                                    const g = ctx.createGain();
+                                    o.connect(g); g.connect(ctx.destination);
+                                    o.type = 'sine';
+                                    o.frequency.setValueAtTime(freq, now + i * 0.12);
+                                    g.gain.setValueAtTime(0.18, now + i * 0.12);
+                                    g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.6);
+                                    o.start(now + i * 0.12);
+                                    o.stop(now + i * 0.12 + 0.6);
+                                });
+                            } catch(e) {}
                         },
                         markRead(id) {
                             const item = this.items.find(n => n.id === id);
@@ -393,8 +433,12 @@
                      class="relative">
 
                     <button @click="open = !open" type="button"
-                            class="relative p-2 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            class="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
+                            :class="unread > 0 ? 'text-indigo-500' : 'text-gray-400 hover:text-gray-600'">
+                        <svg class="w-5 h-5 transition-transform"
+                             :class="ringing ? 'bell-ring' : ''"
+                             fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                             style="transform-origin: 50% 0%">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/>
                         </svg>
                         <span x-show="unread > 0"
