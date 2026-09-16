@@ -452,7 +452,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/>
                         </svg>
                         <span x-text="unread > 99 ? '99+' : unread"
-                              :style="unread > 0 ? 'position:absolute;top:-6px;right:-6px;z-index:20;font-size:10px;font-weight:700;background:#ef4444;color:#fff;border-radius:9999px;min-width:1.25rem;height:1.25rem;display:flex;align-items:center;justify-content:center;padding:0 3px;line-height:1;pointer-events:none;' : 'display:none'"></span>
+                              :style="unread > 0 ? 'position:absolute;top:-4px;right:-4px;z-index:20;font-size:9px;font-weight:700;background:#ef4444;color:#fff;border-radius:9999px;min-width:1rem;height:1rem;display:flex;align-items:center;justify-content:center;padding:0 2px;line-height:1;pointer-events:none;' : 'display:none'"></span>
                     </button>
 
                     {{-- Dropdown --}}
