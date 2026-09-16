@@ -364,9 +364,15 @@
                         unread: 0,
                         ringing: false,
                         items: [],
+                        audioCtx: null,
                         pollUrl: '{{ route('notifications.poll') }}',
                         readAllUrl: '{{ route('notifications.read-all') }}',
                         csrfToken: '{{ csrf_token() }}',
+                        initAudio() {
+                            if (!this.audioCtx) {
+                                try { this.audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+                            }
+                        },
                         poll() {
                             fetch(this.pollUrl, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
                                 .then(r => r.ok ? r.json() : null)
@@ -384,19 +390,21 @@
                                 .catch(() => {});
                         },
                         playSound() {
+                            if (!this.audioCtx) return;
                             try {
-                                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                                const ctx = this.audioCtx;
+                                if (ctx.state === 'suspended') ctx.resume();
                                 const now = ctx.currentTime;
                                 [880, 660].forEach((freq, i) => {
                                     const o = ctx.createOscillator();
                                     const g = ctx.createGain();
                                     o.connect(g); g.connect(ctx.destination);
                                     o.type = 'sine';
-                                    o.frequency.setValueAtTime(freq, now + i * 0.12);
-                                    g.gain.setValueAtTime(0.18, now + i * 0.12);
-                                    g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.6);
-                                    o.start(now + i * 0.12);
-                                    o.stop(now + i * 0.12 + 0.6);
+                                    o.frequency.setValueAtTime(freq, now + i * 0.13);
+                                    g.gain.setValueAtTime(0.2, now + i * 0.13);
+                                    g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.13 + 0.6);
+                                    o.start(now + i * 0.13);
+                                    o.stop(now + i * 0.13 + 0.7);
                                 });
                             } catch(e) {}
                         },
@@ -425,6 +433,8 @@
                             if (n.url) window.location.href = n.url;
                         },
                         init() {
+                            // AudioContext requires a user gesture — initialize on first click
+                            document.addEventListener('click', () => this.initAudio(), {once: true});
                             this.poll();
                             setInterval(() => this.poll(), 50000);
                         }
@@ -444,7 +454,7 @@
                         <span x-show="unread > 0"
                               x-text="unread > 99 ? '99+' : unread"
                               x-cloak
-                              class="absolute -top-0.5 -right-0.5 text-[10px] font-bold bg-red-500 text-white rounded-full min-w-[1.1rem] h-[1.1rem] flex items-center justify-center px-0.5 leading-none"></span>
+                              class="absolute -top-1 -right-1 text-[10px] font-bold bg-red-500 text-white rounded-full min-w-[1.25rem] h-5 flex items-center justify-center px-1 leading-none tabular-nums"></span>
                     </button>
 
                     {{-- Dropdown --}}
