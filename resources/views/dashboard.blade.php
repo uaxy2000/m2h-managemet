@@ -253,6 +253,7 @@ $phases = [
             ['label' => 'Meta Billing — monthly ad spend import from local insights',        'complete' => true],
             ['label' => 'Finance overview — account balances, recent transactions, expense breakdown', 'complete' => true],
             ['label' => 'SP firm current account view (read-only)',                          'complete' => false],
+            ['label' => 'Automated daily DB backup to AWS S3 (60-day rotation, cron-job.org trigger)', 'complete' => true],
         ],
     ],
     [
