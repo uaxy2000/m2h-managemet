@@ -1,5 +1,13 @@
 <?php
 // ONE-TIME: Recreate notifications table with correct schema. DELETE AFTER USE.
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
+set_exception_handler(function ($e) {
+    http_response_code(500);
+    header('Content-Type: text/plain');
+    echo "ERROR: " . $e->getMessage() . "\n" . $e->getTraceAsString();
+    exit;
+});
 
 $envPath = __DIR__ . '/../.env';
 $env = [];

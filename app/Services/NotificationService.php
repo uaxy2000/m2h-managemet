@@ -18,30 +18,37 @@ class NotificationService
         ?string $url   = null,
         array   $meta  = [],
     ): void {
-        // Dedup: skip if an identical unread notification exists within the last hour
-        $exists = Notification::where('user_id', $userId)
-            ->where('type', $type)
-            ->whereNull('read_at')
-            ->where('created_at', '>=', now()->subHour())
-            ->when(!empty($meta), function ($q) use ($meta) {
-                foreach ($meta as $k => $v) {
-                    $q->whereJsonContains('meta->' . $k, $v);
-                }
-            })
-            ->exists();
+        try {
+            // Dedup: skip if an identical unread notification exists within the last hour
+            $exists = Notification::where('user_id', $userId)
+                ->where('type', $type)
+                ->whereNull('read_at')
+                ->where('created_at', '>=', now()->subHour())
+                ->when(!empty($meta), function ($q) use ($meta) {
+                    foreach ($meta as $k => $v) {
+                        $q->whereJsonContains('meta->' . $k, $v);
+                    }
+                })
+                ->exists();
 
-        if ($exists) {
+            if ($exists) {
+                return;
+            }
+
+            Notification::create([
+                'user_id' => $userId,
+                'type'    => $type,
+                'title'   => $title,
+                'body'    => $body,
+                'url'     => $url,
+                'meta'    => $meta ?: null,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('NotificationService::send failed', [
+                'userId' => $userId, 'type' => $type, 'error' => $e->getMessage(),
+            ]);
             return;
         }
-
-        Notification::create([
-            'user_id' => $userId,
-            'type'    => $type,
-            'title'   => $title,
-            'body'    => $body,
-            'url'     => $url,
-            'meta'    => $meta ?: null,
-        ]);
     }
 
     /**
