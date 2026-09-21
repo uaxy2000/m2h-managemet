@@ -23,6 +23,7 @@ use App\Http\Controllers\WhatsAppController;
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\BoardCardController;
 use App\Http\Controllers\CardNoteController;
+use App\Http\Controllers\LeadMergeController;
 use App\Http\Controllers\CardTaskController;
 use App\Http\Controllers\UnifiedTaskController;
 use App\Http\Controllers\TodoListController;
@@ -180,6 +181,7 @@ Route::middleware('auth')->group(function () {
 
     // Programs (nested under lead)
     Route::post('leads/{lead}/clear-duplicate', [LeadController::class, 'clearDuplicateFlag'])->name('leads.clear-duplicate');
+    Route::post('leads/{lead}/merge', [LeadMergeController::class, 'merge'])->name('leads.merge');
 
     Route::post('leads/{lead}/programs', [LeadProgramController::class, 'store'])->name('leads.programs.store');
     Route::post('leads/{lead}/programs/{leadProgram}/primary', [LeadProgramController::class, 'setPrimary'])->name('leads.programs.primary');

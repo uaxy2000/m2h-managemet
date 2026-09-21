@@ -121,27 +121,38 @@
                                 @endif
                             </button>
                             <div x-show="open" x-cloak @click.outside="open = false"
-                                 class="absolute left-0 top-full mt-1 z-20 bg-white border border-amber-200 rounded-xl shadow-lg p-3 min-w-[260px]">
+                                 class="absolute left-0 top-full mt-1 z-20 bg-white border border-amber-200 rounded-xl shadow-lg p-3 min-w-[280px]">
                                 @if($duplicateMatches->isNotEmpty())
                                 <p class="text-[10px] font-semibold text-amber-600 uppercase tracking-wide mb-2">Matching leads</p>
                                 <div class="space-y-1.5 mb-3">
                                     @foreach($duplicateMatches as $dup)
-                                    <a href="{{ route('leads.show', $dup) }}"
-                                       class="flex items-start gap-2 p-2 rounded-lg hover:bg-amber-50 transition-colors group">
-                                        <div class="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 text-[10px] font-bold flex-shrink-0 mt-0.5">
-                                            {{ strtoupper(substr($dup->first_name, 0, 1)) }}
-                                        </div>
-                                        <div class="min-w-0">
-                                            <p class="text-xs font-medium text-gray-800 group-hover:text-amber-700 truncate">{{ trim($dup->first_name . ' ' . $dup->last_name) }}</p>
-                                            @if($dup->email)
-                                            <p class="text-[10px] text-gray-400 truncate">{{ $dup->email }}</p>
-                                            @endif
-                                            @if($dup->phone)
-                                            <p class="text-[10px] text-gray-400">{{ $dup->phone }}</p>
-                                            @endif
-                                            <p class="text-[10px] text-gray-300">{{ $dup->created_at->format('d M Y') }}</p>
-                                        </div>
-                                    </a>
+                                    <div class="flex items-center gap-1 p-2 rounded-lg hover:bg-amber-50 transition-colors">
+                                        <a href="{{ route('leads.show', $dup) }}" class="flex items-start gap-2 flex-1 min-w-0 group">
+                                            <div class="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 text-[10px] font-bold flex-shrink-0 mt-0.5">
+                                                {{ strtoupper(substr($dup->first_name, 0, 1)) }}
+                                            </div>
+                                            <div class="min-w-0">
+                                                <p class="text-xs font-medium text-gray-800 group-hover:text-amber-700 truncate">{{ trim($dup->first_name . ' ' . $dup->last_name) }}</p>
+                                                @if($dup->email)
+                                                <p class="text-[10px] text-gray-400 truncate">{{ $dup->email }}</p>
+                                                @endif
+                                                @if($dup->phone)
+                                                <p class="text-[10px] text-gray-400">{{ $dup->phone }}</p>
+                                                @endif
+                                                <p class="text-[10px] text-gray-300">{{ $dup->created_at->format('d M Y') }}</p>
+                                            </div>
+                                        </a>
+                                        @if(auth()->user()->isInternalAdmin())
+                                        <button type="button"
+                                                @click="open = false; $dispatch('open-merge-modal', { otherId: '{{ $dup->id }}', otherName: '{{ addslashes(trim($dup->first_name . ' ' . $dup->last_name)) }}' })"
+                                                class="flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 px-2 py-1 rounded-md transition-colors">
+                                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 3M21 7.5H7.5"/>
+                                            </svg>
+                                            Merge
+                                        </button>
+                                        @endif
+                                    </div>
                                     @endforeach
                                 </div>
                                 <div class="border-t border-amber-100 pt-2">
@@ -1033,6 +1044,10 @@
                         <svg class="w-2.5 h-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"/>
                         </svg>
+                        @elseif($item->type === 'merge')
+                        <svg class="w-2.5 h-2.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 3M21 7.5H7.5"/>
+                        </svg>
                         @else
                         <svg class="w-2.5 h-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/>
@@ -1040,7 +1055,11 @@
                         @endif
                     </div>
                     <div class="flex-1 min-w-0">
+                        @if($item->type === 'merge')
+                        <p class="text-sm text-gray-600">{!! $item->description !!}</p>
+                        @else
                         <p class="text-sm text-gray-600">{{ $item->description }}</p>
+                        @endif
                         <div class="flex items-center gap-1.5 mt-0.5">
                             @if($item->user)
                             <span class="text-xs text-gray-400">by {{ $item->user->name }}</span>
@@ -1273,6 +1292,102 @@
 
 </div>
 
+{{-- Merge Modal --}}
+@if(auth()->user()->isInternalAdmin() && $lead->is_duplicate_flag)
+<div x-data="mergeModal()"
+     @open-merge-modal.window="openWith($event.detail)"
+     x-show="open"
+     x-cloak
+     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+
+    {{-- Step 1: direction + note --}}
+    <div x-show="step === 1"
+         @click.stop
+         class="bg-white rounded-2xl shadow-xl w-full max-w-md">
+        <div class="px-6 pt-6 pb-4 border-b border-gray-100">
+            <h3 class="text-base font-semibold text-gray-900">Merge Leads</h3>
+            <p class="text-xs text-gray-500 mt-0.5">Activities, notes, custom fields and tags will be transferred.</p>
+        </div>
+        <div class="px-6 py-4 space-y-4">
+            {{-- Direction --}}
+            <div>
+                <p class="text-xs font-medium text-gray-700 mb-2">Which record should survive?</p>
+                <label class="flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors"
+                       :class="direction === 'other_into_this' ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'">
+                    <input type="radio" x-model="direction" value="other_into_this" class="mt-0.5 accent-indigo-600">
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Keep this lead</p>
+                        <p class="text-xs text-gray-500">Merge <span x-text="otherName" class="font-medium"></span> into this record</p>
+                    </div>
+                </label>
+                <label class="flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors mt-2"
+                       :class="direction === 'this_into_other' ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'">
+                    <input type="radio" x-model="direction" value="this_into_other" class="mt-0.5 accent-indigo-600">
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Keep <span x-text="otherName"></span></p>
+                        <p class="text-xs text-gray-500">Merge this lead into <span x-text="otherName" class="font-medium"></span></p>
+                    </div>
+                </label>
+            </div>
+
+            {{-- Note --}}
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Merge note <span class="text-gray-400 font-normal">(optional)</span></label>
+                <textarea x-model="note" rows="3"
+                          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none"
+                          placeholder="Reason for merging, or any relevant context..."></textarea>
+            </div>
+
+            <div x-show="errorMsg" class="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2" x-text="errorMsg"></div>
+        </div>
+        <div class="px-6 pb-5 flex justify-end gap-2">
+            <button @click="close()" type="button"
+                    class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 rounded-lg hover:bg-gray-100 transition-colors">Cancel</button>
+            <button @click="doMerge()" type="button" :disabled="loading"
+                    class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg disabled:opacity-50 transition-colors">
+                <svg x-show="loading" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <span x-text="loading ? 'Merging...' : 'Merge'"></span>
+            </button>
+        </div>
+    </div>
+
+    {{-- Step 2: delete confirmation --}}
+    <div x-show="step === 2"
+         @click.stop
+         class="bg-white rounded-2xl shadow-xl w-full max-w-md">
+        <div class="px-6 pt-6 pb-4">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
+                    </svg>
+                </div>
+                <h3 class="text-base font-semibold text-gray-900">Merge complete</h3>
+            </div>
+            <p class="text-sm text-gray-600">
+                Delete <strong x-text="sourceName"></strong>?
+                If you keep it, a transfer note has been added to its timeline.
+            </p>
+        </div>
+        <div class="px-6 pb-5 flex justify-end gap-2">
+            <button @click="keepSource()" type="button"
+                    class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 rounded-lg hover:bg-gray-100 transition-colors">Keep both records</button>
+            <button @click="deleteSource()" type="button" :disabled="loading"
+                    class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg disabled:opacity-50 transition-colors">
+                <svg x-show="loading" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <span x-text="loading ? 'Deleting...' : 'Delete'"></span>
+            </button>
+        </div>
+    </div>
+</div>
+@endif
+
 @endsection
 
 @push('scripts')
@@ -1309,5 +1424,82 @@ function customFieldsEditor(initialFields) {
         }
     };
 }
+
+@if(auth()->user()->isInternalAdmin() && $lead->is_duplicate_flag)
+function mergeModal() {
+    return {
+        open: false,
+        step: 1,
+        otherId: null,
+        otherName: '',
+        direction: 'other_into_this',
+        note: '',
+        loading: false,
+        errorMsg: '',
+        sourceId: null,
+        sourceName: '',
+        targetUrl: '',
+
+        openWith({ otherId, otherName }) {
+            this.otherId    = otherId;
+            this.otherName  = otherName;
+            this.direction  = 'other_into_this';
+            this.note       = '';
+            this.step       = 1;
+            this.loading    = false;
+            this.errorMsg   = '';
+            this.open       = true;
+        },
+
+        close() { this.open = false; },
+
+        async doMerge() {
+            this.loading  = true;
+            this.errorMsg = '';
+            try {
+                const res = await fetch('{{ route('leads.merge', $lead) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        other_id:  this.otherId,
+                        direction: this.direction,
+                        note:      this.note,
+                    }),
+                });
+                const data = await res.json();
+                if (!res.ok) { this.errorMsg = data.message || 'Merge failed.'; return; }
+                this.sourceId   = data.source_id;
+                this.sourceName = data.source_name;
+                this.targetUrl  = data.target_url;
+                this.step       = 2;
+            } catch (e) {
+                this.errorMsg = 'An error occurred. Please try again.';
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        keepSource() { window.location.href = this.targetUrl; },
+
+        deleteSource() {
+            this.loading = true;
+            const csrf = document.querySelector('meta[name="csrf-token"]').content;
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/leads/' + this.sourceId;
+            form.innerHTML =
+                '<input type="hidden" name="_method" value="DELETE">' +
+                '<input type="hidden" name="_token" value="' + csrf + '">' +
+                '<input type="hidden" name="redirect_to" value="' + this.targetUrl + '">';
+            document.body.appendChild(form);
+            form.submit();
+        },
+    };
+}
+@endif
 </script>
 @endpush

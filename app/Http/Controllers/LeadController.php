@@ -554,7 +554,12 @@ class LeadController extends Controller
     public function destroy(Lead $lead): RedirectResponse
     {
         $pipelineId = $lead->pipeline_id;
+        $redirectTo = request()->input('redirect_to');
         $lead->delete();
+
+        if ($redirectTo && str_starts_with($redirectTo, url('/'))) {
+            return redirect($redirectTo)->with('success', 'Lead deleted.');
+        }
 
         return redirect()->route('leads.index', ['pipeline' => $pipelineId])
             ->with('success', 'Lead deleted.');
