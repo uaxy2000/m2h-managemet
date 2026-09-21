@@ -871,7 +871,7 @@
                     <div class="flex-1 min-w-0">
                         <div class="flex items-baseline gap-2 flex-wrap">
                             <span class="text-xs font-medium text-gray-700">{{ $item->createdBy->name }}</span>
-                            <span class="text-xs text-gray-400">{{ $item->created_at->diffForHumans() }}</span>
+                            <span class="text-xs text-gray-400">{{ $item->created_at->format('d.m.Y') }} ({{ $item->created_at->diffForHumans() }})</span>
                             @php $visParts = array_map('trim', explode(',', $item->visibility ?? 'internal')); @endphp
                             @if(in_array('internal', $visParts))
                             <span class="text-xs text-gray-300">· internal</span>
@@ -1002,7 +1002,7 @@
                             <div class="{{ !$loop->last ? 'pb-2 border-b border-gray-100' : '' }}">
                                 <p class="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{{ $msg->description }}</p>
                                 <div class="flex items-center gap-1 mt-0.5 {{ $isOutgoing ? 'justify-end' : '' }}">
-                                    <span class="text-xs text-gray-400">{{ $msg->created_at->diffForHumans() }}</span>
+                                    <span class="text-xs text-gray-400">{{ $msg->created_at->format('d.m.Y') }} ({{ $msg->created_at->diffForHumans() }})</span>
                                     @if($isOutgoing)
                                     @php $waStatus = $msg->meta['status'] ?? null; @endphp
                                     @if($waStatus === 'read')
@@ -1065,7 +1065,7 @@
                             <span class="text-xs text-gray-400">by {{ $item->user->name }}</span>
                             <span class="text-xs text-gray-300">·</span>
                             @endif
-                            <span class="text-xs text-gray-400">{{ $item->created_at->diffForHumans() }}</span>
+                            <span class="text-xs text-gray-400">{{ $item->created_at->format('d.m.Y') }} ({{ $item->created_at->diffForHumans() }})</span>
                         </div>
                     </div>
                 </div>
