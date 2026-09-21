@@ -40,7 +40,7 @@ return [
     'meta_ads' => [
         'access_token' => env('META_ADS_ACCESS_TOKEN'),
         'account_id'   => env('META_ADS_ACCOUNT_ID', 'act_744258568450122'),
-        'app_id'       => env('META_ADS_APP_ID', '931856815899153'),
+        'app_id'       => env('META_ADS_APP_ID', '1250516030492703'),
     ],
 
     'backup' => [
