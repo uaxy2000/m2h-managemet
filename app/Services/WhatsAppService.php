@@ -43,7 +43,7 @@ class WhatsAppService
             'type'        => 'whatsapp_outgoing',
             'description' => $message,
             'visible_to'  => ['internal'],
-            'meta'        => ['wa_message_id' => $response->json('messages.0.id')],
+            'meta'        => ['wa_message_id' => $response->json('messages.0.id'), 'sent_at' => now()->timestamp],
             'is_read'     => true,
         ]);
 
@@ -129,6 +129,7 @@ class WhatsAppService
             'meta'        => [
                 'wa_message_id'   => $response->json('messages.0.id'),
                 'template_name'   => $template->name,
+                'sent_at'         => now()->timestamp,
             ],
             'is_read'     => true,
         ]);

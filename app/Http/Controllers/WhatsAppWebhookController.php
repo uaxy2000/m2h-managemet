@@ -149,9 +149,10 @@ class WhatsAppWebhookController extends Controller
             return;
         }
 
-        $meta              = $activity->meta ?? [];
-        $meta['status']    = $newStatus;
-        $meta['status_at'] = $timestamp;
+        $meta                       = $activity->meta ?? [];
+        $meta['status']             = $newStatus;
+        $meta['status_at']          = $timestamp;
+        $meta[$newStatus . '_at']   = $timestamp; // delivered_at / read_at
 
         $activity->update(['meta' => $meta]);
 

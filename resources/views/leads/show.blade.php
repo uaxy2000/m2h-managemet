@@ -1001,30 +1001,50 @@
                             @foreach($entry['messages'] as $msg)
                             <div class="{{ !$loop->last ? 'pb-2 border-b border-gray-100' : '' }}">
                                 <p class="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{{ $msg->description }}</p>
-                                <div class="flex items-center gap-1 mt-0.5 {{ $isOutgoing ? 'justify-end' : '' }}">
-                                    <span class="text-xs text-gray-400">{{ $msg->created_at->format('d.m.Y') }} ({{ $msg->created_at->diffForHumans() }})</span>
-                                    @if($isOutgoing)
-                                    @php $waStatus = $msg->meta['status'] ?? null; @endphp
-                                    @if($waStatus === 'read')
-                                    {{-- Double tick blue (read) --}}
-                                    <svg style="width:16px;height:11px;flex-shrink:0" viewBox="0 0 18 12" fill="none">
-                                        <path d="M1 6L4.5 9.5L10 3" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <path d="M7 6L10.5 9.5L17 2" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                    @elseif($waStatus === 'delivered')
-                                    {{-- Double tick grey (delivered) --}}
-                                    <svg style="width:16px;height:11px;flex-shrink:0" viewBox="0 0 18 12" fill="none">
-                                        <path d="M1 6L4.5 9.5L10 3" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <path d="M7 6L10.5 9.5L17 2" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                    @elseif($waStatus === 'sent')
-                                    {{-- Single tick grey (sent) --}}
-                                    <svg style="width:10px;height:11px;flex-shrink:0" viewBox="0 0 10 12" fill="none">
-                                        <path d="M1 6L4 9.5L9 2" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
+                                @if($isOutgoing)
+                                @php
+                                    $waMeta       = $msg->meta ?? [];
+                                    $waSentTs     = $waMeta['sent_at'] ?? null;
+                                    $waDelivTs    = $waMeta['delivered_at'] ?? null;
+                                    $waReadTs     = $waMeta['read_at'] ?? null;
+                                    $waSentDt     = $waSentTs ? \Carbon\Carbon::createFromTimestamp($waSentTs) : $msg->created_at;
+                                    $waDelivDt    = $waDelivTs ? \Carbon\Carbon::createFromTimestamp($waDelivTs) : null;
+                                    $waReadDt     = $waReadTs  ? \Carbon\Carbon::createFromTimestamp($waReadTs)  : null;
+                                @endphp
+                                <div class="mt-1.5 space-y-0.5 text-right">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <span class="text-[10px] text-gray-400 font-medium w-16 text-right">Sent</span>
+                                        <span class="text-[10px] text-gray-400">{{ $waSentDt->format('d.m.Y') }} ({{ $waSentDt->diffForHumans() }})</span>
+                                        <svg style="width:10px;height:11px;flex-shrink:0" viewBox="0 0 10 12" fill="none">
+                                            <path d="M1 6L4 9.5L9 2" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </div>
+                                    @if($waDelivDt)
+                                    <div class="flex items-center justify-end gap-1">
+                                        <span class="text-[10px] text-gray-400 font-medium w-16 text-right">Delivered</span>
+                                        <span class="text-[10px] text-gray-400">{{ $waDelivDt->format('d.m.Y') }} ({{ $waDelivDt->diffForHumans() }})</span>
+                                        <svg style="width:16px;height:11px;flex-shrink:0" viewBox="0 0 18 12" fill="none">
+                                            <path d="M1 6L4.5 9.5L10 3" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M7 6L10.5 9.5L17 2" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </div>
                                     @endif
+                                    @if($waReadDt)
+                                    <div class="flex items-center justify-end gap-1">
+                                        <span class="text-[10px] text-gray-400 font-medium w-16 text-right">Read</span>
+                                        <span class="text-[10px] text-gray-400">{{ $waReadDt->format('d.m.Y') }} ({{ $waReadDt->diffForHumans() }})</span>
+                                        <svg style="width:16px;height:11px;flex-shrink:0" viewBox="0 0 18 12" fill="none">
+                                            <path d="M1 6L4.5 9.5L10 3" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M7 6L10.5 9.5L17 2" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </div>
                                     @endif
                                 </div>
+                                @else
+                                <div class="flex items-center gap-1 mt-0.5">
+                                    <span class="text-xs text-gray-400">{{ $msg->created_at->format('d.m.Y') }} ({{ $msg->created_at->diffForHumans() }})</span>
+                                </div>
+                                @endif
                             </div>
                             @endforeach
                         </div>
