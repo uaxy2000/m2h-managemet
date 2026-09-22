@@ -683,6 +683,7 @@ class LeadController extends Controller
                 $q->where(fn ($q) => $q
                     ->where('first_name', 'like', "%{$s}%")
                     ->orWhere('last_name', 'like', "%{$s}%")
+                    ->orWhere('email', 'like', "%{$s}%")
                 )
             )
             ->when($filters['assigned_to'], fn ($q, $uid) =>
