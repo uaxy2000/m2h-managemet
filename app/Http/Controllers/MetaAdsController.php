@@ -58,8 +58,8 @@ class MetaAdsController extends Controller
                 return $row;
             });
 
-        // Adsets grouped by campaign
-        $adsets = MetaInsight::where('entity_type', 'adset')
+        // Adsets (flat — grouped after funnel attachment)
+        $adsetsFlat = MetaInsight::where('entity_type', 'adset')
             ->whereBetween('date', [$from, $to])
             ->groupBy('entity_id', 'entity_name', 'parent_entity_id')
             ->selectRaw('
@@ -77,11 +77,10 @@ class MetaAdsController extends Controller
                 $row->cpl = $row->leads_count > 0 ? round($row->spend / $row->leads_count, 2) : 0;
                 $row->ctr = $row->impressions  > 0 ? round($row->clicks / $row->impressions * 100, 2) : 0;
                 return $row;
-            })
-            ->groupBy('campaign_id');
+            });
 
-        // Ads grouped by adset
-        $ads = MetaInsight::where('entity_type', 'ad')
+        // Ads (flat — grouped after funnel attachment)
+        $adsFlat = MetaInsight::where('entity_type', 'ad')
             ->whereBetween('date', [$from, $to])
             ->groupBy('entity_id', 'entity_name', 'parent_entity_id')
             ->selectRaw('
@@ -99,8 +98,56 @@ class MetaAdsController extends Controller
                 $row->cpl = $row->leads_count > 0 ? round($row->spend / $row->leads_count, 2) : 0;
                 $row->ctr = $row->impressions  > 0 ? round($row->clicks / $row->impressions * 100, 2) : 0;
                 return $row;
-            })
-            ->groupBy('adset_id');
+            });
+
+        // Funnel stage IDs (LEAD REGISTERED / MEETING 1 / WON)
+        $stageMap = \App\Models\Stage::whereIn('name', ['LEAD REGISTERED', 'MEETING 1', 'WON'])
+            ->pluck('id', 'name');
+        $regId  = $stageMap->get('LEAD REGISTERED');
+        $mtg1Id = $stageMap->get('MEETING 1');
+        $wonId  = $stageMap->get('WON');
+
+        $funnelQuery = fn (string $col) => \Illuminate\Support\Facades\DB::table('leads')
+            ->whereNotNull($col)
+            ->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+            ->selectRaw("$col as grp,
+                COUNT(*) as total,
+                SUM(CASE WHEN stage_id = ? THEN 1 ELSE 0 END) as reg,
+                SUM(CASE WHEN stage_id = ? THEN 1 ELSE 0 END) as mtg,
+                SUM(CASE WHEN stage_id = ? THEN 1 ELSE 0 END) as won",
+                [$regId, $mtg1Id, $wonId])
+            ->groupBy($col)
+            ->get()
+            ->keyBy('grp');
+
+        $campaignFunnel = $funnelQuery('meta_campaign_id');
+        $adsetFunnel    = $funnelQuery('meta_adset_id');
+        $adFunnel       = $funnelQuery('meta_ad_id');
+
+        $attachFunnel = function ($row, $fi) {
+            $f   = $fi->get($row->entity_id);
+            $n   = (int)   ($f?->total ?? 0);
+            $reg = (int)   ($f?->reg   ?? 0);
+            $mtg = (int)   ($f?->mtg   ?? 0);
+            $won = (int)   ($f?->won   ?? 0);
+            $s   = (float) $row->spend;
+            $row->f = (object) [
+                'reg'      => $reg,
+                'reg_pct'  => $n > 0 ? round($reg / $n * 100, 1) : 0,
+                'reg_cost' => ($reg > 0 && $s > 0) ? round($s / $reg, 2) : null,
+                'mtg'      => $mtg,
+                'mtg_pct'  => $n > 0 ? round($mtg / $n * 100, 1) : 0,
+                'mtg_cost' => ($mtg > 0 && $s > 0) ? round($s / $mtg, 2) : null,
+                'won'      => $won,
+                'won_pct'  => $n > 0 ? round($won / $n * 100, 1) : 0,
+                'won_cost' => ($won > 0 && $s > 0) ? round($s / $won, 2) : null,
+            ];
+            return $row;
+        };
+
+        $campaigns = $campaigns->map(fn ($r) => $attachFunnel($r, $campaignFunnel));
+        $adsets    = $adsetsFlat->map(fn ($r) => $attachFunnel($r, $adsetFunnel))->groupBy('campaign_id');
+        $ads       = $adsFlat->map(fn ($r) => $attachFunnel($r, $adFunnel))->groupBy('adset_id');
 
         // Daily trend (for chart)
         $trend = MetaInsight::where('entity_type', 'account')
