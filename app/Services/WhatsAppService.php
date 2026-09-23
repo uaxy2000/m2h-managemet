@@ -50,7 +50,7 @@ class WhatsAppService
         return true;
     }
 
-    public function sendTemplate(Lead $lead, WaTemplate $template, string|null $sentBy): bool
+    public function sendTemplate(Lead $lead, WaTemplate $template, string|null $sentBy, string|null $senderLabel = null): bool
     {
         $to = preg_replace('/\D/', '', $lead->phone);
         if (!$to) {
@@ -126,11 +126,12 @@ class WhatsAppService
             'type'        => 'whatsapp_outgoing',
             'description' => "[Şablon: {$templateLabel}]\n{$previewBody}",
             'visible_to'  => ['internal'],
-            'meta'        => [
+            'meta'        => array_filter([
                 'wa_message_id'   => $response->json('messages.0.id'),
                 'template_name'   => $template->name,
                 'sent_at'         => now()->timestamp,
-            ],
+                'sender_label'    => $senderLabel,
+            ]),
             'is_read'     => true,
         ]);
 

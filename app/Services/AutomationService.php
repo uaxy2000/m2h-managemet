@@ -37,6 +37,10 @@ class AutomationService
                     continue;
                 }
 
+                if ($rule->skip_duplicates && $lead->is_duplicate_flag) {
+                    continue;
+                }
+
                 // once-per-lead check
                 if ($rule->re_run_mode === 'once') {
                     $alreadyRan = AutomationRuleRun::where('rule_id', $rule->id)
@@ -167,18 +171,26 @@ class AutomationService
     private static function runRule(Lead $lead, AutomationRule $rule, string $event): void
     {
         $actionsLog = [];
+        $descLines  = [];
 
         foreach ($rule->actions as $action) {
             $result = static::runAction($lead, $action, $rule);
             $actionsLog[] = $result;
+            if ($result['ok'] && !empty($result['label'])) {
+                $descLines[] = '• ' . $result['label'];
+            }
         }
 
-        // Log lead activity
+        $desc = '<strong>' . e($rule->name) . '</strong> automation applied by M2H System';
+        if ($descLines) {
+            $desc .= ':<br>' . implode('<br>', $descLines);
+        }
+
         LeadActivity::create([
             'lead_id'     => $lead->id,
             'user_id'     => null,
             'type'        => 'automation',
-            'description' => 'Automation rule applied: ' . $rule->name,
+            'description' => $desc,
             'meta'        => ['rule_id' => $rule->id, 'event' => $event, 'actions' => $actionsLog],
         ]);
 
@@ -194,16 +206,16 @@ class AutomationService
     private static function runAction(Lead $lead, AutomationAction $action, AutomationRule $rule): array
     {
         $params = $action->parameters ?? [];
-        $log = ['type' => $action->action_type, 'ok' => false, 'note' => ''];
+        $log = ['type' => $action->action_type, 'ok' => false, 'note' => '', 'label' => ''];
 
         try {
             switch ($action->action_type) {
                 case 'assign_to':
                     $userId = $params['user_id'] ?? null;
                     if ($userId) {
+                        $assignee = User::find($userId);
                         $lead->update(['assigned_to' => $userId]);
                         $lead->refresh();
-                        // Notify the newly assigned user
                         NotificationService::send(
                             userId: $userId,
                             type:   'lead_assigned',
@@ -211,8 +223,9 @@ class AutomationService
                             body:   $lead->first_name . ' ' . $lead->last_name . ' assigned via automation: ' . $rule->name,
                             url:    route('leads.show', $lead->id),
                         );
-                        $log['ok']   = true;
-                        $log['note'] = 'Assigned to user ' . $userId;
+                        $log['ok']    = true;
+                        $log['note']  = 'Assigned to user ' . $userId;
+                        $log['label'] = 'Assigned to ' . ($assignee?->name ?? $userId);
                     }
                     break;
 
@@ -220,6 +233,8 @@ class AutomationService
                     $stageId = $params['stage_id'] ?? null;
                     if ($stageId) {
                         $fromStageId = $lead->stage_id;
+                        $fromStage   = \App\Models\Stage::find($fromStageId);
+                        $toStage     = \App\Models\Stage::find($stageId);
                         $lead->update(['stage_id' => $stageId]);
                         $lead->refresh();
                         LeadStatusHistory::create([
@@ -229,8 +244,11 @@ class AutomationService
                             'to_stage_id'   => $stageId,
                             'changed_at'    => now(),
                         ]);
-                        $log['ok']   = true;
-                        $log['note'] = 'Stage changed to ' . $stageId;
+                        $toName   = $toStage?->name   ?? $stageId;
+                        $fromName = $fromStage?->name ?? '—';
+                        $log['ok']    = true;
+                        $log['note']  = 'Stage changed to ' . $toName;
+                        $log['label'] = 'Stage changed to ' . $toName . ' (from ' . $fromName . ')';
                     }
                     break;
 
@@ -240,34 +258,41 @@ class AutomationService
                         $template = WaTemplate::find($templateId);
                         if ($template) {
                             $wa  = new \App\Services\WhatsAppService();
-                            $ok  = $wa->sendTemplate($lead, $template, null);
-                            $log['ok']   = $ok;
-                            $log['note'] = $ok ? 'Sent template: ' . $template->name : 'WA send failed';
+                            $ok  = $wa->sendTemplate($lead, $template, null, 'M2H System');
+                            $log['ok']    = $ok;
+                            $log['note']  = $ok ? 'Sent template: ' . $template->name : 'WA send failed';
+                            $log['label'] = $ok ? 'WhatsApp \'' . ($template->display_name ?? $template->name) . '\' sent' : 'WhatsApp send failed';
                         }
                     }
                     break;
 
                 case 'add_tag':
                     $tagId = $params['tag_id'] ?? null;
-                    if ($tagId && Tag::find($tagId)) {
-                        $lead->tags()->syncWithoutDetaching([$tagId]);
-                        $log['ok']   = true;
-                        $log['note'] = 'Tag added: ' . $tagId;
+                    if ($tagId) {
+                        $tag = Tag::find($tagId);
+                        if ($tag) {
+                            $lead->tags()->syncWithoutDetaching([$tagId]);
+                            $log['ok']    = true;
+                            $log['note']  = 'Tag added: ' . $tag->name;
+                            $log['label'] = 'Tag \'' . $tag->name . '\' added';
+                        }
                     }
                     break;
 
                 case 'send_notification':
                     $toUserId = $lead->assigned_to;
                     if ($toUserId) {
+                        $title = $params['title'] ?? $rule->name;
                         NotificationService::send(
                             userId: $toUserId,
                             type:   'automation_notification',
-                            title:  $params['title'] ?? $rule->name,
+                            title:  $title,
                             body:   $params['body'] ?? null,
                             url:    route('leads.show', $lead->id),
                         );
-                        $log['ok']   = true;
-                        $log['note'] = 'Notification sent to ' . $toUserId;
+                        $log['ok']    = true;
+                        $log['note']  = 'Notification sent to ' . $toUserId;
+                        $log['label'] = 'Notification \'' . $title . '\' sent';
                     }
                     break;
             }

@@ -59,12 +59,13 @@ class AutomationController extends Controller
         ]);
 
         $rule = AutomationRule::create([
-            'name'           => $validated['name'],
-            'description'    => $validated['description'] ?? null,
-            'is_active'      => $request->boolean('is_active'),
-            'priority'       => $validated['priority'],
-            're_run_mode'    => $validated['re_run_mode'],
-            'trigger_events' => $validated['trigger_events'],
+            'name'             => $validated['name'],
+            'description'      => $validated['description'] ?? null,
+            'is_active'        => $request->boolean('is_active'),
+            'priority'         => $validated['priority'],
+            're_run_mode'      => $validated['re_run_mode'],
+            'trigger_events'   => $validated['trigger_events'],
+            'skip_duplicates'  => $request->boolean('skip_duplicates'),
         ]);
 
         $this->syncConditions($rule, $validated['conditions_json']);
@@ -93,12 +94,13 @@ class AutomationController extends Controller
         ]);
 
         $automation->update([
-            'name'           => $validated['name'],
-            'description'    => $validated['description'] ?? null,
-            'is_active'      => $request->boolean('is_active'),
-            'priority'       => $validated['priority'],
-            're_run_mode'    => $validated['re_run_mode'],
-            'trigger_events' => $validated['trigger_events'],
+            'name'            => $validated['name'],
+            'description'     => $validated['description'] ?? null,
+            'is_active'       => $request->boolean('is_active'),
+            'priority'        => $validated['priority'],
+            're_run_mode'     => $validated['re_run_mode'],
+            'trigger_events'  => $validated['trigger_events'],
+            'skip_duplicates' => $request->boolean('skip_duplicates'),
         ]);
 
         $this->syncConditions($automation, $validated['conditions_json']);

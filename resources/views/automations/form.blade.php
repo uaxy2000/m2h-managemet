@@ -133,6 +133,19 @@
                         </label>
                     </div>
                 </div>
+
+                {{-- Skip duplicates --}}
+                <div class="border-t border-gray-100 pt-4">
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" name="skip_duplicates" value="1"
+                               {{ old('skip_duplicates', $rule->skip_duplicates ?? false) ? 'checked' : '' }}
+                               class="mt-0.5 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <div>
+                            <span class="text-sm text-gray-700 font-medium">Skip leads flagged as possible duplicate</span>
+                            <p class="text-xs text-gray-400 mt-0.5">Leads with the "Possible duplicate" flag will be excluded from this rule — useful when duplicates require manual review.</p>
+                        </div>
+                    </label>
+                </div>
             </div>
 
             {{-- Condition builder --}}

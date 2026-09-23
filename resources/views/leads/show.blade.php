@@ -994,7 +994,7 @@
                                 <path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.554 4.118 1.522 5.845L.057 23.25l5.565-1.457A11.938 11.938 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.712 9.712 0 0 1-4.95-1.354l-.355-.21-3.305.866.881-3.218-.231-.371A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
                             </svg>
                             <span class="text-xs font-medium {{ $isOutgoing ? 'text-green-700' : 'text-gray-500' }}">
-                                {{ $isOutgoing ? ($entry['messages'][0]->user?->name ?? 'Team') : 'WhatsApp' }}
+                                {{ $isOutgoing ? ($entry['messages'][0]->meta['sender_label'] ?? $entry['messages'][0]->user?->name ?? 'M2H System') : 'WhatsApp' }}
                             </span>
                         </div>
                         <div class="space-y-2">
@@ -1068,6 +1068,10 @@
                         <svg class="w-2.5 h-2.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 3M21 7.5H7.5"/>
                         </svg>
+                        @elseif($item->type === 'automation')
+                        <svg class="w-2.5 h-2.5 text-violet-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"/>
+                        </svg>
                         @else
                         <svg class="w-2.5 h-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/>
@@ -1075,7 +1079,7 @@
                         @endif
                     </div>
                     <div class="flex-1 min-w-0">
-                        @if($item->type === 'merge')
+                        @if(in_array($item->type, ['merge', 'automation']))
                         <p class="text-sm text-gray-600">{!! $item->description !!}</p>
                         @else
                         <p class="text-sm text-gray-600">{{ $item->description }}</p>

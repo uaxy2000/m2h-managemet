@@ -8,13 +8,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class AutomationRule extends Model
 {
     protected $fillable = [
-        'name', 'description', 'is_active', 'priority', 're_run_mode', 'trigger_events',
+        'name', 'description', 'is_active', 'priority', 're_run_mode', 'trigger_events', 'skip_duplicates',
     ];
 
     protected $casts = [
-        'is_active'      => 'boolean',
-        'trigger_events' => 'array',
-        'priority'       => 'integer',
+        'is_active'       => 'boolean',
+        'trigger_events'  => 'array',
+        'priority'        => 'integer',
+        'skip_duplicates' => 'boolean',
     ];
 
     public function conditions(): HasMany
