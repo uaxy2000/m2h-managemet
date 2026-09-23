@@ -352,7 +352,12 @@ class AutomationService
 
         $leads    = Lead::with(['tags', 'customValues.field'])->get();
         $matching = $leads->filter(fn ($lead) => static::evaluateConditions($lead, $rule));
-        $total    = $matching->count();
+
+        if ($rule->skip_duplicates) {
+            $matching = $matching->filter(fn ($lead) => !$lead->is_duplicate_flag);
+        }
+
+        $total = $matching->count();
 
         $alreadyRan = 0;
         if ($rule->re_run_mode === 'once' && $total > 0) {
