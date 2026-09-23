@@ -258,7 +258,7 @@
     @endif
 
     {{-- Date preset filter --}}
-    <div class="flex flex-wrap gap-2 mb-6">
+    <div class="flex flex-wrap items-center gap-2 mb-6">
         @foreach(['today' => 'Today', 'yesterday' => 'Yesterday', 'last_7d' => 'Last 7 Days', 'last_30d' => 'Last 30 Days', 'this_month' => 'This Month'] as $key => $label)
             <a href="{{ route('reports.meta-ads', ['preset' => $key]) }}"
                class="px-3 py-1.5 rounded-full text-sm font-medium transition
@@ -266,6 +266,32 @@
                 {{ $label }}
             </a>
         @endforeach
+
+        {{-- Custom date range --}}
+        <form method="GET" action="{{ route('reports.meta-ads') }}"
+              class="flex items-center gap-1.5 ml-1"
+              x-data="{ open: {{ $preset === 'custom' ? 'true' : 'false' }} }">
+            <input type="hidden" name="preset" value="custom">
+            <button type="button" @click="open = !open"
+                    class="px-3 py-1.5 rounded-full text-sm font-medium transition
+                           {{ $preset === 'custom' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                Custom
+            </button>
+            <template x-if="open">
+                <div class="flex items-center gap-1.5">
+                    <input type="date" name="date_from" value="{{ $preset === 'custom' ? $from : '' }}"
+                           class="border border-gray-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <span class="text-xs text-gray-400">–</span>
+                    <input type="date" name="date_to" value="{{ $preset === 'custom' ? $to : '' }}"
+                           class="border border-gray-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <button type="submit"
+                            class="px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition">
+                        Apply
+                    </button>
+                </div>
+            </template>
+        </form>
+
         <span class="text-xs text-gray-400 self-center ml-1">
             {{ \Carbon\Carbon::parse($from)->format('d M') }} – {{ \Carbon\Carbon::parse($to)->format('d M Y') }}
         </span>
@@ -349,6 +375,7 @@
                         <th colspan="3" class="text-center px-3 py-1.5 text-emerald-700 bg-emerald-50 border-l-2 border-emerald-200">Registered</th>
                         <th colspan="3" class="text-center px-3 py-1.5 text-blue-700 bg-blue-50 border-l-2 border-blue-200">Meeting 1</th>
                         <th colspan="3" class="text-center px-3 py-1.5 text-violet-700 bg-violet-50 border-l-2 border-violet-200">Won</th>
+                        <th colspan="2" class="text-center px-3 py-1.5 text-amber-700 bg-amber-50 border-l-2 border-amber-200">Stage Conv.</th>
                         <th rowspan="2" class="px-3 py-2"></th>
                     </tr>
                     {{-- Sub-column header row --}}
@@ -362,6 +389,8 @@
                         <th class="text-right px-3 py-1.5 border-l-2 border-violet-200">#</th>
                         <th class="text-right px-3 py-1.5">Rate</th>
                         <th class="text-right px-3 py-1.5">CPW</th>
+                        <th class="text-right px-3 py-1.5 border-l-2 border-amber-200">R→M</th>
+                        <th class="text-right px-3 py-1.5">M→W</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -369,7 +398,7 @@
                         @php $campaignAdsets = $adsets->get($campaign->entity_id, collect()); @endphp
 
                         {{-- Campaign row --}}
-                        <tr class="hover:bg-gray-50/50 transition-colors">
+                        <tr class="hover:bg-[#e1e1e1] transition-colors">
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-2">
                                     @if($campaignAdsets->isNotEmpty())
@@ -404,6 +433,13 @@
                             <td class="px-3 py-3 text-right border-l-2 border-violet-100"><span class="{{ $campaign->f->won > 0 ? 'font-semibold text-violet-700' : 'text-gray-300' }}">{{ $campaign->f->won ?: '—' }}</span></td>
                             <td class="px-3 py-3 text-right text-xs text-gray-500 whitespace-nowrap">{{ $campaign->f->won_pct > 0 ? $campaign->f->won_pct.'%' : '—' }}</td>
                             <td class="px-3 py-3 text-right text-xs text-gray-600 whitespace-nowrap">{{ $campaign->f->won_cost !== null ? '₺'.number_format($campaign->f->won_cost,2) : '—' }}</td>
+                            {{-- Stage Conv. --}}
+                            <td class="px-3 py-3 text-right text-xs font-medium border-l-2 border-amber-100">
+                                <span class="{{ $campaign->f->reg_to_mtg !== null ? 'text-amber-700' : 'text-gray-300' }}">{{ $campaign->f->reg_to_mtg !== null ? $campaign->f->reg_to_mtg.'%' : '—' }}</span>
+                            </td>
+                            <td class="px-3 py-3 text-right text-xs font-medium">
+                                <span class="{{ $campaign->f->mtg_to_won !== null ? 'text-amber-700' : 'text-gray-300' }}">{{ $campaign->f->mtg_to_won !== null ? $campaign->f->mtg_to_won.'%' : '—' }}</span>
+                            </td>
                             <td class="px-3 py-3 text-right">
                                 @if($campaign->leads_count > 0)
                                     <a href="{{ route('leads.index', ['meta_campaign_id' => $campaign->entity_id]) }}"
@@ -418,7 +454,7 @@
                         {{-- Adset rows (flat, same columns) --}}
                         @foreach($campaignAdsets as $adset)
                             @php $adsetAds = $ads->get($adset->entity_id, collect()); @endphp
-                            <tr class="bg-gray-50/80 hover:bg-gray-100/60 transition-colors"
+                            <tr class="hover:bg-[#e1e1e1] transition-colors"
                                 x-show="openCampaigns['{{ $campaign->entity_id }}']" x-cloak>
                                 <td class="py-2.5 pr-4 pl-10">
                                     <div class="flex items-center gap-2">
@@ -452,6 +488,12 @@
                                 <td class="px-3 py-2.5 text-right text-xs border-l-2 border-violet-100"><span class="{{ $adset->f->won > 0 ? 'font-medium text-violet-600' : 'text-gray-300' }}">{{ $adset->f->won ?: '—' }}</span></td>
                                 <td class="px-3 py-2.5 text-right text-xs text-gray-500 whitespace-nowrap">{{ $adset->f->won_pct > 0 ? $adset->f->won_pct.'%' : '—' }}</td>
                                 <td class="px-3 py-2.5 text-right text-xs text-gray-600 whitespace-nowrap">{{ $adset->f->won_cost !== null ? '₺'.number_format($adset->f->won_cost,2) : '—' }}</td>
+                                <td class="px-3 py-2.5 text-right text-xs font-medium border-l-2 border-amber-100">
+                                    <span class="{{ $adset->f->reg_to_mtg !== null ? 'text-amber-600' : 'text-gray-300' }}">{{ $adset->f->reg_to_mtg !== null ? $adset->f->reg_to_mtg.'%' : '—' }}</span>
+                                </td>
+                                <td class="px-3 py-2.5 text-right text-xs font-medium">
+                                    <span class="{{ $adset->f->mtg_to_won !== null ? 'text-amber-600' : 'text-gray-300' }}">{{ $adset->f->mtg_to_won !== null ? $adset->f->mtg_to_won.'%' : '—' }}</span>
+                                </td>
                                 <td class="px-3 py-2.5 text-right">
                                     @if($adset->leads_count > 0)
                                         <a href="{{ route('leads.index', ['meta_adset_id' => $adset->entity_id]) }}"
@@ -464,7 +506,7 @@
 
                             {{-- Ad rows (flat, same columns) --}}
                             @foreach($adsetAds as $ad)
-                                <tr class="bg-white hover:bg-indigo-50/20 transition-colors"
+                                <tr class="hover:bg-[#e1e1e1] transition-colors"
                                     x-show="openCampaigns['{{ $campaign->entity_id }}'] && openAdsets['{{ $adset->entity_id }}']" x-cloak>
                                     <td class="py-2 pr-4 pl-20">
                                         <div class="flex items-center gap-1.5">
@@ -492,6 +534,12 @@
                                     <td class="px-3 py-2 text-right text-xs border-l-2 border-violet-100"><span class="{{ $ad->f->won > 0 ? 'font-medium text-violet-600' : 'text-gray-300' }}">{{ $ad->f->won ?: '—' }}</span></td>
                                     <td class="px-3 py-2 text-right text-xs text-gray-500 whitespace-nowrap">{{ $ad->f->won_pct > 0 ? $ad->f->won_pct.'%' : '—' }}</td>
                                     <td class="px-3 py-2 text-right text-xs text-gray-600 whitespace-nowrap">{{ $ad->f->won_cost !== null ? '₺'.number_format($ad->f->won_cost,2) : '—' }}</td>
+                                    <td class="px-3 py-2 text-right text-xs font-medium border-l-2 border-amber-100">
+                                        <span class="{{ $ad->f->reg_to_mtg !== null ? 'text-amber-600' : 'text-gray-300' }}">{{ $ad->f->reg_to_mtg !== null ? $ad->f->reg_to_mtg.'%' : '—' }}</span>
+                                    </td>
+                                    <td class="px-3 py-2 text-right text-xs font-medium">
+                                        <span class="{{ $ad->f->mtg_to_won !== null ? 'text-amber-600' : 'text-gray-300' }}">{{ $ad->f->mtg_to_won !== null ? $ad->f->mtg_to_won.'%' : '—' }}</span>
+                                    </td>
                                     <td class="px-3 py-2 text-right">
                                         @if($ad->leads_count > 0)
                                             <a href="{{ route('leads.index', ['meta_ad_id' => $ad->entity_id]) }}"
@@ -506,7 +554,7 @@
 
                     @empty
                         <tr>
-                            <td colspan="17" class="px-4 py-8 text-center text-gray-400 text-sm">
+                            <td colspan="19" class="px-4 py-8 text-center text-gray-400 text-sm">
                                 No campaign data for this period. Run <strong>Sync Now</strong> to fetch from Meta.
                             </td>
                         </tr>

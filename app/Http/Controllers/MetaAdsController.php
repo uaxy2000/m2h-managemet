@@ -132,15 +132,17 @@ class MetaAdsController extends Controller
             $won = (int)   ($f?->won   ?? 0);
             $s   = (float) $row->spend;
             $row->f = (object) [
-                'reg'      => $reg,
-                'reg_pct'  => $n > 0 ? round($reg / $n * 100, 1) : 0,
-                'reg_cost' => ($reg > 0 && $s > 0) ? round($s / $reg, 2) : null,
-                'mtg'      => $mtg,
-                'mtg_pct'  => $n > 0 ? round($mtg / $n * 100, 1) : 0,
-                'mtg_cost' => ($mtg > 0 && $s > 0) ? round($s / $mtg, 2) : null,
-                'won'      => $won,
-                'won_pct'  => $n > 0 ? round($won / $n * 100, 1) : 0,
-                'won_cost' => ($won > 0 && $s > 0) ? round($s / $won, 2) : null,
+                'reg'        => $reg,
+                'reg_pct'    => $n > 0 ? round($reg / $n * 100, 1) : 0,
+                'reg_cost'   => ($reg > 0 && $s > 0) ? round($s / $reg, 2) : null,
+                'mtg'        => $mtg,
+                'mtg_pct'    => $n > 0 ? round($mtg / $n * 100, 1) : 0,
+                'mtg_cost'   => ($mtg > 0 && $s > 0) ? round($s / $mtg, 2) : null,
+                'won'        => $won,
+                'won_pct'    => $n > 0 ? round($won / $n * 100, 1) : 0,
+                'won_cost'   => ($won > 0 && $s > 0) ? round($s / $won, 2) : null,
+                'reg_to_mtg' => $reg > 0 ? round($mtg / $reg * 100, 1) : null,
+                'mtg_to_won' => $mtg > 0 ? round($won / $mtg * 100, 1) : null,
             ];
             return $row;
         };
