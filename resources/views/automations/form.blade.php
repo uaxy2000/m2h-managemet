@@ -206,45 +206,86 @@
                                             </select>
                                         </template>
 
-                                        {{-- Value — stage (grouped by pipeline) --}}
+                                        {{-- Value — stage (multi-select dropdown) --}}
                                         <template x-if="cond.field === 'stage' && !['is_empty','is_not_empty'].includes(cond.operator)">
-                                            <select x-model="cond.value[0]"
-                                                    class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                                <option value="">Select stage…</option>
-                                                <template x-for="group in stagesGrouped" :key="group.pipeline">
-                                                    <optgroup :label="group.pipeline">
-                                                        <template x-for="s in group.stages" :key="s.id">
-                                                            <option :value="s.id" x-text="s.name" :selected="s.id == cond.value[0]"></option>
-                                                        </template>
-                                                    </optgroup>
-                                                </template>
-                                            </select>
+                                            <div x-data="{ open: false }" class="relative" @click.outside="open = false">
+                                                <button type="button" @click.stop="open = !open"
+                                                        class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white text-left flex items-center gap-1.5 min-w-[150px]">
+                                                    <span class="flex-1 truncate"
+                                                          x-text="cond.value.filter(v=>v).length === 0 ? 'Select stage…' : cond.value.filter(v=>v).length === 1 ? (stages.find(s=>s.id==cond.value.filter(v=>v)[0])?.name ?? '1 selected') : cond.value.filter(v=>v).length + ' stages'"></span>
+                                                    <svg class="w-2.5 h-2.5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+                                                </button>
+                                                <div x-show="open" x-cloak
+                                                     class="absolute z-30 top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] max-h-52 overflow-y-auto py-1">
+                                                    <template x-for="group in stagesGrouped" :key="group.pipeline">
+                                                        <div>
+                                                            <div class="px-3 pt-2 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wide" x-text="group.pipeline"></div>
+                                                            <template x-for="s in group.stages" :key="s.id">
+                                                                <label class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 cursor-pointer">
+                                                                    <input type="checkbox" :value="s.id"
+                                                                           :checked="cond.value.includes(s.id)"
+                                                                           @change="cond.value.includes(s.id) ? cond.value.splice(cond.value.indexOf(s.id),1) : cond.value.push(s.id)"
+                                                                           class="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600">
+                                                                    <span class="text-xs text-gray-700" x-text="s.name"></span>
+                                                                </label>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
                                         </template>
 
-                                        {{-- Value — tag (grouped by tag group) --}}
+                                        {{-- Value — tag (multi-select dropdown) --}}
                                         <template x-if="cond.field === 'tag' && !['is_empty','is_not_empty'].includes(cond.operator)">
-                                            <select x-model="cond.value[0]"
-                                                    class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                                <option value="">Select tag…</option>
-                                                <template x-for="group in tagsGrouped" :key="group.name">
-                                                    <optgroup :label="group.name">
-                                                        <template x-for="t in group.tags" :key="t.id">
-                                                            <option :value="t.id" x-text="t.name" :selected="t.id == cond.value[0]"></option>
-                                                        </template>
-                                                    </optgroup>
-                                                </template>
-                                            </select>
+                                            <div x-data="{ open: false }" class="relative" @click.outside="open = false">
+                                                <button type="button" @click.stop="open = !open"
+                                                        class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white text-left flex items-center gap-1.5 min-w-[150px]">
+                                                    <span class="flex-1 truncate"
+                                                          x-text="cond.value.filter(v=>v).length === 0 ? 'Select tag…' : cond.value.filter(v=>v).length === 1 ? (tags.find(t=>t.id==cond.value.filter(v=>v)[0])?.name ?? '1 selected') : cond.value.filter(v=>v).length + ' tags'"></span>
+                                                    <svg class="w-2.5 h-2.5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+                                                </button>
+                                                <div x-show="open" x-cloak
+                                                     class="absolute z-30 top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] max-h-52 overflow-y-auto py-1">
+                                                    <template x-for="group in tagsGrouped" :key="group.name">
+                                                        <div>
+                                                            <div class="px-3 pt-2 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wide" x-text="group.name"></div>
+                                                            <template x-for="t in group.tags" :key="t.id">
+                                                                <label class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 cursor-pointer">
+                                                                    <input type="checkbox" :value="t.id"
+                                                                           :checked="cond.value.includes(t.id)"
+                                                                           @change="cond.value.includes(t.id) ? cond.value.splice(cond.value.indexOf(t.id),1) : cond.value.push(t.id)"
+                                                                           class="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600">
+                                                                    <span class="text-xs text-gray-700" x-text="t.name"></span>
+                                                                </label>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
                                         </template>
 
-                                        {{-- Value — assigned_user --}}
+                                        {{-- Value — assigned_user (multi-select dropdown) --}}
                                         <template x-if="cond.field === 'assigned_user' && !['is_empty','is_not_empty'].includes(cond.operator)">
-                                            <select x-model="cond.value[0]"
-                                                    class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                                <option value="">Select user…</option>
-                                                <template x-for="u in users" :key="u.id">
-                                                    <option :value="u.id" x-text="u.name" :selected="u.id == cond.value[0]"></option>
-                                                </template>
-                                            </select>
+                                            <div x-data="{ open: false }" class="relative" @click.outside="open = false">
+                                                <button type="button" @click.stop="open = !open"
+                                                        class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white text-left flex items-center gap-1.5 min-w-[150px]">
+                                                    <span class="flex-1 truncate"
+                                                          x-text="cond.value.filter(v=>v).length === 0 ? 'Select user…' : cond.value.filter(v=>v).length === 1 ? (users.find(u=>u.id==cond.value.filter(v=>v)[0])?.name ?? '1 selected') : cond.value.filter(v=>v).length + ' users'"></span>
+                                                    <svg class="w-2.5 h-2.5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+                                                </button>
+                                                <div x-show="open" x-cloak
+                                                     class="absolute z-30 top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[180px] max-h-52 overflow-y-auto py-1">
+                                                    <template x-for="u in users" :key="u.id">
+                                                        <label class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 cursor-pointer">
+                                                            <input type="checkbox" :value="u.id"
+                                                                   :checked="cond.value.includes(u.id)"
+                                                                   @change="cond.value.includes(u.id) ? cond.value.splice(cond.value.indexOf(u.id),1) : cond.value.push(u.id)"
+                                                                   class="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600">
+                                                            <span class="text-xs text-gray-700" x-text="u.name"></span>
+                                                        </label>
+                                                    </template>
+                                                </div>
+                                            </div>
                                         </template>
 
                                         {{-- Value — source / country (text input) --}}
@@ -256,13 +297,26 @@
                                         {{-- Value — custom_field (select or text) --}}
                                         <template x-if="cond.field === 'custom_field' && cond.field_key && !['is_empty','is_not_empty'].includes(cond.operator)">
                                             <template x-if="getCustomField(cond.field_key)?.type === 'select' || getCustomField(cond.field_key)?.type === 'multi_select'">
-                                                <select x-model="cond.value[0]"
-                                                        class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                                    <option value="">Select option…</option>
-                                                    <template x-for="opt in getCustomField(cond.field_key)?.options ?? []" :key="opt.value">
-                                                        <option :value="opt.value" x-text="opt.label" :selected="opt.value == cond.value[0]"></option>
-                                                    </template>
-                                                </select>
+                                                <div x-data="{ open: false }" class="relative" @click.outside="open = false">
+                                                    <button type="button" @click.stop="open = !open"
+                                                            class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white text-left flex items-center gap-1.5 min-w-[150px]">
+                                                        <span class="flex-1 truncate"
+                                                              x-text="cond.value.filter(v=>v).length === 0 ? 'Select option…' : cond.value.filter(v=>v).length === 1 ? ((getCustomField(cond.field_key)?.options ?? []).find(o=>o.value==cond.value.filter(v=>v)[0])?.label ?? '1 selected') : cond.value.filter(v=>v).length + ' options'"></span>
+                                                        <svg class="w-2.5 h-2.5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+                                                    </button>
+                                                    <div x-show="open" x-cloak
+                                                         class="absolute z-30 top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] max-h-52 overflow-y-auto py-1">
+                                                        <template x-for="opt in getCustomField(cond.field_key)?.options ?? []" :key="opt.value">
+                                                            <label class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 cursor-pointer">
+                                                                <input type="checkbox" :value="opt.value"
+                                                                       :checked="cond.value.includes(opt.value)"
+                                                                       @change="cond.value.includes(opt.value) ? cond.value.splice(cond.value.indexOf(opt.value),1) : cond.value.push(opt.value)"
+                                                                       class="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600">
+                                                                <span class="text-xs text-gray-700" x-text="opt.label"></span>
+                                                            </label>
+                                                        </template>
+                                                    </div>
+                                                </div>
                                             </template>
                                             <template x-if="getCustomField(cond.field_key)?.type === 'date'">
                                                 <input type="date" x-model="cond.value[0]"
@@ -467,7 +521,7 @@ function ruleBuilder(stages, tags, users, waTemplates, customFields, initConditi
                 initConditions.forEach(c => {
                     const g = c.group_index ?? 0;
                     if (!grouped[g]) grouped[g] = [];
-                    grouped[g].push({ ...c, value: c.value ?? [''] });
+                    grouped[g].push({ ...c, value: Array.isArray(c.value) ? c.value : [] });
                 });
                 const keys = Object.keys(grouped).map(Number).sort((a,b) => a-b);
                 this.conditionGroups = keys.map(k => grouped[k]);
@@ -486,7 +540,7 @@ function ruleBuilder(stages, tags, users, waTemplates, customFields, initConditi
         },
 
         newCondition() {
-            return { field: '', field_key: null, operator: 'is', value: [''] };
+            return { field: '', field_key: null, operator: 'is', value: [] };
         },
 
         addGroup() {
@@ -517,13 +571,13 @@ function ruleBuilder(stages, tags, users, waTemplates, customFields, initConditi
 
         onFieldChange(cond) {
             cond.field_key = null;
-            cond.value = [''];
+            cond.value = [];
             const ops = this.getOperators(cond);
             cond.operator = ops.length ? ops[0].value : 'is';
         },
 
         onFieldKeyChange(cond) {
-            cond.value = [''];
+            cond.value = [];
         },
 
         getOperators(cond) {
