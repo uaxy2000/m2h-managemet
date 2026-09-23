@@ -79,6 +79,17 @@
 
                 {{-- Actions --}}
                 <div class="flex items-center gap-1 flex-shrink-0">
+                    @if(in_array('manual', $rule->trigger_events ?? []))
+                        <form method="POST" action="{{ route('automations.run', $rule) }}"
+                              onsubmit="return confirm('Run \'{{ addslashes($rule->name) }}\' against all leads now?')">
+                            @csrf
+                            <button type="submit" class="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Run now">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z"/>
+                                </svg>
+                            </button>
+                        </form>
+                    @endif
                     <a href="{{ route('automations.edit', $rule) }}"
                        class="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Edit">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
