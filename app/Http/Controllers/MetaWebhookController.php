@@ -191,6 +191,9 @@ class MetaWebhookController extends Controller
         // Auto-populate custom fields from Meta form answers
         $this->populateCustomFields($lead, $customFields);
 
+        // Fire automation rules for lead_created event
+        \App\Services\AutomationService::evaluate($lead, 'lead_created');
+
         // Auto-send WhatsApp template if configured for this form mapping
         if ($mapping->wa_template_id && $lead->phone) {
             try {
