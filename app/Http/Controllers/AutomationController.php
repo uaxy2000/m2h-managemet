@@ -137,6 +137,9 @@ class AutomationController extends Controller
         $leads = Lead::with(['tags', 'customValues.field'])->get();
         $count = 0;
         foreach ($leads as $lead) {
+            if ($automation->skip_duplicates && $lead->is_duplicate_flag) {
+                continue;
+            }
             if (AutomationService::evaluateConditions($lead, $automation)) {
                 AutomationService::evaluate($lead, 'manual', auth()->id());
                 $count++;
