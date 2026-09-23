@@ -178,7 +178,7 @@
                                                     class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
                                                 <option value="">Select field…</option>
                                                 <template x-for="cf in customFields" :key="cf.id">
-                                                    <option :value="cf.id" x-text="cf.label"></option>
+                                                    <option :value="cf.id" x-text="cf.label" :selected="cf.id == cond.field_key"></option>
                                                 </template>
                                             </select>
                                         </template>
@@ -201,7 +201,7 @@
                                                 <template x-for="group in stagesGrouped" :key="group.pipeline">
                                                     <optgroup :label="group.pipeline">
                                                         <template x-for="s in group.stages" :key="s.id">
-                                                            <option :value="s.id" x-text="s.name"></option>
+                                                            <option :value="s.id" x-text="s.name" :selected="s.id == cond.value[0]"></option>
                                                         </template>
                                                     </optgroup>
                                                 </template>
@@ -216,7 +216,7 @@
                                                 <template x-for="group in tagsGrouped" :key="group.name">
                                                     <optgroup :label="group.name">
                                                         <template x-for="t in group.tags" :key="t.id">
-                                                            <option :value="t.id" x-text="t.name"></option>
+                                                            <option :value="t.id" x-text="t.name" :selected="t.id == cond.value[0]"></option>
                                                         </template>
                                                     </optgroup>
                                                 </template>
@@ -229,7 +229,7 @@
                                                     class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
                                                 <option value="">Select user…</option>
                                                 <template x-for="u in users" :key="u.id">
-                                                    <option :value="u.id" x-text="u.name"></option>
+                                                    <option :value="u.id" x-text="u.name" :selected="u.id == cond.value[0]"></option>
                                                 </template>
                                             </select>
                                         </template>
@@ -247,7 +247,7 @@
                                                         class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
                                                     <option value="">Select option…</option>
                                                     <template x-for="opt in getCustomField(cond.field_key)?.options ?? []" :key="opt.value">
-                                                        <option :value="opt.value" x-text="opt.label"></option>
+                                                        <option :value="opt.value" x-text="opt.label" :selected="opt.value == cond.value[0]"></option>
                                                     </template>
                                                 </select>
                                             </template>
@@ -315,7 +315,7 @@
                                         class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
                                     <option value="">Select user…</option>
                                     <template x-for="u in users" :key="u.id">
-                                        <option :value="u.id" x-text="u.name"></option>
+                                        <option :value="u.id" x-text="u.name" :selected="u.id == action.parameters.user_id"></option>
                                     </template>
                                 </select>
                             </template>
@@ -328,7 +328,7 @@
                                     <template x-for="group in stagesGrouped" :key="group.pipeline">
                                         <optgroup :label="group.pipeline">
                                             <template x-for="s in group.stages" :key="s.id">
-                                                <option :value="s.id" x-text="s.name"></option>
+                                                <option :value="s.id" x-text="s.name" :selected="s.id == action.parameters.stage_id"></option>
                                             </template>
                                         </optgroup>
                                     </template>
@@ -341,7 +341,7 @@
                                         class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
                                     <option value="">Select template…</option>
                                     <template x-for="t in waTemplates" :key="t.id">
-                                        <option :value="t.id" x-text="t.name"></option>
+                                        <option :value="t.id" x-text="t.name" :selected="t.id == action.parameters.template_id"></option>
                                     </template>
                                 </select>
                             </template>
@@ -354,7 +354,7 @@
                                     <template x-for="group in tagsGrouped" :key="group.name">
                                         <optgroup :label="group.name">
                                             <template x-for="t in group.tags" :key="t.id">
-                                                <option :value="t.id" x-text="t.name"></option>
+                                                <option :value="t.id" x-text="t.name" :selected="t.id == action.parameters.tag_id"></option>
                                             </template>
                                         </optgroup>
                                     </template>
