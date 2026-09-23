@@ -338,17 +338,31 @@ class AutomationService
 
     /**
      * Count how many leads currently match the rule's conditions (for preview).
+     * For once-per-lead rules also returns how many have already been run.
+     *
+     * @return array{total: int, already_ran: int}
      */
-    public static function preview(AutomationRule $rule): int
+    public static function preview(AutomationRule $rule): array
     {
         $rule->loadMissing('conditions');
 
         if ($rule->conditions->isEmpty()) {
-            return 0;
+            return ['total' => 0, 'already_ran' => 0];
         }
 
-        $leads = Lead::with(['tags', 'customValues.field'])->get();
+        $leads    = Lead::with(['tags', 'customValues.field'])->get();
+        $matching = $leads->filter(fn ($lead) => static::evaluateConditions($lead, $rule));
+        $total    = $matching->count();
 
-        return $leads->filter(fn ($lead) => static::evaluateConditions($lead, $rule))->count();
+        $alreadyRan = 0;
+        if ($rule->re_run_mode === 'once' && $total > 0) {
+            $alreadyRan = AutomationRuleRun::where('rule_id', $rule->id)
+                ->whereIn('lead_id', $matching->pluck('id'))
+                ->where('status', 'success')
+                ->distinct('lead_id')
+                ->count('lead_id');
+        }
+
+        return ['total' => $total, 'already_ran' => $alreadyRan];
     }
 }

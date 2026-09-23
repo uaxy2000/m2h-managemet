@@ -124,8 +124,12 @@ class AutomationController extends Controller
     public function preview(Request $request, AutomationRule $automation): JsonResponse
     {
         $automation->load('conditions');
-        $count = AutomationService::preview($automation);
-        return response()->json(['count' => $count]);
+        $result = AutomationService::preview($automation);
+        return response()->json([
+            'count'       => $result['total'],
+            'already_ran' => $result['already_ran'],
+            're_run_mode' => $automation->re_run_mode,
+        ]);
     }
 
     public function run(Request $request, AutomationRule $automation): RedirectResponse

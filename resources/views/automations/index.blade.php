@@ -67,13 +67,16 @@
                 </button>
 
                 {{-- Preview count --}}
-                <div x-data="{ count: null, loading: false }">
-                    <button @click="loading=true; fetch('{{ route('automations.preview', $rule) }}',{headers:{'Accept':'application/json'}}).then(r=>r.json()).then(d=>{count=d.count;loading=false;})"
+                <div x-data="{ count: null, alreadyRan: 0, reRunMode: '', loading: false }">
+                    <button @click="loading=true; fetch('{{ route('automations.preview', $rule) }}',{headers:{'Accept':'application/json'}}).then(r=>r.json()).then(d=>{count=d.count;alreadyRan=d.already_ran;reRunMode=d.re_run_mode;loading=false;})"
                             class="text-xs text-indigo-600 hover:text-indigo-800 font-medium whitespace-nowrap"
                             title="Preview: how many leads match now">
                         <span x-show="!loading && count === null">Preview</span>
                         <span x-show="loading">…</span>
-                        <span x-show="count !== null && !loading" x-text="count + ' leads'"></span>
+                        <span x-show="count !== null && !loading"
+                              x-text="reRunMode === 'once' && alreadyRan > 0
+                                  ? count + ' matching (' + alreadyRan + ' run before)'
+                                  : count + ' leads'"></span>
                     </button>
                 </div>
 
