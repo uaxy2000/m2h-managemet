@@ -40,7 +40,10 @@
     </div>
 </div>
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<style>
+#meta-table tbody tr:hover td { background-color: #e1e1e1; }
+</style>
+<div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
     {{-- Header --}}
     <div class="flex flex-wrap items-start justify-between gap-4 mb-6"
@@ -361,7 +364,7 @@
             <h2 class="text-sm font-semibold text-gray-700">Campaigns</h2>
         </div>
         <div class="overflow-x-auto">
-            <table class="w-full text-sm" style="min-width:1100px">
+            <table id="meta-table" class="w-full text-sm" style="min-width:1100px">
                 <thead>
                     {{-- Group header row --}}
                     <tr class="bg-gray-50 border-b border-gray-100 text-[10px] font-semibold uppercase tracking-wide">
@@ -398,7 +401,7 @@
                         @php $campaignAdsets = $adsets->get($campaign->entity_id, collect()); @endphp
 
                         {{-- Campaign row --}}
-                        <tr class="hover:bg-[#e1e1e1] transition-colors">
+                        <tr>
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-2">
                                     @if($campaignAdsets->isNotEmpty())
@@ -454,8 +457,7 @@
                         {{-- Adset rows (flat, same columns) --}}
                         @foreach($campaignAdsets as $adset)
                             @php $adsetAds = $ads->get($adset->entity_id, collect()); @endphp
-                            <tr class="hover:bg-[#e1e1e1] transition-colors"
-                                x-show="openCampaigns['{{ $campaign->entity_id }}']" x-cloak>
+                            <tr x-show="openCampaigns['{{ $campaign->entity_id }}']" x-cloak>
                                 <td class="py-2.5 pr-4 pl-10">
                                     <div class="flex items-center gap-2">
                                         @if($adsetAds->isNotEmpty())
@@ -506,8 +508,7 @@
 
                             {{-- Ad rows (flat, same columns) --}}
                             @foreach($adsetAds as $ad)
-                                <tr class="hover:bg-[#e1e1e1] transition-colors"
-                                    x-show="openCampaigns['{{ $campaign->entity_id }}'] && openAdsets['{{ $adset->entity_id }}']" x-cloak>
+                                <tr x-show="openCampaigns['{{ $campaign->entity_id }}'] && openAdsets['{{ $adset->entity_id }}']" x-cloak>
                                     <td class="py-2 pr-4 pl-20">
                                         <div class="flex items-center gap-1.5">
                                             <svg class="w-3 h-3 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
