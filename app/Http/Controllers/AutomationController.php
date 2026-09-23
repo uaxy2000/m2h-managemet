@@ -134,7 +134,7 @@ class AutomationController extends Controller
         $count = 0;
         foreach ($leads as $lead) {
             if (AutomationService::evaluateConditions($lead, $automation)) {
-                AutomationService::evaluate($lead, 'manual');
+                AutomationService::evaluate($lead, 'manual', auth()->id());
                 $count++;
             }
         }

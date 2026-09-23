@@ -20,7 +20,7 @@ class AutomationService
      * Evaluate all active rules against a lead for a given trigger event.
      * First matching rule runs its actions; subsequent matches are logged as conflicts.
      */
-    public static function evaluate(Lead $lead, string $event): void
+    public static function evaluate(Lead $lead, string $event, string|null $triggeredByUserId = null): void
     {
         try {
             $rules = AutomationRule::where('is_active', true)
@@ -58,7 +58,7 @@ class AutomationService
 
                 if ($firstMatchId === null) {
                     $firstMatchId = $rule->id;
-                    static::runRule($lead, $rule, $event);
+                    static::runRule($lead, $rule, $event, $triggeredByUserId);
                 } else {
                     // Conflict: this rule also matched but won't run
                     $conflictIds[] = $rule->id;
@@ -168,20 +168,26 @@ class AutomationService
     /**
      * Run a matched rule's actions on a lead.
      */
-    private static function runRule(Lead $lead, AutomationRule $rule, string $event): void
+    private static function runRule(Lead $lead, AutomationRule $rule, string $event, string|null $triggeredByUserId = null): void
     {
-        $actionsLog = [];
-        $descLines  = [];
+        $actionsLog  = [];
+        $descLines   = [];
+        $triggerUser = $triggeredByUserId ? User::find($triggeredByUserId) : null;
+        $senderLabel = $triggerUser ? ($triggerUser->name . ' via ' . $rule->name) : 'M2H System';
 
         foreach ($rule->actions as $action) {
-            $result = static::runAction($lead, $action, $rule);
+            $result = static::runAction($lead, $action, $rule, $senderLabel);
             $actionsLog[] = $result;
             if ($result['ok'] && !empty($result['label'])) {
                 $descLines[] = '• ' . $result['label'];
             }
         }
 
-        $desc = '<strong>' . e($rule->name) . '</strong> automation applied by M2H System';
+        if ($event === 'manual' && $triggerUser) {
+            $desc = '<strong>' . e($rule->name) . '</strong> triggered manually by ' . e($triggerUser->name);
+        } else {
+            $desc = '<strong>' . e($rule->name) . '</strong> automation applied by M2H System';
+        }
         if ($descLines) {
             $desc .= ':<br>' . implode('<br>', $descLines);
         }
@@ -203,7 +209,7 @@ class AutomationService
         ]);
     }
 
-    private static function runAction(Lead $lead, AutomationAction $action, AutomationRule $rule): array
+    private static function runAction(Lead $lead, AutomationAction $action, AutomationRule $rule, string $senderLabel = 'M2H System'): array
     {
         $params = $action->parameters ?? [];
         $log = ['type' => $action->action_type, 'ok' => false, 'note' => '', 'label' => ''];
@@ -258,7 +264,7 @@ class AutomationService
                         $template = WaTemplate::find($templateId);
                         if ($template) {
                             $wa  = new \App\Services\WhatsAppService();
-                            $ok  = $wa->sendTemplate($lead, $template, null, 'M2H System');
+                            $ok  = $wa->sendTemplate($lead, $template, null, $senderLabel);
                             $log['ok']    = $ok;
                             $log['note']  = $ok ? 'Sent template: ' . $template->name : 'WA send failed';
                             $log['label'] = $ok ? 'WhatsApp \'' . ($template->display_name ?? $template->name) . '\' sent' : 'WhatsApp send failed';
