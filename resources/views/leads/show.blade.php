@@ -871,7 +871,7 @@
                     <div class="flex-1 min-w-0">
                         <div class="flex items-baseline gap-2 flex-wrap">
                             <span class="text-xs font-medium text-gray-700">{{ $item->createdBy->name }}</span>
-                            <span class="text-xs text-gray-400">{{ $item->created_at->format('d.m.Y') }} ({{ $item->created_at->diffForHumans() }})</span>
+                            <span class="text-xs text-gray-400">{{ $item->created_at->format('d.m.Y H:i') }} ({{ $item->created_at->diffForHumans() }})</span>
                             @php $visParts = array_map('trim', explode(',', $item->visibility ?? 'internal')); @endphp
                             @if(in_array('internal', $visParts))
                             <span class="text-xs text-gray-300">· internal</span>
@@ -1014,7 +1014,7 @@
                                 <div class="mt-1.5 space-y-0.5 text-right">
                                     <div class="flex items-center justify-end gap-1">
                                         <span class="text-[10px] text-gray-400 font-medium w-16 text-right">Sent</span>
-                                        <span class="text-[10px] text-gray-400">{{ $waSentDt->format('d.m.Y') }} ({{ $waSentDt->diffForHumans() }})</span>
+                                        <span class="text-[10px] text-gray-400">{{ $waSentDt->format('d.m.Y H:i') }} ({{ $waSentDt->diffForHumans() }})</span>
                                         <svg style="width:10px;height:11px;flex-shrink:0" viewBox="0 0 10 12" fill="none">
                                             <path d="M1 6L4 9.5L9 2" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
@@ -1022,7 +1022,7 @@
                                     @if($waDelivDt)
                                     <div class="flex items-center justify-end gap-1">
                                         <span class="text-[10px] text-gray-400 font-medium w-16 text-right">Delivered</span>
-                                        <span class="text-[10px] text-gray-400">{{ $waDelivDt->format('d.m.Y') }} ({{ $waDelivDt->diffForHumans() }})</span>
+                                        <span class="text-[10px] text-gray-400">{{ $waDelivDt->format('d.m.Y H:i') }} ({{ $waDelivDt->diffForHumans() }})</span>
                                         <svg style="width:16px;height:11px;flex-shrink:0" viewBox="0 0 18 12" fill="none">
                                             <path d="M1 6L4.5 9.5L10 3" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                                             <path d="M7 6L10.5 9.5L17 2" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1032,7 +1032,7 @@
                                     @if($waReadDt)
                                     <div class="flex items-center justify-end gap-1">
                                         <span class="text-[10px] text-gray-400 font-medium w-16 text-right">Read</span>
-                                        <span class="text-[10px] text-gray-400">{{ $waReadDt->format('d.m.Y') }} ({{ $waReadDt->diffForHumans() }})</span>
+                                        <span class="text-[10px] text-gray-400">{{ $waReadDt->format('d.m.Y H:i') }} ({{ $waReadDt->diffForHumans() }})</span>
                                         <svg style="width:16px;height:11px;flex-shrink:0" viewBox="0 0 18 12" fill="none">
                                             <path d="M1 6L4.5 9.5L10 3" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                                             <path d="M7 6L10.5 9.5L17 2" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1042,7 +1042,7 @@
                                 </div>
                                 @else
                                 <div class="flex items-center gap-1 mt-0.5">
-                                    <span class="text-xs text-gray-400">{{ $msg->created_at->format('d.m.Y') }} ({{ $msg->created_at->diffForHumans() }})</span>
+                                    <span class="text-xs text-gray-400">{{ $msg->created_at->format('d.m.Y H:i') }} ({{ $msg->created_at->diffForHumans() }})</span>
                                 </div>
                                 @endif
                             </div>
@@ -1089,7 +1089,7 @@
                             <span class="text-xs text-gray-400">by {{ $item->user->name }}</span>
                             <span class="text-xs text-gray-300">·</span>
                             @endif
-                            <span class="text-xs text-gray-400">{{ $item->created_at->format('d.m.Y') }} ({{ $item->created_at->diffForHumans() }})</span>
+                            <span class="text-xs text-gray-400">{{ $item->created_at->format('d.m.Y H:i') }} ({{ $item->created_at->diffForHumans() }})</span>
                         </div>
                     </div>
                 </div>
