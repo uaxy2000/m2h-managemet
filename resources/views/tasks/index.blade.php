@@ -23,16 +23,16 @@ function taskNavUrl(array $overrides): string {
         <input type="hidden" name="month_offset" value="{{ $monthOffset }}">
 
         {{-- Assigned by dropdown --}}
-        <div x-data="{ open: false }" class="relative" @click.outside="open = false">
+        <div x-data="{ open: false, sel: {{ json_encode(array_values($filterAssignedBy)) }} }" class="relative" @click.outside="open = false">
             <button type="button" @click.stop="open = !open"
-                    class="flex items-center gap-1.5 text-xs border rounded-lg px-2.5 py-1.5 bg-white {{ !empty($filterAssignedBy) ? 'border-indigo-400 text-indigo-700 bg-indigo-50' : 'border-gray-300 text-gray-600 hover:border-gray-400' }} transition-colors">
+                    :class="sel.length > 0 ? 'border-indigo-400 text-indigo-700 bg-indigo-50' : 'border-gray-300 text-gray-600 hover:border-gray-400'"
+                    class="flex items-center gap-1.5 text-xs border rounded-lg px-2.5 py-1.5 bg-white transition-colors">
                 <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/>
                 </svg>
                 Assigned by
-                @if(!empty($filterAssignedBy))
-                <span class="bg-indigo-600 text-white rounded-full px-1.5 py-0.5 text-[10px] font-semibold">{{ count($filterAssignedBy) }}</span>
-                @endif
+                <span x-show="sel.length > 0" x-text="sel.length"
+                      class="bg-indigo-600 text-white rounded-full px-1.5 py-0.5 text-[10px] font-semibold"></span>
                 <svg class="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
                 </svg>
@@ -41,7 +41,8 @@ function taskNavUrl(array $overrides): string {
                 @foreach($filterUsers as $u)
                 <label class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 cursor-pointer">
                     <input type="checkbox" name="assigned_by[]" value="{{ $u->id }}"
-                           {{ in_array($u->id, $filterAssignedBy) ? 'checked' : '' }}
+                           :checked="sel.includes('{{ $u->id }}')"
+                           @change="$event.target.checked ? sel.push('{{ $u->id }}') : sel.splice(sel.indexOf('{{ $u->id }}'), 1)"
                            class="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600">
                     <span class="text-xs text-gray-700">{{ $u->name }}</span>
                 </label>
@@ -50,16 +51,16 @@ function taskNavUrl(array $overrides): string {
         </div>
 
         {{-- Assigned to dropdown --}}
-        <div x-data="{ open: false }" class="relative" @click.outside="open = false">
+        <div x-data="{ open: false, sel: {{ json_encode(array_values($filterAssignedTo)) }} }" class="relative" @click.outside="open = false">
             <button type="button" @click.stop="open = !open"
-                    class="flex items-center gap-1.5 text-xs border rounded-lg px-2.5 py-1.5 bg-white {{ !empty($filterAssignedTo) ? 'border-purple-400 text-purple-700 bg-purple-50' : 'border-gray-300 text-gray-600 hover:border-gray-400' }} transition-colors">
+                    :class="sel.length > 0 ? 'border-purple-400 text-purple-700 bg-purple-50' : 'border-gray-300 text-gray-600 hover:border-gray-400'"
+                    class="flex items-center gap-1.5 text-xs border rounded-lg px-2.5 py-1.5 bg-white transition-colors">
                 <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"/>
                 </svg>
                 Assigned to
-                @if(!empty($filterAssignedTo))
-                <span class="bg-purple-600 text-white rounded-full px-1.5 py-0.5 text-[10px] font-semibold">{{ count($filterAssignedTo) }}</span>
-                @endif
+                <span x-show="sel.length > 0" x-text="sel.length"
+                      class="bg-purple-600 text-white rounded-full px-1.5 py-0.5 text-[10px] font-semibold"></span>
                 <svg class="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
                 </svg>
@@ -68,7 +69,8 @@ function taskNavUrl(array $overrides): string {
                 @foreach($filterUsers as $u)
                 <label class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 cursor-pointer">
                     <input type="checkbox" name="assigned_to[]" value="{{ $u->id }}"
-                           {{ in_array($u->id, $filterAssignedTo) ? 'checked' : '' }}
+                           :checked="sel.includes('{{ $u->id }}')"
+                           @change="$event.target.checked ? sel.push('{{ $u->id }}') : sel.splice(sel.indexOf('{{ $u->id }}'), 1)"
                            class="w-3.5 h-3.5 rounded border-gray-300 text-purple-600">
                     <span class="text-xs text-gray-700">{{ $u->name }}</span>
                 </label>
@@ -196,13 +198,13 @@ function taskNavUrl(array $overrides): string {
                             @endif
                         </button>
                         <div class="min-w-0 flex-1">
-                            <p class="text-[11px] leading-snug {{ $task['is_done'] ? 'line-through text-gray-300' : 'text-gray-700' }} truncate" title="{{ $task['title'] }}">{{ $task['title'] }}</p>
+                            <p class="text-xs leading-snug {{ $task['is_done'] ? 'line-through text-gray-300' : 'text-gray-700' }} truncate" title="{{ $task['title'] }}">{{ $task['title'] }}</p>
                             <a href="{{ $task['context_url'] }}"
-                               class="text-[10px] {{ $task['type'] === 'lead' ? 'text-indigo-400' : 'text-purple-400' }} hover:underline truncate block leading-tight">
+                               class="text-[11px] {{ $task['type'] === 'lead' ? 'text-indigo-400' : 'text-purple-400' }} hover:underline truncate block leading-tight">
                                 {{ Str::limit($task['context'], 20) }}
                             </a>
                             @if($task['due_at']->format('H:i') !== '00:00')
-                            <span class="text-[10px] text-gray-400 leading-tight">{{ $task['due_at']->format('H:i') }}</span>
+                            <span class="text-[11px] text-gray-400 leading-tight">{{ $task['due_at']->format('H:i') }}</span>
                             @endif
                         </div>
                     </div>
@@ -221,9 +223,9 @@ function taskNavUrl(array $overrides): string {
         @else
         <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
             {{-- Day-of-week headers --}}
-            <div class="grid grid-cols-7 border-b border-gray-100">
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);" class="border-b border-gray-100">
                 @foreach(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] as $dow)
-                <div class="py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-400
+                <div class="py-2 text-center text-xs font-semibold uppercase tracking-wider text-gray-400
                     {{ $loop->index >= 5 ? 'bg-gray-50' : '' }}">
                     {{ $dow }}
                 </div>
@@ -231,7 +233,7 @@ function taskNavUrl(array $overrides): string {
             </div>
             {{-- Weeks --}}
             @foreach($monthGrid as $week)
-            <div class="grid grid-cols-7 {{ !$loop->last ? 'border-b border-gray-100' : '' }}">
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);" class="{{ !$loop->last ? 'border-b border-gray-100' : '' }}">
                 @foreach($week as $day)
                 @php
                     $isToday   = $day['date']->isToday();
@@ -262,7 +264,7 @@ function taskNavUrl(array $overrides): string {
                                 @endif
                             </button>
                             <a href="{{ $task['context_url'] }}"
-                               class="text-[10px] leading-tight truncate {{ $task['is_done'] ? 'line-through text-gray-300' : ($task['type'] === 'lead' ? 'text-indigo-600' : 'text-purple-600') }} hover:underline"
+                               class="text-[11px] leading-tight truncate {{ $task['is_done'] ? 'line-through text-gray-300' : ($task['type'] === 'lead' ? 'text-indigo-600' : 'text-purple-600') }} hover:underline"
                                title="{{ $task['title'] }}">
                                 {{ Str::limit($task['title'], 18) }}
                             </a>
