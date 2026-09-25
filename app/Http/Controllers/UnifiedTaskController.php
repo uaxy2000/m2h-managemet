@@ -152,7 +152,7 @@ class UnifiedTaskController extends Controller
             : collect();
 
         return view('tasks.index', compact(
-            'overdue', 'weekDays', 'upcoming', 'noDue', 'done',
+            'all', 'overdue', 'weekDays', 'upcoming', 'noDue', 'done',
             'isInternalAdmin', 'weekStart', 'weekEnd',
             'viewMode', 'weekOffset', 'monthOffset',
             'monthStart', 'monthEnd', 'monthGrid',
