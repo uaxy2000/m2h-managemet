@@ -139,7 +139,7 @@ class UnifiedTaskController extends Controller
         $done     = $all->filter(fn ($t) => $t['is_done'])->sortByDesc('due_at')->take(20)->values();
 
         $filterUsers = $isInternalAdmin
-            ? User::where(fn ($q) => $q->whereIn('role', ['super_admin', 'admin', 'member']))
+            ? User::whereIn('role', ['super_admin', 'admin', 'member'])
                 ->orderBy('name')->get(['id', 'name'])
             : collect();
 

@@ -17,7 +17,7 @@ function taskNavUrl(array $overrides): string {
 
     {{-- ===== ADMIN FILTER BAR ===== --}}
     @if($isInternalAdmin)
-    <form method="GET" action="{{ route('tasks.index') }}" class="flex items-center gap-2 flex-wrap">
+    <form method="GET" action="{{ route('tasks.index') }}" class="flex items-center gap-2 flex-wrap relative z-10">
         <input type="hidden" name="view"         value="{{ $viewMode }}">
         <input type="hidden" name="week_offset"  value="{{ $weekOffset }}">
         <input type="hidden" name="month_offset" value="{{ $monthOffset }}">
@@ -37,7 +37,7 @@ function taskNavUrl(array $overrides): string {
                     <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
                 </svg>
             </button>
-            <div x-show="open" x-cloak class="absolute z-30 top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] max-h-52 overflow-y-auto py-1">
+            <div x-show="open" x-cloak class="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] max-h-52 overflow-y-auto py-1" style="z-index:200">
                 @foreach($filterUsers as $u)
                 <label class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 cursor-pointer">
                     <input type="checkbox" name="assigned_by[]" value="{{ $u->id }}"
@@ -60,12 +60,12 @@ function taskNavUrl(array $overrides): string {
                 </svg>
                 Assigned to
                 <span x-show="sel.length > 0" x-text="sel.length"
-                      class="bg-purple-600 text-white rounded-full px-1.5 py-0.5 text-[10px] font-semibold"></span>
+                      style="background:#7c3aed;color:#fff;border-radius:9999px;padding:1px 6px;font-size:10px;font-weight:600;flex-shrink:0"></span>
                 <svg class="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
                 </svg>
             </button>
-            <div x-show="open" x-cloak class="absolute z-30 top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] max-h-52 overflow-y-auto py-1">
+            <div x-show="open" x-cloak class="absolute top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] max-h-52 overflow-y-auto py-1" style="z-index:200">
                 @foreach($filterUsers as $u)
                 <label class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 cursor-pointer">
                     <input type="checkbox" name="assigned_to[]" value="{{ $u->id }}"
