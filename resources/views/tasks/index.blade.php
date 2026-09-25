@@ -12,8 +12,9 @@ function taskNavUrl(array $overrides): string {
 }
 @endphp
 
+<script>window.__taskAllData = @json($all->values());</script>
 <div class="max-w-6xl mx-auto px-4 py-6 space-y-6"
-     x-data="taskPage('{{ csrf_token() }}', @json($all->values()))"
+     x-data="taskPage('{{ csrf_token() }}')"
      @keydown.escape.window="if(dayModal.open) dayModal.open = false">
 
     {{-- ===== ADMIN FILTER BAR ===== --}}
@@ -479,9 +480,9 @@ function taskNavUrl(array $overrides): string {
 </div>
 
 <script>
-function taskPage(csrf, allTasks) {
+function taskPage(csrf) {
     return {
-        allTasks,
+        allTasks: window.__taskAllData || [],
         dayModal: {
             open: false, label: '', totalCount: 0, doneCount: 0,
             early: [], hours: [], late: [],
