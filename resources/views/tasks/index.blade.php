@@ -13,7 +13,8 @@ function taskNavUrl(array $overrides): string {
 @endphp
 
 <div class="max-w-6xl mx-auto px-4 py-6 space-y-6"
-     x-data="taskPage('{{ csrf_token() }}')">
+     x-data="taskPage('{{ csrf_token() }}', @json($all->values()))"
+     @keydown.escape.window="if(dayModal.open) dayModal.open = false">
 
     {{-- ===== ADMIN FILTER BAR ===== --}}
     @if($isInternalAdmin)
@@ -246,10 +247,12 @@ function taskNavUrl(array $overrides): string {
                     {{ $isWeekend ? 'bg-gray-50/50' : 'bg-white' }}
                     {{ !$inMonth ? 'opacity-40' : '' }}">
                     <div class="flex justify-center mb-1">
-                        <span class="text-[11px] font-semibold w-5 h-5 flex items-center justify-center rounded-full
-                            {{ $isToday ? 'bg-indigo-600 text-white' : ($inMonth ? 'text-gray-700' : 'text-gray-400') }}">
+                        <button type="button"
+                                @click="openDay('{{ $day['date']->format('Y-m-d') }}', '{{ $day['date']->isoFormat('dddd, D MMMM Y') }}')"
+                                class="text-[11px] font-semibold w-5 h-5 flex items-center justify-center rounded-full transition-colors
+                                {{ $isToday ? 'bg-indigo-600 text-white' : ($inMonth ? 'text-gray-700 hover:bg-indigo-100 hover:text-indigo-700' : 'text-gray-400') }}">
                             {{ $day['date']->format('j') }}
-                        </span>
+                        </button>
                     </div>
                     <div class="space-y-0.5">
                         @foreach($visibleTasks as $task)
@@ -345,17 +348,190 @@ function taskNavUrl(array $overrides): string {
     </div>
     @endif
 
+    {{-- ===== DAY DETAIL MODAL ===== --}}
+    <div x-show="dayModal.open" x-cloak
+         class="fixed inset-0 flex items-center justify-center p-4"
+         style="z-index:500">
+        {{-- Backdrop --}}
+        <div class="absolute inset-0 bg-black/40" @click="dayModal.open = false"></div>
+
+        {{-- Panel --}}
+        <div class="relative bg-white rounded-xl shadow-2xl flex flex-col"
+             style="width:520px;max-height:82vh">
+
+            {{-- Header --}}
+            <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 flex-shrink-0">
+                <div>
+                    <p x-text="dayModal.label" class="text-sm font-semibold text-gray-800"></p>
+                    <p class="text-xs text-gray-400 mt-0.5">
+                        <span x-text="dayModal.totalCount"></span> task<span x-show="dayModal.totalCount !== 1">s</span>
+                        &nbsp;·&nbsp;
+                        <span x-text="dayModal.doneCount" class="text-emerald-600"></span> done
+                    </p>
+                </div>
+                <button @click="dayModal.open = false" type="button"
+                        class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            {{-- Scrollable body --}}
+            <div class="overflow-y-auto flex-1 py-2">
+
+                {{-- Early band (before 08:00) --}}
+                <template x-if="dayModal.early.length > 0">
+                    <div class="mx-3 mb-1 flex gap-3 items-start py-1.5 px-3 rounded-lg bg-slate-50 border border-slate-100">
+                        <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wide pt-0.5 flex-shrink-0" style="width:40px">Before 8</span>
+                        <div class="flex-1 space-y-1.5">
+                            <template x-for="t in dayModal.early" :key="String(t.id)+t.type">
+                                <div x-bind:style="taskStyle(t)" class="flex gap-2 items-start p-1.5 rounded-lg">
+                                    <button type="button" @click="toggle(t.toggle_url, $event)"
+                                            x-bind:style="checkStyle(t)"
+                                            style="flex-shrink:0;margin-top:2px;width:14px;height:14px;border-radius:3px;border:1.5px solid;display:flex;align-items:center;justify-content:center;">
+                                        <svg x-show="t.is_done" style="width:8px;height:8px;color:#fff" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
+                                        </svg>
+                                    </button>
+                                    <div style="min-width:0;flex:1;">
+                                        <div class="flex items-baseline gap-1 flex-wrap">
+                                            <span x-show="t.time_str && t.time_str !== '00:00'" x-text="t.time_str" style="font-size:10px;color:#9ca3af;"></span>
+                                            <a x-show="t.context_url" x-bind:href="t.context_url" x-text="t.title" x-bind:style="titleStyle(t)" style="font-size:12px;font-weight:600;"></a>
+                                            <span x-show="!t.context_url" x-text="t.title" x-bind:style="titleStyle(t)" style="font-size:12px;font-weight:600;"></span>
+                                        </div>
+                                        <p x-show="t.description" x-text="t.description" style="font-size:11px;color:#6b7280;margin-top:2px;"></p>
+                                        <p x-show="t.context" x-text="t.context" style="font-size:10px;color:#9ca3af;margin-top:1px;"></p>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+                {{-- Hour slots 08:00–20:00 --}}
+                <template x-for="slot in dayModal.hours" :key="slot.h">
+                    <div class="flex gap-0 items-stretch px-3"
+                         x-bind:style="slot.tasks.length > 0 ? 'background:#f5f3ff10' : ''">
+                        <div style="width:44px;flex-shrink:0;padding-top:8px;">
+                            <span x-text="slot.label" style="font-size:10px;font-family:monospace;"
+                                  x-bind:style="slot.tasks.length > 0 ? 'color:#818cf8' : 'color:#d1d5db'"></span>
+                        </div>
+                        <div class="flex-1 py-1 space-y-1" style="border-top:1px solid #f3f4f6;min-height:32px;"
+                             x-bind:style="slot.tasks.length > 0 ? 'border-top-color:#e0e7ff' : ''">
+                            <template x-for="t in slot.tasks" :key="String(t.id)+t.type">
+                                <div x-bind:style="taskStyle(t)" class="flex gap-2 items-start p-1.5 rounded-lg">
+                                    <button type="button" @click="toggle(t.toggle_url, $event)"
+                                            x-bind:style="checkStyle(t)"
+                                            style="flex-shrink:0;margin-top:2px;width:14px;height:14px;border-radius:3px;border:1.5px solid;display:flex;align-items:center;justify-content:center;">
+                                        <svg x-show="t.is_done" style="width:8px;height:8px;color:#fff" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
+                                        </svg>
+                                    </button>
+                                    <div style="min-width:0;flex:1;">
+                                        <div class="flex items-baseline gap-1 flex-wrap">
+                                            <span x-show="t.time_str && t.time_str !== '00:00'" x-text="t.time_str" style="font-size:10px;color:#9ca3af;"></span>
+                                            <a x-show="t.context_url" x-bind:href="t.context_url" x-text="t.title" x-bind:style="titleStyle(t)" style="font-size:12px;font-weight:600;"></a>
+                                            <span x-show="!t.context_url" x-text="t.title" x-bind:style="titleStyle(t)" style="font-size:12px;font-weight:600;"></span>
+                                        </div>
+                                        <p x-show="t.description" x-text="t.description" style="font-size:11px;color:#6b7280;margin-top:2px;"></p>
+                                        <p x-show="t.context" x-text="t.context" style="font-size:10px;color:#9ca3af;margin-top:1px;"></p>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+                {{-- Late band (after 20:00) --}}
+                <template x-if="dayModal.late.length > 0">
+                    <div class="mx-3 mt-1 flex gap-3 items-start py-1.5 px-3 rounded-lg bg-slate-50 border border-slate-100">
+                        <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wide pt-0.5 flex-shrink-0" style="width:40px">After 20</span>
+                        <div class="flex-1 space-y-1.5">
+                            <template x-for="t in dayModal.late" :key="String(t.id)+t.type">
+                                <div x-bind:style="taskStyle(t)" class="flex gap-2 items-start p-1.5 rounded-lg">
+                                    <button type="button" @click="toggle(t.toggle_url, $event)"
+                                            x-bind:style="checkStyle(t)"
+                                            style="flex-shrink:0;margin-top:2px;width:14px;height:14px;border-radius:3px;border:1.5px solid;display:flex;align-items:center;justify-content:center;">
+                                        <svg x-show="t.is_done" style="width:8px;height:8px;color:#fff" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
+                                        </svg>
+                                    </button>
+                                    <div style="min-width:0;flex:1;">
+                                        <div class="flex items-baseline gap-1 flex-wrap">
+                                            <span x-show="t.time_str && t.time_str !== '00:00'" x-text="t.time_str" style="font-size:10px;color:#9ca3af;"></span>
+                                            <a x-show="t.context_url" x-bind:href="t.context_url" x-text="t.title" x-bind:style="titleStyle(t)" style="font-size:12px;font-weight:600;"></a>
+                                            <span x-show="!t.context_url" x-text="t.title" x-bind:style="titleStyle(t)" style="font-size:12px;font-weight:600;"></span>
+                                        </div>
+                                        <p x-show="t.description" x-text="t.description" style="font-size:11px;color:#6b7280;margin-top:2px;"></p>
+                                        <p x-show="t.context" x-text="t.context" style="font-size:10px;color:#9ca3af;margin-top:1px;"></p>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
-function taskPage(csrf) {
+function taskPage(csrf, allTasks) {
     return {
+        allTasks,
+        dayModal: {
+            open: false, label: '', totalCount: 0, doneCount: 0,
+            early: [], hours: [], late: [],
+        },
+
         toggle(url, event) {
             if (!url) return;
-            const btn = event.currentTarget;
             fetch(url, { method: 'POST', headers: { 'X-CSRF-TOKEN': csrf } })
                 .then(r => r.json())
                 .then(() => window.location.reload());
+        },
+
+        openDay(dateStr, label) {
+            const tasks = this.allTasks.filter(t => t.date === dateStr)
+                .sort((a, b) => a.time_str.localeCompare(b.time_str));
+            this.dayModal = {
+                open: true,
+                label: label,
+                totalCount: tasks.length,
+                doneCount: tasks.filter(t => t.is_done).length,
+                early: tasks.filter(t => t.hour < 8),
+                hours: Array.from({length: 13}, (_, i) => {
+                    const h = 8 + i;
+                    return {
+                        h,
+                        label: String(h).padStart(2, '0') + ':00',
+                        tasks: tasks.filter(t => t.hour === h),
+                    };
+                }),
+                late: tasks.filter(t => t.hour > 20),
+            };
+        },
+
+        taskStyle(t) {
+            if (t.is_done) return 'background:#f0fdf4;border:1px solid #d1fae5;';
+            return t.type === 'lead'
+                ? 'background:#eef2ff;border:1px solid #c7d2fe;'
+                : 'background:#faf5ff;border:1px solid #e9d5ff;';
+        },
+
+        checkStyle(t) {
+            return t.is_done
+                ? 'background:#10b981;border-color:#10b981;'
+                : 'background:#fff;border-color:#d1d5db;';
+        },
+
+        titleStyle(t) {
+            const color = t.is_done ? '#6b7280' : (t.type === 'lead' ? '#4f46e5' : '#7c3aed');
+            const strike = t.is_done ? 'text-decoration:line-through;' : '';
+            return `color:${color};${strike}`;
         },
     };
 }
