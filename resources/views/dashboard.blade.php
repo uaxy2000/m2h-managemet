@@ -95,6 +95,71 @@
 
 </div>
 
+{{-- This Week's Tasks --}}
+@php
+    $today = now()->startOfDay();
+    $todayKey = $today->format('Y-m-d');
+    $days = collect(range(0, 6))->map(fn ($i) => $weekStart->copy()->addDays($i));
+    $pendingThisWeek = $weekTasks->where('is_done', false)->count();
+    $doneThisWeek    = $weekTasks->where('is_done', true)->count();
+@endphp
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
+    <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
+        <div class="flex items-center gap-3">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">This Week's Tasks</h3>
+            @if($pendingThisWeek > 0)
+            <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-full px-2 py-0.5">
+                {{ $pendingThisWeek }} open
+            </span>
+            @endif
+            @if($doneThisWeek > 0)
+            <span class="text-xs text-gray-400">{{ $doneThisWeek }} done</span>
+            @endif
+        </div>
+        <a href="{{ route('tasks.index') }}" class="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+            Detailed Task View
+            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>
+            </svg>
+        </a>
+    </div>
+
+    @if($weekTasks->isEmpty())
+    <div class="px-5 py-6 text-center text-sm text-gray-400">No tasks scheduled for this week.</div>
+    @else
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);">
+        @foreach($days as $day)
+        @php
+            $dk = $day->format('Y-m-d');
+            $dayTasks = $weekDayMap[$dk] ?? [];
+            $isToday = $dk === $todayKey;
+            $isPast  = $day->lt($today);
+        @endphp
+        <div style="border-right:1px solid #f3f4f6;padding:10px 8px;min-height:80px;{{ $isToday ? 'background:#f5f3ff;' : ($isPast ? 'background:#fafafa;' : '') }}">
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;{{ $isToday ? 'color:#6d28d9;' : 'color:#9ca3af;' }}">
+                {{ $day->format('D') }}
+                <span style="display:block;font-size:11px;font-weight:700;{{ $isToday ? 'color:#4f46e5;' : 'color:#6b7280;' }}">{{ $day->format('d') }}</span>
+            </div>
+            @forelse($dayTasks as $t)
+            <div style="font-size:10px;padding:3px 5px;border-radius:4px;margin-bottom:3px;line-height:1.35;
+                {{ $t['is_done'] ? 'background:#f0fdf4;color:#6b7280;text-decoration:line-through;' : ($isPast && !$t['is_done'] ? 'background:#fef2f2;color:#dc2626;' : 'background:#eff6ff;color:#1e40af;') }}">
+                @if($t['context_url'])
+                <a href="{{ $t['context_url'] }}" style="color:inherit;text-decoration:none;">{{ $t['title'] }}</a>
+                @else
+                {{ $t['title'] }}
+                @endif
+                @if($t['context'])
+                <span style="display:block;font-size:9px;opacity:.65;margin-top:1px;">{{ $t['context'] }}</span>
+                @endif
+            </div>
+            @empty
+            @endforelse
+        </div>
+        @endforeach
+    </div>
+    @endif
+</div>
+
 {{-- Recent Leads --}}
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
     <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
