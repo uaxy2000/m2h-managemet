@@ -105,15 +105,14 @@
                 @endphp
                 <label class="flex items-center gap-2 p-2 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors"
                        :class="conflicts.includes('{{ $u->id }}') ? 'border-amber-300 bg-amber-50' : 'border-gray-200'">
-                    <input type="checkbox" name="participants[{{ $loop->index }}][type]" value="internal_user"
-                           x-model="selectedUsers" value="{{ $u->id }}"
+                    <input type="checkbox" value="{{ $u->id }}"
+                           x-model="selectedUsers"
                            @change="checkConflicts()"
-                           {{ $isSelected ? 'checked' : '' }}
                            class="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600">
-                    <input type="hidden" name="participants[{{ $loop->index }}][id]" value="{{ $u->id }}">
-                    <input type="hidden" name="participants[{{ $loop->index }}][type]" value="internal_user">
-                    <input type="hidden" name="participants[{{ $loop->index }}][name]" value="{{ $u->name }}">
-                    <input type="hidden" name="participants[{{ $loop->index }}][email]" value="{{ $u->email }}">
+                    <input type="hidden" name="participants[{{ $loop->index }}][id]"    value="{{ $u->id }}"    :disabled="!selectedUsers.includes('{{ $u->id }}')">
+                    <input type="hidden" name="participants[{{ $loop->index }}][type]"  value="internal_user"  :disabled="!selectedUsers.includes('{{ $u->id }}')">
+                    <input type="hidden" name="participants[{{ $loop->index }}][name]"  value="{{ $u->name }}" :disabled="!selectedUsers.includes('{{ $u->id }}')">
+                    <input type="hidden" name="participants[{{ $loop->index }}][email]" value="{{ $u->email }}" :disabled="!selectedUsers.includes('{{ $u->id }}')">
                     <span class="text-sm text-gray-700">{{ $u->name }}</span>
                 </label>
                 @endforeach
