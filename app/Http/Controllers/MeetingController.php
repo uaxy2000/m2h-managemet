@@ -246,6 +246,11 @@ class MeetingController extends Controller
 
     private function syncParticipants(Meeting $meeting, array $participants): void
     {
+        $existingEventIds = $meeting->participants()
+            ->where('participant_type', 'internal_user')
+            ->whereNotNull('google_event_id')
+            ->pluck('google_event_id', 'participant_id');
+
         $meeting->participants()->delete();
 
         foreach ($participants as $p) {
@@ -254,11 +259,12 @@ class MeetingController extends Controller
             }
 
             MeetingParticipant::create([
-                'meeting_id'       => $meeting->id,
-                'participant_type' => $p['type'],
-                'participant_id'   => $p['id'],
-                'participant_name' => $p['name'] ?? '',
-                'participant_email'=> $p['email'] ?? null,
+                'meeting_id'        => $meeting->id,
+                'participant_type'  => $p['type'],
+                'participant_id'    => $p['id'],
+                'participant_name'  => $p['name'] ?? '',
+                'participant_email' => $p['email'] ?? null,
+                'google_event_id'   => $p['type'] === 'internal_user' ? ($existingEventIds[$p['id']] ?? null) : null,
             ]);
         }
     }
