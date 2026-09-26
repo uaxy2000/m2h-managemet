@@ -28,7 +28,7 @@ class GoogleCalendarController extends Controller
 
         $user = auth()->user();
         $user->update([
-            'google_refresh_token' => $token['refresh_token'] ?? $user->google_refresh_token,
+            'google_refresh_token' => isset($token['refresh_token']) ? encrypt($token['refresh_token']) : $user->google_refresh_token,
             'google_connected_at'  => now(),
         ]);
 
