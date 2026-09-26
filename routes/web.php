@@ -41,6 +41,9 @@ use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\AccountTransferController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AutomationController;
+use App\Http\Controllers\MeetingController;
+use App\Http\Controllers\GoogleCalendarController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
@@ -79,6 +82,20 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/inbox', [InboxController::class, 'index'])->name('inbox');
     Route::get('/tasks', [UnifiedTaskController::class, 'index'])->name('tasks.index');
+
+    // Profile
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    // Google Calendar OAuth
+    Route::get('/auth/google/calendar', [GoogleCalendarController::class, 'redirect'])->name('google.calendar.redirect');
+    Route::get('/auth/google/calendar/callback', [GoogleCalendarController::class, 'callback'])->name('google.calendar.callback');
+    Route::post('/auth/google/calendar/disconnect', [GoogleCalendarController::class, 'disconnect'])->name('google.calendar.disconnect');
+
+    // Meetings
+    Route::resource('meetings', MeetingController::class);
+    Route::post('/meetings/check-conflicts', [MeetingController::class, 'checkConflicts'])->name('meetings.check-conflicts');
+    Route::get('/api/meeting-participant-search', [MeetingController::class, 'participantSearch'])->name('meetings.participant-search');
 
     // Notifications
     Route::get('/api/notifications/poll', [NotificationController::class, 'poll'])->name('notifications.poll');

@@ -25,7 +25,16 @@ class User extends Authenticatable
         'imap_pass_enc',
         'role',
         'password',
+        'google_email',
+        'google_refresh_token',
+        'google_calendar_id',
+        'google_connected_at',
     ];
+
+    public function hasGoogleCalendar(): bool
+    {
+        return !empty($this->google_refresh_token);
+    }
 
     protected $hidden = [
         'password',

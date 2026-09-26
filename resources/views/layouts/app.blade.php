@@ -163,6 +163,17 @@
                 <span x-show="sidebar || mobileNav" class="whitespace-nowrap">Tasks</span>
             </a>
 
+            <a href="{{ route('meetings.index') }}"
+               :class="(sidebar || mobileNav) ? 'px-3 gap-3' : 'lg:justify-center lg:px-0 px-3 gap-3'"
+               class="group flex items-center py-2 rounded-lg text-sm font-medium transition-colors
+                      {{ request()->is('meetings*') ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}"
+               :title="(!sidebar && !mobileNav) ? 'Meetings' : ''">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z"/>
+                </svg>
+                <span x-show="sidebar || mobileNav" class="whitespace-nowrap">Meetings</span>
+            </a>
+
             <a href="{{ route('todo-lists.index') }}"
                :class="(sidebar || mobileNav) ? 'px-3 gap-3' : 'lg:justify-center lg:px-0 px-3 gap-3'"
                class="group flex items-center py-2 rounded-lg text-sm font-medium transition-colors
@@ -335,11 +346,11 @@
              :class="(sidebar || mobileNav) ? 'p-4' : 'lg:p-2 p-4'">
             <div class="flex items-center"
                  :class="(sidebar || mobileNav) ? 'gap-3' : 'lg:justify-center gap-3'">
-                <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                <a href="{{ route('profile.edit') }}" class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 hover:bg-indigo-400 transition-colors" title="Profile">
                     {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                </div>
+                </a>
                 <div class="flex-1 min-w-0" x-show="sidebar || mobileNav">
-                    <p class="text-sm font-medium text-white truncate">{{ auth()->user()->name }}</p>
+                    <a href="{{ route('profile.edit') }}" class="block text-sm font-medium text-white truncate hover:text-indigo-300 transition-colors">{{ auth()->user()->name }}</a>
                     <p class="text-xs text-slate-400 truncate">{{ auth()->user()->roleLabel() }}</p>
                 </div>
                 <form method="POST" action="{{ route('logout') }}" x-show="sidebar || mobileNav">
