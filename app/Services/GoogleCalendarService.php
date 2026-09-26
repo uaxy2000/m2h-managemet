@@ -4,146 +4,138 @@ namespace App\Services;
 
 use App\Models\Meeting;
 use App\Models\User;
-use Google\Client;
-use Google\Service\Calendar;
-use Google\Service\Calendar\ConferenceData;
-use Google\Service\Calendar\ConferenceSolutionKey;
-use Google\Service\Calendar\CreateConferenceRequest;
-use Google\Service\Calendar\Event;
-use Google\Service\Calendar\EventAttendee;
-use Google\Service\Calendar\EventDateTime;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class GoogleCalendarService
 {
-    private function clientForUser(User $user): ?Client
-    {
-        if (!$user->google_refresh_token) {
-            return null;
-        }
-
-        $client = new Client();
-        $client->setClientId(config('services.google.client_id'));
-        $client->setClientSecret(config('services.google.client_secret'));
-        $client->setRedirectUri(config('services.google.redirect'));
-        $client->setAccessType('offline');
-        $client->setScopes([Calendar::CALENDAR_EVENTS]);
-
-        $client->fetchAccessTokenWithRefreshToken($user->google_refresh_token);
-
-        return $client;
-    }
-
-    public function buildEvent(Meeting $meeting): Event
-    {
-        $event = new Event();
-        $event->setSummary($meeting->title);
-        $event->setDescription($meeting->description ?? '');
-
-        $start = new EventDateTime();
-        $start->setDateTime($meeting->start_at->toRfc3339String());
-        $start->setTimeZone(config('app.timezone'));
-        $event->setStart($start);
-
-        $end = new EventDateTime();
-        $end->setDateTime($meeting->end_at->toRfc3339String());
-        $end->setTimeZone(config('app.timezone'));
-        $event->setEnd($end);
-
-        // Attendees from participants
-        $attendees = $meeting->participants->map(function ($p) {
-            $a = new EventAttendee();
-            $a->setEmail($p->participant_email);
-            $a->setDisplayName($p->participant_name);
-            return $a;
-        })->filter(fn ($a) => $a->getEmail())->values()->all();
-
-        if ($attendees) {
-            $event->setAttendees($attendees);
-        }
-
-        // Google Meet for online meetings
-        if ($meeting->is_online) {
-            $conferenceKey = new ConferenceSolutionKey();
-            $conferenceKey->setType('hangoutsMeet');
-            $createRequest = new CreateConferenceRequest();
-            $createRequest->setRequestId(uniqid('m2h_', true));
-            $createRequest->setConferenceSolutionKey($conferenceKey);
-            $conferenceData = new ConferenceData();
-            $conferenceData->setCreateRequest($createRequest);
-            $event->setConferenceData($conferenceData);
-        }
-
-        return $event;
-    }
-
-    public function createForUser(User $user, Meeting $meeting): ?string
-    {
-        $client = $this->clientForUser($user);
-        if (!$client) {
-            return null;
-        }
-
-        $service   = new Calendar($client);
-        $calId     = $user->google_calendar_id ?? 'primary';
-        $conferenceVersion = $meeting->is_online ? 1 : 0;
-
-        $created = $service->events->insert(
-            $calId,
-            $this->buildEvent($meeting),
-            ['conferenceDataVersion' => $conferenceVersion, 'sendUpdates' => 'all']
-        );
-
-        return $created->getId();
-    }
-
-    public function updateForUser(User $user, Meeting $meeting, string $googleEventId): void
-    {
-        $client = $this->clientForUser($user);
-        if (!$client) {
-            return;
-        }
-
-        $service = new Calendar($client);
-        $calId   = $user->google_calendar_id ?? 'primary';
-        $service->events->update($calId, $googleEventId, $this->buildEvent($meeting), ['sendUpdates' => 'all']);
-    }
-
-    public function deleteForUser(User $user, string $googleEventId): void
-    {
-        $client = $this->clientForUser($user);
-        if (!$client) {
-            return;
-        }
-
-        $service = new Calendar($client);
-        $calId   = $user->google_calendar_id ?? 'primary';
-        try {
-            $service->events->delete($calId, $googleEventId, ['sendUpdates' => 'all']);
-        } catch (\Exception) {
-        }
-    }
+    private const TOKEN_URL   = 'https://oauth2.googleapis.com/token';
+    private const REVOKE_URL  = 'https://oauth2.googleapis.com/revoke';
+    private const EVENTS_URL  = 'https://www.googleapis.com/calendar/v3/calendars/{calendarId}/events';
+    private const AUTH_URL    = 'https://accounts.google.com/o/oauth2/v2/auth';
 
     public function getAuthUrl(): string
     {
-        $client = new Client();
-        $client->setClientId(config('services.google.client_id'));
-        $client->setClientSecret(config('services.google.client_secret'));
-        $client->setRedirectUri(config('services.google.redirect'));
-        $client->setAccessType('offline');
-        $client->setPrompt('consent');
-        $client->setScopes([Calendar::CALENDAR_EVENTS]);
-
-        return $client->createAuthUrl();
+        return self::AUTH_URL . '?' . http_build_query([
+            'client_id'     => config('services.google.client_id'),
+            'redirect_uri'  => config('services.google.redirect'),
+            'response_type' => 'code',
+            'scope'         => 'https://www.googleapis.com/auth/calendar',
+            'access_type'   => 'offline',
+            'prompt'        => 'consent',
+        ]);
     }
 
     public function exchangeCode(string $code): array
     {
-        $client = new Client();
-        $client->setClientId(config('services.google.client_id'));
-        $client->setClientSecret(config('services.google.client_secret'));
-        $client->setRedirectUri(config('services.google.redirect'));
-        $client->setAccessType('offline');
+        $response = Http::post(self::TOKEN_URL, [
+            'code'          => $code,
+            'client_id'     => config('services.google.client_id'),
+            'client_secret' => config('services.google.client_secret'),
+            'redirect_uri'  => config('services.google.redirect'),
+            'grant_type'    => 'authorization_code',
+        ]);
 
-        return $client->fetchAccessTokenWithAuthCode($code);
+        return $response->json() ?? [];
+    }
+
+    private function getAccessToken(User $user): ?string
+    {
+        try {
+            $refreshToken = decrypt($user->google_refresh_token);
+        } catch (\Exception $e) {
+            return null;
+        }
+
+        $response = Http::post(self::TOKEN_URL, [
+            'client_id'     => config('services.google.client_id'),
+            'client_secret' => config('services.google.client_secret'),
+            'refresh_token' => $refreshToken,
+            'grant_type'    => 'refresh_token',
+        ]);
+
+        return $response->json('access_token');
+    }
+
+    public function createForUser(User $user, Meeting $meeting): ?string
+    {
+        $token = $this->getAccessToken($user);
+        if (!$token) return null;
+
+        $calendarId = $user->google_calendar_id ?? 'primary';
+        $url = str_replace('{calendarId}', rawurlencode($calendarId), self::EVENTS_URL);
+
+        if ($meeting->is_online) {
+            $url .= '?conferenceDataVersion=1';
+        }
+
+        $response = Http::withToken($token)->post($url, $this->buildBody($meeting));
+
+        if ($response->successful()) {
+            $data = $response->json();
+
+            if ($meeting->is_online && !empty($data['hangoutLink'])) {
+                $meeting->update(['online_url' => $data['hangoutLink']]);
+            }
+
+            return $data['id'] ?? null;
+        }
+
+        Log::error('GoogleCalendar createForUser failed', ['status' => $response->status(), 'body' => $response->body()]);
+        return null;
+    }
+
+    public function updateForUser(User $user, Meeting $meeting, string $eventId): bool
+    {
+        $token = $this->getAccessToken($user);
+        if (!$token) return false;
+
+        $calendarId = $user->google_calendar_id ?? 'primary';
+        $url = str_replace('{calendarId}', rawurlencode($calendarId), self::EVENTS_URL) . '/' . $eventId;
+
+        $response = Http::withToken($token)->put($url, $this->buildBody($meeting));
+
+        return $response->successful();
+    }
+
+    public function deleteForUser(User $user, string $eventId): bool
+    {
+        $token = $this->getAccessToken($user);
+        if (!$token) return false;
+
+        $calendarId = $user->google_calendar_id ?? 'primary';
+        $url = str_replace('{calendarId}', rawurlencode($calendarId), self::EVENTS_URL) . '/' . $eventId;
+
+        $response = Http::withToken($token)->delete($url);
+
+        return $response->successful();
+    }
+
+    private function buildBody(Meeting $meeting): array
+    {
+        $tz = config('app.timezone', 'UTC');
+
+        $body = [
+            'summary'     => $meeting->title,
+            'description' => $meeting->description,
+            'start'       => ['dateTime' => $meeting->start_at->toIso8601String(), 'timeZone' => $tz],
+            'end'         => ['dateTime' => $meeting->end_at->toIso8601String(),   'timeZone' => $tz],
+            'attendees'   => $meeting->participants
+                ->filter(fn ($p) => !empty($p->participant_email))
+                ->map(fn ($p) => ['email' => $p->participant_email])
+                ->values()
+                ->toArray(),
+        ];
+
+        if ($meeting->is_online) {
+            $body['conferenceData'] = [
+                'createRequest' => [
+                    'requestId'            => 'meeting-' . $meeting->id . '-' . time(),
+                    'conferenceSolutionKey' => ['type' => 'hangoutsMeet'],
+                ],
+            ];
+        }
+
+        return $body;
     }
 }
