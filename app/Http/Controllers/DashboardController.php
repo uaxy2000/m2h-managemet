@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CardTask;
 use App\Models\Lead;
+use App\Models\Meeting;
 use App\Models\Task;
 use Carbon\Carbon;
 use Illuminate\View\View;
@@ -74,10 +75,25 @@ class DashboardController extends Controller
             $weekDayMap[$key][] = $t;
         }
 
+        // This week's meetings
+        $weekMeetings = Meeting::with(['room'])
+            ->whereBetween('start_at', [$weekStart, $weekEnd])
+            ->when(!$user->isInternalAdmin(), fn ($q) => $q->whereHas('participants', fn ($p) =>
+                $p->where('participant_type', 'internal_user')->where('participant_id', $user->id)
+            ))
+            ->orderBy('start_at')
+            ->get();
+
+        $weekMeetingDayMap = [];
+        foreach ($weekMeetings as $m) {
+            $weekMeetingDayMap[$m->start_at->format('Y-m-d')][] = $m;
+        }
+
         return view('dashboard', compact(
             'totalLeads', 'metaLeads', 'duplicates', 'newThisWeek',
             'openTasks', 'todayTasks', 'overdueTasks', 'recentLeads', 'ownOnly',
-            'weekStart', 'weekEnd', 'weekTasks', 'weekDayMap'
+            'weekStart', 'weekEnd', 'weekTasks', 'weekDayMap',
+            'weekMeetings', 'weekMeetingDayMap'
         ));
     }
 

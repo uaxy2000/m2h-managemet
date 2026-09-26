@@ -160,6 +160,60 @@
     @endif
 </div>
 
+{{-- This Week's Meetings --}}
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
+    <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
+        <div class="flex items-center gap-3">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">This Week's Meetings</h3>
+            @if($weekMeetings->isNotEmpty())
+            <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-full px-2 py-0.5">
+                {{ $weekMeetings->count() }} total
+            </span>
+            @endif
+        </div>
+        <a href="{{ route('meetings.index') }}" class="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+            All Meetings
+            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>
+            </svg>
+        </a>
+    </div>
+
+    @if($weekMeetings->isEmpty())
+    <div class="px-5 py-6 text-center text-sm text-gray-400">No meetings scheduled for this week.</div>
+    @else
+    @php $days = collect(range(0, 6))->map(fn ($i) => $weekStart->copy()->addDays($i)); @endphp
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);">
+        @foreach($days as $day)
+        @php
+            $dk = $day->format('Y-m-d');
+            $dayMeetings = $weekMeetingDayMap[$dk] ?? [];
+            $isToday = $dk === now()->format('Y-m-d');
+            $isPast  = $day->lt(now()->startOfDay());
+        @endphp
+        <div style="border-right:1px solid #f3f4f6;padding:10px 8px;min-height:72px;{{ $isToday ? 'background:#f5f3ff;' : ($isPast ? 'background:#fafafa;' : '') }}">
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;{{ $isToday ? 'color:#6d28d9;' : 'color:#9ca3af;' }}">
+                {{ $day->format('D') }}
+                <span style="display:block;font-size:11px;font-weight:700;{{ $isToday ? 'color:#4f46e5;' : 'color:#6b7280;' }}">{{ $day->format('d') }}</span>
+            </div>
+            @foreach($dayMeetings as $m)
+            <a href="{{ route('meetings.show', $m) }}"
+               style="display:block;font-size:10px;padding:3px 5px;border-radius:4px;margin-bottom:3px;line-height:1.35;text-decoration:none;
+                      {{ $isPast ? 'background:#f3f4f6;color:#6b7280;' : 'background:#ecfdf5;color:#065f46;' }}">
+                {{ $m->start_at->format('H:i') }} {{ $m->title }}
+                @if($m->room)
+                <span style="display:block;font-size:9px;opacity:.65;margin-top:1px;">{{ $m->room->name }}</span>
+                @elseif($m->is_online)
+                <span style="display:block;font-size:9px;opacity:.65;margin-top:1px;">Online</span>
+                @endif
+            </a>
+            @endforeach
+        </div>
+        @endforeach
+    </div>
+    @endif
+</div>
+
 {{-- Recent Leads --}}
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
     <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
