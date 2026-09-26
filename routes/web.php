@@ -293,6 +293,12 @@ Route::middleware('auth')->group(function () {
             Route::post('wa-templates/sync', [WaTemplateController::class, 'sync'])->name('wa-templates.sync');
             Route::put('wa-templates/{waTemplate}', [WaTemplateController::class, 'update'])->name('wa-templates.update');
 
+            // Meeting Rooms
+            Route::get('meeting-rooms', [\App\Http\Controllers\Settings\MeetingRoomController::class, 'index'])->name('meeting-rooms.index');
+            Route::post('meeting-rooms', [\App\Http\Controllers\Settings\MeetingRoomController::class, 'store'])->name('meeting-rooms.store');
+            Route::put('meeting-rooms/{meetingRoom}', [\App\Http\Controllers\Settings\MeetingRoomController::class, 'update'])->name('meeting-rooms.update');
+            Route::delete('meeting-rooms/{meetingRoom}', [\App\Http\Controllers\Settings\MeetingRoomController::class, 'destroy'])->name('meeting-rooms.destroy');
+
             // Meta Integration
             Route::get('meta', [MetaPageController::class, 'index'])->name('meta.index');
             Route::post('meta/pages', [MetaPageController::class, 'store'])->name('meta.pages.store');
