@@ -1072,6 +1072,10 @@
                         <svg class="w-2.5 h-2.5 text-violet-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"/>
                         </svg>
+                        @elseif(in_array($item->type, ['email_out', 'email_in']))
+                        <svg class="w-2.5 h-2.5 {{ $item->type === 'email_out' ? 'text-blue-400' : 'text-cyan-400' }}" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/>
+                        </svg>
                         @else
                         <svg class="w-2.5 h-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/>
@@ -1081,6 +1085,17 @@
                     <div class="flex-1 min-w-0">
                         @if(in_array($item->type, ['merge', 'automation']))
                         <p class="text-sm text-gray-600">{!! $item->description !!}</p>
+                        @elseif(in_array($item->type, ['email_out', 'email_in']))
+                        <div x-data="{ open: false }">
+                            <p class="text-sm text-gray-700 font-medium flex items-center gap-1.5">
+                                <span class="text-xs {{ $item->type === 'email_out' ? 'text-blue-500' : 'text-cyan-500' }} font-semibold">{{ $item->type === 'email_out' ? '↑ Sent' : '↓ Received' }}</span>
+                                {{ $item->description }}
+                                <button @click="open = !open" class="text-xs text-gray-400 hover:text-gray-600 ml-1" type="button">
+                                    <span x-text="open ? 'hide' : 'show body'"></span>
+                                </button>
+                            </p>
+                            <div x-show="open" x-cloak class="mt-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-xs text-gray-600 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">{{ $item->meta['body'] ?? '' }}</div>
+                        </div>
                         @else
                         <p class="text-sm text-gray-600">{{ $item->description }}</p>
                         @endif
@@ -1101,7 +1116,7 @@
 
             {{-- Add Note / Add Task / WhatsApp forms --}}
             <div class="border-t border-gray-100 p-5"
-                 x-data="{ formTab: '{{ session('task_success') ? 'task' : (session('wa_success') || session('wa_error') ? 'whatsapp' : 'note') }}' }">
+                 x-data="{ formTab: '{{ session('task_success') ? 'task' : (session('wa_success') || session('wa_error') ? 'whatsapp' : (session('email_success') || session('email_error') ? 'email' : 'note')) }}' }">
                 <div class="flex gap-4 mb-4">
                     <button @click="formTab = 'note'"
                             :class="formTab === 'note'
@@ -1124,6 +1139,18 @@
                             <path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.554 4.118 1.522 5.845L.057 23.25l5.565-1.457A11.938 11.938 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.712 9.712 0 0 1-4.95-1.354l-.355-.21-3.305.866.881-3.218-.231-.371A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
                         </svg>
                         WhatsApp
+                    </button>
+                    @endif
+                    @if($lead->email)
+                    <button @click="formTab = 'email'"
+                            :class="formTab === 'email'
+                                ? 'text-blue-600 font-semibold border-b-2 border-blue-600'
+                                : 'text-gray-400 hover:text-gray-600'"
+                            class="text-xs pb-1 transition-colors flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/>
+                        </svg>
+                        Email
                     </button>
                     @endif
                 </div>
@@ -1307,6 +1334,77 @@
 
                 </div>
                 @endif
+
+                {{-- Email send form --}}
+                @if($lead->email)
+                <div x-show="formTab === 'email'" x-cloak
+                     x-data="{
+                         templates: [],
+                         selectedId: '',
+                         subject: '',
+                         body: '',
+                         extra: '',
+                         async init() {
+                             const r = await fetch('{{ route('leads.email.templates', $lead) }}');
+                             this.templates = await r.json();
+                         },
+                         selectTemplate(id) {
+                             const t = this.templates.find(t => t.id == id);
+                             if (t) { this.subject = t.subject; this.body = t.body; }
+                         }
+                     }">
+
+                    @if(session('email_error'))
+                    <div class="mb-3 bg-red-50 border border-red-200 text-red-700 text-xs px-3 py-2 rounded-lg">{{ session('email_error') }}</div>
+                    @endif
+                    @if(session('email_success'))
+                    <div class="mb-3 bg-blue-50 border border-blue-200 text-blue-700 text-xs px-3 py-2 rounded-lg">{{ session('email_success') }}</div>
+                    @endif
+
+                    <form method="POST" action="{{ route('leads.email.send', $lead) }}">
+                        @csrf
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Template <span class="text-red-500">*</span></label>
+                                <select name="template_id" x-model="selectedId" @change="selectTemplate($event.target.value)" required
+                                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
+                                    <option value="">— Select a template</option>
+                                    <template x-for="t in templates" :key="t.id">
+                                        <option :value="t.id" x-text="t.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+
+                            <div x-show="selectedId">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Subject</label>
+                                <input type="text" name="subject" x-model="subject" required
+                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
+                            </div>
+
+                            <div x-show="selectedId">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Template Preview</label>
+                                <div class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-xs text-gray-600 whitespace-pre-wrap leading-relaxed max-h-32 overflow-y-auto" x-text="body"></div>
+                            </div>
+
+                            <div x-show="selectedId">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Additional message <span class="text-gray-400">(optional — appended after template)</span></label>
+                                <textarea name="extra_message" x-model="extra" rows="3"
+                                          placeholder="Add a personal note..."
+                                          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"></textarea>
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-gray-400">To: {{ $lead->email }}</span>
+                                <button type="submit" :disabled="!selectedId"
+                                        class="text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-4 py-1.5 rounded-lg transition-colors font-medium">
+                                    Send Email
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                @endif
+
             </div>
 
         </div>

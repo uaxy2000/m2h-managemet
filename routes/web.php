@@ -185,6 +185,10 @@ Route::middleware('auth')->group(function () {
     Route::post('leads/{lead}/whatsapp/send', [WhatsAppController::class, 'send'])->name('leads.whatsapp.send');
     Route::post('leads/{lead}/whatsapp/send-template', [WhatsAppController::class, 'sendTemplate'])->name('leads.whatsapp.send-template');
 
+    // Email
+    Route::post('leads/{lead}/email/send', [\App\Http\Controllers\LeadEmailController::class, 'send'])->name('leads.email.send');
+    Route::get('leads/{lead}/email/templates', [\App\Http\Controllers\LeadEmailController::class, 'templates'])->name('leads.email.templates');
+
     // Tags (nested under lead)
     Route::post('leads/{lead}/tags/{tag}/toggle', [LeadTagController::class, 'toggle'])->name('leads.tags.toggle');
     Route::put('leads/{lead}/tags', [LeadTagController::class, 'sync'])->name('leads.tags.sync');
@@ -292,6 +296,17 @@ Route::middleware('auth')->group(function () {
             Route::get('wa-templates', [WaTemplateController::class, 'index'])->name('wa-templates.index');
             Route::post('wa-templates/sync', [WaTemplateController::class, 'sync'])->name('wa-templates.sync');
             Route::put('wa-templates/{waTemplate}', [WaTemplateController::class, 'update'])->name('wa-templates.update');
+
+            // Email Settings
+            Route::get('email', [\App\Http\Controllers\Settings\EmailSettingController::class, 'index'])->name('email.index');
+            Route::put('email', [\App\Http\Controllers\Settings\EmailSettingController::class, 'update'])->name('email.update');
+            Route::post('email/test', [\App\Http\Controllers\Settings\EmailSettingController::class, 'test'])->name('email.test');
+
+            // Email Templates
+            Route::get('email-templates', [\App\Http\Controllers\Settings\EmailTemplateController::class, 'index'])->name('email-templates.index');
+            Route::post('email-templates', [\App\Http\Controllers\Settings\EmailTemplateController::class, 'store'])->name('email-templates.store');
+            Route::put('email-templates/{emailTemplate}', [\App\Http\Controllers\Settings\EmailTemplateController::class, 'update'])->name('email-templates.update');
+            Route::delete('email-templates/{emailTemplate}', [\App\Http\Controllers\Settings\EmailTemplateController::class, 'destroy'])->name('email-templates.destroy');
 
             // Meeting Rooms
             Route::get('meeting-rooms', [\App\Http\Controllers\Settings\MeetingRoomController::class, 'index'])->name('meeting-rooms.index');
