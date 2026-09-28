@@ -38,7 +38,7 @@
             </div>
         </div>
         <div x-show="editing" x-cloak class="border-t border-gray-100 px-5 py-4">
-            <form method="POST" action="{{ route('settings.email-templates.update', $tpl) }}" class="space-y-3">
+            <form method="POST" action="{{ route('settings.email-templates.update', $tpl) }}" class="space-y-3" enctype="multipart/form-data">
                 @csrf @method('PUT')
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -57,6 +57,33 @@
                     <textarea name="body" rows="6" required
                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 font-mono resize-y">{{ $tpl->body }}</textarea>
                 </div>
+                {{-- Existing files --}}
+                @if($tpl->files->count())
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1.5">Attached Files</label>
+                    <div class="space-y-1.5">
+                        @foreach($tpl->files as $f)
+                        <div class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                            <a href="{{ route('settings.email-template-files.download', $f) }}" target="_blank"
+                               class="text-xs text-indigo-600 hover:text-indigo-800 font-medium truncate max-w-xs">{{ $f->original_name }}</a>
+                            <form method="POST" action="{{ route('settings.email-template-files.destroy', $f) }}"
+                                  onsubmit="return confirm('Remove this file?')" class="ml-3 flex-shrink-0">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="text-xs text-red-500 hover:text-red-700">Remove</button>
+                            </form>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                {{-- Add new files --}}
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Add Files <span class="text-gray-400">(optional)</span></label>
+                    <input type="file" name="new_files[]" multiple
+                           class="w-full text-xs text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+                </div>
+
                 <div class="flex items-center justify-between">
                     <label class="flex items-center gap-2 text-sm text-gray-700">
                         <input type="checkbox" name="is_active" value="1" {{ $tpl->is_active ? 'checked' : '' }} class="rounded">
@@ -84,7 +111,7 @@
         Add Email Template
     </button>
     <div x-show="open" x-cloak class="mt-4">
-        <form method="POST" action="{{ route('settings.email-templates.store') }}" class="space-y-3">
+        <form method="POST" action="{{ route('settings.email-templates.store') }}" class="space-y-3" enctype="multipart/form-data">
             @csrf
             <div class="grid grid-cols-2 gap-3">
                 <div>
@@ -103,6 +130,11 @@
                 <textarea name="body" rows="8" required
                           placeholder="Dear @{{first_name}},&#10;&#10;Your message here..."
                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 font-mono resize-y"></textarea>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Attachments <span class="text-gray-400">(optional)</span></label>
+                <input type="file" name="new_files[]" multiple
+                       class="w-full text-xs text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
             </div>
             <div class="flex justify-end gap-2">
                 <button type="button" @click="open = false" class="text-sm text-gray-500 px-4 py-2">Cancel</button>

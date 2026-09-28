@@ -43,16 +43,19 @@ class MailerService
         });
     }
 
-    public function sendRaw(string $to, string $toName, string $subject, string $body, array $attachments = []): void
+    public function sendRaw(string $to, string $toName, string $subject, string $body, array $uploadedFiles = [], array $templateFiles = []): void
     {
         $this->configure();
 
         $html = $this->wrapInTemplate(nl2br(e($body)));
 
-        Mail::html($html, function ($m) use ($to, $toName, $subject, $attachments) {
+        Mail::html($html, function ($m) use ($to, $toName, $subject, $uploadedFiles, $templateFiles) {
             $m->to($to, $toName)->subject($subject);
-            foreach ($attachments as $file) {
+            foreach ($uploadedFiles as $file) {
                 $m->attach($file->getRealPath(), ['as' => $file->getClientOriginalName(), 'mime' => $file->getMimeType()]);
+            }
+            foreach ($templateFiles as $tplFile) {
+                $m->attach($tplFile->absolutePath(), ['as' => $tplFile->original_name, 'mime' => $tplFile->mime_type]);
             }
         });
     }

@@ -30,7 +30,7 @@ class LeadEmailController extends Controller
             return back()->with('email_error', 'SMTP not configured. Please set it up in Settings → Email.');
         }
 
-        $template = EmailTemplate::findOrFail($request->template_id);
+        $template = EmailTemplate::with('files')->findOrFail($request->template_id);
         $lead->loadMissing('programs');
         $resolved = $template->resolve($lead);
 
@@ -39,7 +39,7 @@ class LeadEmailController extends Controller
             $body .= "\n\n" . $request->extra_message;
         }
 
-        $attachments = collect($request->file('attachments', []))->filter()->values()->all();
+        $extraAttachments = collect($request->file('attachments', []))->filter()->values()->all();
 
         try {
             $this->mailer->sendRaw(
@@ -47,7 +47,8 @@ class LeadEmailController extends Controller
                 $lead->fullName(),
                 $resolved['subject'],
                 $body,
-                $attachments
+                $extraAttachments,
+                $template->files->all()
             );
         } catch (\Exception $e) {
             return back()->with('email_error', 'Failed to send: ' . $e->getMessage());
@@ -64,7 +65,7 @@ class LeadEmailController extends Controller
                 'body'            => $body,
                 'template_name'   => $template->name,
                 'extra_message'   => $request->extra_message,
-                'attachments'     => collect($attachments)->map(fn ($f) => $f->getClientOriginalName())->all(),
+                'attachments'     => collect($extraAttachments)->map(fn ($f) => $f->getClientOriginalName())->merge($template->files->pluck('original_name'))->all(),
             ],
         ]);
 
@@ -73,12 +74,18 @@ class LeadEmailController extends Controller
 
     public function templates(Lead $lead)
     {
-        $templates = EmailTemplate::where('is_active', true)->orderBy('name')->get();
+        $templates = EmailTemplate::with('files')->where('is_active', true)->orderBy('name')->get();
         return response()->json($templates->map(fn ($t) => [
             'id'      => $t->id,
             'name'    => $t->name,
             'subject' => $t->subject,
             'body'    => $t->body,
+            'files'   => $t->files->map(fn ($f) => [
+                'id'   => $f->id,
+                'name' => $f->original_name,
+                'size' => $f->size,
+                'url'  => $f->downloadUrl(),
+            ]),
         ]));
     }
 }

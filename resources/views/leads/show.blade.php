@@ -1344,13 +1344,19 @@
                          subject: '',
                          body: '',
                          extra: '',
+                         tplFiles: [],
                          async init() {
                              const r = await fetch('{{ route('leads.email.templates', $lead) }}');
                              this.templates = await r.json();
                          },
                          selectTemplate(id) {
                              const t = this.templates.find(t => t.id == id);
-                             if (t) { this.subject = t.subject; this.body = t.body; }
+                             if (t) { this.subject = t.subject; this.body = t.body; this.tplFiles = t.files || []; }
+                         },
+                         formatSize(bytes) {
+                             if (bytes < 1024) return bytes + ' B';
+                             if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
+                             return (bytes/1048576).toFixed(1) + ' MB';
                          }
                      }">
 
@@ -1384,6 +1390,21 @@
                             <div x-show="selectedId">
                                 <label class="block text-xs font-medium text-gray-600 mb-1">Template Preview</label>
                                 <div class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-xs text-gray-600 whitespace-pre-wrap leading-relaxed max-h-32 overflow-y-auto" x-text="body"></div>
+                            </div>
+
+                            <div x-show="selectedId && tplFiles.length > 0">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Template Attachments</label>
+                                <div class="space-y-1">
+                                    <template x-for="f in tplFiles" :key="f.id">
+                                        <div class="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-1.5">
+                                            <svg class="w-3.5 h-3.5 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 002.112 2.13"/>
+                                            </svg>
+                                            <a :href="f.url" target="_blank" class="text-xs text-blue-700 hover:text-blue-900 font-medium truncate" x-text="f.name"></a>
+                                            <span class="text-xs text-blue-400 flex-shrink-0" x-text="formatSize(f.size)"></span>
+                                        </div>
+                                    </template>
+                                </div>
                             </div>
 
                             <div x-show="selectedId">
