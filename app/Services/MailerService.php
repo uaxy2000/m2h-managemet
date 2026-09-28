@@ -71,8 +71,8 @@ class MailerService
         <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
           <tr>
-            <td align="center" style="background:#0f172a;border-radius:12px 12px 0 0;padding:28px 40px;">
-              <img src="https://m2h.ge/imgn/M2H-Logo-10.jpg" alt="M2H" width="120" style="display:block;border:0;max-width:120px;">
+            <td align="center" style="background:#ffffff;border-radius:12px 12px 0 0;padding:28px 40px;border-bottom:1px solid #e2e8f0;">
+              <img src="https://m2h.ge/imgn/M2H-Logo-10.jpg" alt="M2H" width="120" style="display:block;border:0;max-width:120px;margin:0 auto;">
             </td>
           </tr>
 
@@ -83,13 +83,13 @@ class MailerService
           </tr>
 
           <tr>
-            <td style="background:#0f172a;border-radius:0 0 12px 12px;padding:20px 40px;text-align:center;">
-              <p style="margin:0 0 10px;color:#94a3b8;font-size:12px;">
-                <a href="https://m2h.ge" style="color:#cbd5e1;text-decoration:none;">m2h.ge</a>
-                &nbsp;&bull;&nbsp;
-                <a href="https://www.instagram.com/goldenvisaservices" style="color:#cbd5e1;text-decoration:none;">@goldenvisaservices</a>
+            <td style="background:#ffffff;border-radius:0 0 12px 12px;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
+              <p style="margin:0 0 6px;font-size:12px;">
+                <a href="https://m2h.ge" style="color:#1e3a5f;text-decoration:none;font-weight:600;">m2h.ge</a>
+                <span style="color:#94a3b8;">&nbsp;&bull;&nbsp;</span>
+                <a href="https://www.instagram.com/goldenvisaservices" style="color:#1e3a5f;text-decoration:none;font-weight:600;">@goldenvisaservices</a>
               </p>
-              <p style="margin:0;color:#475569;font-size:11px;">
+              <p style="margin:0;color:#94a3b8;font-size:11px;">
                 &copy; M2H &mdash; Golden Visa Services
               </p>
             </td>
