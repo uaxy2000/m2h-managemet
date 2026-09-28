@@ -19,3 +19,8 @@ yarn-error.log
 m2h-crm-spec.md
 /public/run_migrate_temp.php
 /public/_*.php
+/public/migrate-*.php
+/public/check-*.php
+/public/create-*.php
+/public/clear-*.php
+/public/test-*.php

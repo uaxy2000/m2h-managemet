@@ -13,7 +13,7 @@
 <div class="bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-3 mb-5 flex flex-wrap gap-2 items-center">
     <span class="text-xs font-semibold text-indigo-600 mr-1">Available variables:</span>
     @foreach($variables as $var => $label)
-    <code class="text-xs bg-white border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded font-mono">{{ $var }}</code>
+    <code class="text-xs bg-white border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded font-mono">{{ e($var) }}</code>
     @endforeach
 </div>
 
@@ -94,14 +94,14 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">Subject <span class="text-red-500">*</span></label>
-                    <input type="text" name="subject" required placeholder="e.g. Welcome, {{first_name}}!"
+                    <input type="text" name="subject" required placeholder="e.g. Welcome, @{{first_name}}!"
                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
                 </div>
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Body <span class="text-red-500">*</span></label>
                 <textarea name="body" rows="8" required
-                          placeholder="Dear {{first_name}},&#10;&#10;Your message here..."
+                          placeholder="Dear @{{first_name}},&#10;&#10;Your message here..."
                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 font-mono resize-y"></textarea>
             </div>
             <div class="flex justify-end gap-2">
