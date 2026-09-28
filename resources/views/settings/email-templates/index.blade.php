@@ -64,9 +64,9 @@
                     <div class="space-y-1.5">
                         @foreach($tpl->files as $f)
                         <div class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-                            <a href="{{ route('settings.email-template-files.download', $f) }}" target="_blank"
+                            <a href="{{ route('settings.email-template-files.download', $f->id) }}" target="_blank"
                                class="text-xs text-indigo-600 hover:text-indigo-800 font-medium truncate max-w-xs">{{ $f->original_name }}</a>
-                            <form method="POST" action="{{ route('settings.email-template-files.destroy', $f) }}"
+                            <form method="POST" action="{{ route('settings.email-template-files.destroy', $f->id) }}"
                                   onsubmit="return confirm('Remove this file?')" class="ml-3 flex-shrink-0">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="text-xs text-red-500 hover:text-red-700">Remove</button>

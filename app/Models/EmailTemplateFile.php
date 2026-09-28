@@ -30,6 +30,6 @@ class EmailTemplateFile extends Model
 
     public function downloadUrl(): string
     {
-        return route('email-template-files.download', $this->id);
+        return route('settings.email-template-files.download', $this->id);
     }
 }
