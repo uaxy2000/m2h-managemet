@@ -1361,7 +1361,7 @@
                     <div class="mb-3 bg-blue-50 border border-blue-200 text-blue-700 text-xs px-3 py-2 rounded-lg">{{ session('email_success') }}</div>
                     @endif
 
-                    <form method="POST" action="{{ route('leads.email.send', $lead) }}">
+                    <form method="POST" action="{{ route('leads.email.send', $lead) }}" enctype="multipart/form-data">
                         @csrf
                         <div class="space-y-3">
                             <div>
@@ -1391,6 +1391,14 @@
                                 <textarea name="extra_message" x-model="extra" rows="3"
                                           placeholder="Add a personal note..."
                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"></textarea>
+                            </div>
+
+                            <div x-show="selectedId">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">
+                                    Attachments <span class="text-gray-400">(optional — multiple files allowed)</span>
+                                </label>
+                                <input type="file" name="attachments[]" multiple
+                                       class="w-full text-xs text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
                             </div>
 
                             <div class="flex items-center justify-between">

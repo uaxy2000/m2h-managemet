@@ -15,9 +15,11 @@ class LeadEmailController extends Controller
     public function send(Request $request, Lead $lead)
     {
         $request->validate([
-            'template_id'   => 'required|exists:email_templates,id',
-            'subject'       => 'required|string|max:500',
-            'extra_message' => 'nullable|string|max:2000',
+            'template_id'    => 'required|exists:email_templates,id',
+            'subject'        => 'required|string|max:500',
+            'extra_message'  => 'nullable|string|max:2000',
+            'attachments'    => 'nullable|array|max:10',
+            'attachments.*'  => 'file|max:10240',
         ]);
 
         if (!$lead->email) {
@@ -37,12 +39,15 @@ class LeadEmailController extends Controller
             $body .= "\n\n" . $request->extra_message;
         }
 
+        $attachments = collect($request->file('attachments', []))->filter()->values()->all();
+
         try {
             $this->mailer->sendRaw(
                 $lead->email,
                 $lead->fullName(),
                 $resolved['subject'],
-                $body
+                $body,
+                $attachments
             );
         } catch (\Exception $e) {
             return back()->with('email_error', 'Failed to send: ' . $e->getMessage());
@@ -59,6 +64,7 @@ class LeadEmailController extends Controller
                 'body'            => $body,
                 'template_name'   => $template->name,
                 'extra_message'   => $request->extra_message,
+                'attachments'     => collect($attachments)->map(fn ($f) => $f->getClientOriginalName())->all(),
             ],
         ]);
 
