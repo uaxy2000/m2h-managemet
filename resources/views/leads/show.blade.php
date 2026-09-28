@@ -1383,8 +1383,8 @@
 
                             <div x-show="selectedId">
                                 <label class="block text-xs font-medium text-gray-600 mb-1">Subject</label>
-                                <input type="text" name="subject" x-model="subject" required
-                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
+                                <input type="text" name="subject" x-model="subject" required readonly
+                                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-default">
                             </div>
 
                             <div x-show="selectedId">
