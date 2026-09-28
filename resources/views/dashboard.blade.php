@@ -359,6 +359,12 @@ $phases = [
             ['label' => 'Tasks — unified weekly view across leads & boards',              'complete' => true],
             ['label' => 'ToDo Lists — CRUD, member access, items with who/when audit, copy to clipboard', 'complete' => true],
             ['label' => 'ToDo List ↔ Board linking (board view shows linked lists & allows adding items)', 'complete' => true],
+            ['label' => 'Meeting Calendar — CRUD, internal + lead/external participants', 'complete' => true],
+            ['label' => 'Meeting Rooms — settings CRUD (capacity, location, color)',      'complete' => true],
+            ['label' => 'Meeting conflict detection — room (blocks) + person (warns)',    'complete' => true],
+            ['label' => 'Google Calendar sync — OAuth per user, event create/update/delete', 'complete' => true],
+            ['label' => 'Profile page — personal info edit, Google Calendar connect/disconnect', 'complete' => true],
+            ['label' => 'Dashboard — This Week\'s Meetings 7-day strip',                 'complete' => true],
         ],
     ],
     [
