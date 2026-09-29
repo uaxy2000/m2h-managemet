@@ -902,12 +902,11 @@
                                 </form>
                             </div>
                             @endif
-                        </div>
-                        <div class="flex items-center gap-3 mt-1">
-                        @if($canEditNote)
-                        <button @click="editing = !editing"
-                                class="text-xs text-gray-300 hover:text-indigo-500 transition-colors" x-text="editing ? 'Cancel' : 'Edit'"></button>
-                        @endif
+                            <div class="flex items-center gap-3 mt-1">
+                            @if($canEditNote)
+                            <button @click="editing = !editing"
+                                    class="text-xs text-gray-300 hover:text-indigo-500 transition-colors" x-text="editing ? 'Cancel' : 'Edit'"></button>
+                            @endif
                         @if($canDeleteNote)
                         <form method="POST" action="{{ route('leads.notes.destroy', [$lead, $item]) }}"
                               onsubmit="return confirm('Delete this note?')">
@@ -939,7 +938,8 @@
                             </svg>
                             Formu Aç
                         </a>
-                        </div>
+                            </div>{{-- end flex actions --}}
+                        </div>{{-- end x-data --}}
                     </div>
                 </div>
 
