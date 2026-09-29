@@ -92,23 +92,33 @@ class ImapService
         $body = preg_replace('/\r\n|\r/', "\n", $body);
         $body = preg_replace('/\n{3,}/', "\n\n", trim($body));
 
+        // Ensure valid UTF-8 — strip invalid bytes silently
+        $body = @iconv('UTF-8', 'UTF-8//IGNORE', $body) ?: '';
+
         return mb_substr($body, 0, $limit);
     }
 
-    /** Recursively collect all text parts as [{num, encoding, subtype}] */
+    /** Recursively collect all text parts as [{num, encoding, subtype, charset}] */
     private function collectTextParts(object $structure, string $prefix = ''): array
     {
         $parts = [];
         if ($structure->type === TYPEMULTIPART && !empty($structure->parts)) {
             foreach ($structure->parts as $i => $part) {
-                $num    = $prefix === '' ? (string)($i + 1) : $prefix . '.' . ($i + 1);
-                $parts  = array_merge($parts, $this->collectTextParts($part, $num));
+                $num   = $prefix === '' ? (string)($i + 1) : $prefix . '.' . ($i + 1);
+                $parts = array_merge($parts, $this->collectTextParts($part, $num));
             }
         } elseif ($structure->type === TYPETEXT) {
+            $charset = 'UTF-8';
+            if (!empty($structure->parameters)) {
+                foreach ($structure->parameters as $p) {
+                    if (strtolower($p->attribute) === 'charset') { $charset = strtoupper($p->value); break; }
+                }
+            }
             $parts[] = [
                 'num'      => $prefix === '' ? '1' : $prefix,
                 'encoding' => $structure->encoding ?? ENC7BIT,
                 'subtype'  => strtolower($structure->subtype ?? 'plain'),
+                'charset'  => $charset,
             ];
         }
         return $parts;
@@ -122,8 +132,16 @@ class ImapService
         $pick  = $plain[0] ?? $html[0] ?? null;
         if (!$pick) return '';
 
-        $raw = @imap_fetchbody($this->connection, $uid, $pick['num'], FT_UID);
-        return $this->decodePart($raw ?: '', $pick['encoding']);
+        $raw  = @imap_fetchbody($this->connection, $uid, $pick['num'], FT_UID);
+        $text = $this->decodePart($raw ?: '', $pick['encoding']);
+
+        // Convert to UTF-8 if needed
+        if ($pick['charset'] !== 'UTF-8' && $pick['charset'] !== 'US-ASCII') {
+            $converted = @iconv($pick['charset'], 'UTF-8//IGNORE', $text);
+            if ($converted !== false) $text = $converted;
+        }
+
+        return $text;
     }
 
     private function decodePart(string $raw, int $encoding): string
