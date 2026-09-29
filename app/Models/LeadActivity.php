@@ -15,7 +15,7 @@ class LeadActivity extends Model
     protected $fillable = [
         'lead_id', 'user_id', 'type', 'description',
         'subject_type', 'subject_id', 'meta', 'visible_to',
-        'is_read', 'read_at', 'read_by',
+        'is_read', 'read_at', 'read_by', 'imap_message_id',
     ];
 
     protected $casts = [

@@ -116,28 +116,29 @@ class EmailSyncService
 
         $created = 0;
         foreach ($leads as $lead) {
-            // Deduplicate by message_id per lead
+            // Deduplicate by message_id per lead (plain column, no JSON query needed)
             $exists = LeadActivity::where('lead_id', $lead->id)
                 ->whereIn('type', ['email_in', 'email_out'])
-                ->where('meta->message_id', $email['message_id'])
+                ->where('imap_message_id', $email['message_id'])
                 ->exists();
 
             if ($exists) continue;
 
             LeadActivity::create([
-                'lead_id'     => $lead->id,
-                'user_id'     => null, // system sync
-                'type'        => $type,
-                'description' => $email['subject'],
-                'created_at'  => $email['date'],
-                'meta'        => [
-                    'message_id'    => $email['message_id'],
-                    'from'          => $email['from'][0] ?? $accountEmail,
-                    'to'            => $email['to'],
-                    'cc'            => $email['cc'],
-                    'subject'       => $email['subject'],
-                    'synced_from'   => $accountEmail,
-                    'via_imap'      => true,
+                'lead_id'          => $lead->id,
+                'user_id'          => null,
+                'type'             => $type,
+                'description'      => $email['subject'],
+                'imap_message_id'  => $email['message_id'],
+                'created_at'       => $email['date'],
+                'meta'             => [
+                    'message_id'  => $email['message_id'],
+                    'from'        => $email['from'][0] ?? $accountEmail,
+                    'to'          => $email['to'],
+                    'cc'          => $email['cc'],
+                    'subject'     => $email['subject'],
+                    'synced_from' => $accountEmail,
+                    'via_imap'    => true,
                 ],
             ]);
             $created++;
