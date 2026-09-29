@@ -102,18 +102,14 @@ $typeColor = [
 </div>
 
 {{-- Summary stat bar --}}
-<div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-3 mb-6">
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mb-6">
     @php
     $stats = [
-        ['label' => 'New Leads',      'value' => $newLeads->count(),     'color' => '#6366f1'],
-        ['label' => 'Leads Touched',  'value' => $totalLeadsTouched,     'color' => '#8b5cf6'],
-        ['label' => 'WA Received',    'value' => $waIn,                  'color' => '#22c55e'],
-        ['label' => 'WA Sent',        'value' => $waOut,                 'color' => '#10b981'],
-        ['label' => 'Notes',          'value' => $notes->count(),        'color' => '#6366f1'],
-        ['label' => 'Tasks Created',  'value' => $tasksCreated->count(), 'color' => '#8b5cf6'],
-        ['label' => 'Stage Changes',  'value' => $stageChanges,          'color' => '#f59e0b'],
-        ['label' => 'Email Received', 'value' => $emailIn,               'color' => '#06b6d4'],
-        ['label' => 'Email Sent',     'value' => $emailOut,              'color' => '#3b82f6'],
+        ['label' => 'New Leads',     'value' => $newLeads->count(),     'color' => '#6366f1'],
+        ['label' => 'Leads Touched', 'value' => $totalLeadsTouched,     'color' => '#8b5cf6'],
+        ['label' => 'Notes',         'value' => $notes->count(),        'color' => '#6366f1'],
+        ['label' => 'Tasks Created', 'value' => $tasksCreated->count(), 'color' => '#8b5cf6'],
+        ['label' => 'Stage Changes', 'value' => $stageChanges,          'color' => '#f59e0b'],
     ];
     @endphp
     @foreach($stats as $stat)
@@ -122,6 +118,38 @@ $typeColor = [
         <p class="text-xs text-gray-500 mt-0.5 leading-tight">{{ $stat['label'] }}</p>
     </div>
     @endforeach
+
+    {{-- WhatsApp combined --}}
+    <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+        <div class="flex items-center justify-center gap-3">
+            <div>
+                <p class="text-2xl font-bold text-green-500">{{ $waIn }}</p>
+                <p class="text-xs text-gray-400">↓ In</p>
+            </div>
+            <div class="text-gray-200 text-lg">|</div>
+            <div>
+                <p class="text-2xl font-bold text-emerald-600">{{ $waOut }}</p>
+                <p class="text-xs text-gray-400">↑ Out</p>
+            </div>
+        </div>
+        <p class="text-xs text-gray-500 mt-1 leading-tight">WhatsApp</p>
+    </div>
+
+    {{-- Email combined --}}
+    <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+        <div class="flex items-center justify-center gap-3">
+            <div>
+                <p class="text-2xl font-bold text-cyan-500">{{ $emailIn }}</p>
+                <p class="text-xs text-gray-400">↓ In</p>
+            </div>
+            <div class="text-gray-200 text-lg">|</div>
+            <div>
+                <p class="text-2xl font-bold text-blue-600">{{ $emailOut }}</p>
+                <p class="text-xs text-gray-400">↑ Out</p>
+            </div>
+        </div>
+        <p class="text-xs text-gray-500 mt-1 leading-tight">Email</p>
+    </div>
 </div>
 
 {{-- NEW LEADS --}}
