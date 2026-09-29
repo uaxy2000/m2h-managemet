@@ -317,6 +317,7 @@ Route::middleware('auth')->group(function () {
             Route::post('email-imap/regenerate-token', [\App\Http\Controllers\Settings\ImapSettingController::class, 'regenerateToken'])->name('email-imap.regenerate-token');
             Route::put('email-imap/users/{user}', [\App\Http\Controllers\Settings\ImapSettingController::class, 'updateUser'])->name('email-imap.update-user');
             Route::post('email-imap/sync-now', [\App\Http\Controllers\Settings\ImapSettingController::class, 'syncNow'])->name('email-imap.sync-now');
+            Route::post('email-imap/reset-sync-date', [\App\Http\Controllers\Settings\ImapSettingController::class, 'resetSyncDate'])->name('email-imap.reset-sync-date');
 
             // Meeting Rooms
             Route::get('meeting-rooms', [\App\Http\Controllers\Settings\MeetingRoomController::class, 'index'])->name('meeting-rooms.index');

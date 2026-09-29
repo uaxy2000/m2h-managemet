@@ -98,4 +98,10 @@ class ImapSettingController extends Controller
         $total   = collect($results)->sum('synced');
         return back()->with('success', "Sync complete — {$total} new email(s) added to timelines.");
     }
+
+    public function resetSyncDate()
+    {
+        Setting::set('imap_last_sync_at', null);
+        return back()->with('success', 'Sync date reset — next sync will scan the last 7 days.');
+    }
 }

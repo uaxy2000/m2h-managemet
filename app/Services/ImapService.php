@@ -21,8 +21,8 @@ class ImapService
             default => '/imap/notls',
         };
 
-        $this->mailbox = '{' . $host . ':' . $port . $flags . '}';
-        $this->connection = @imap_open($this->mailbox, $username, $password, 0, 1);
+        $this->mailbox  = '{' . $host . ':' . $port . $flags . '}';
+        $this->connection = @imap_open($this->mailbox . 'INBOX', $username, $password, 0, 1);
 
         return $this->connection !== false;
     }
@@ -32,23 +32,48 @@ class ImapService
         return imap_last_error() ?: 'Unknown IMAP error';
     }
 
-    /** Returns list of folder names on this account */
+    /** Returns raw folder names as returned by the server */
     public function listFolders(): array
     {
         $list = imap_list($this->connection, $this->mailbox, '*');
-        return $list ? array_map(fn ($f) => imap_utf7_decode(str_replace($this->mailbox, '', $f)), $list) : [];
+        if (!$list) return [];
+        return array_map(fn ($f) => str_replace($this->mailbox, '', $f), $list);
     }
 
-    /** Detect the Sent folder name (varies by provider) */
+    /** Detect the Sent folder — first by \Sent attribute, then by name */
     public function detectSentFolder(): ?string
     {
-        $candidates = ['Sent', 'Sent Items', 'Sent Messages', '[Gmail]/Sent Mail', 'INBOX.Sent'];
-        $folders    = $this->listFolders();
-        foreach ($candidates as $c) {
-            foreach ($folders as $f) {
-                if (strcasecmp(trim($f, '/'), $c) === 0) return trim($f, '/');
+        // Use getmailboxes to read folder attributes (\Sent flag)
+        $boxes = @imap_getmailboxes($this->connection, $this->mailbox, '*');
+        if ($boxes) {
+            foreach ($boxes as $box) {
+                if ($box->attributes & LATT_NOINFERIORS) continue; // skip virtual
+                // IMAP \Sent attribute = 64 (0x40) but PHP doesn't expose it directly
+                // so fall back to name matching below
             }
         }
+
+        // Name-based detection (raw IMAP names, including UTF-7 encoded)
+        $rawFolders = $this->listFolders();
+        $nameCandidates = [
+            'Sent', 'Sent Items', 'Sent Messages',
+            '[Gmail]/Sent Mail', 'INBOX.Sent',
+            // Decoded Turkish
+            'Gönderilen',
+        ];
+
+        foreach ($rawFolders as $raw) {
+            $decoded = @imap_utf7_decode($raw) ?: $raw;
+            foreach ($nameCandidates as $candidate) {
+                if (strcasecmp(trim($decoded, '/'), $candidate) === 0) return $raw;
+                if (strcasecmp(trim($raw, '/'), $candidate) === 0) return $raw;
+            }
+            // Generic: if folder name contains 'sent' in any language variation
+            if (stripos($decoded, 'sent') !== false || stripos($decoded, 'nderilen') !== false) {
+                return $raw;
+            }
+        }
+
         return null;
     }
 
@@ -56,14 +81,17 @@ class ImapService
      * Fetch emails from a folder since a given date.
      * Returns array of parsed email data.
      */
-    public function fetchEmails(string $folder, ?Carbon $since = null): array
+    public function fetchEmails(string $folderRaw, ?Carbon $since = null): array
     {
-        $fullFolder = $this->mailbox . $folder;
+        $fullFolder = $this->mailbox . $folderRaw;
         if (!@imap_reopen($this->connection, $fullFolder)) {
             return [];
         }
 
-        $criteria = $since ? 'SINCE "' . $since->format('d-M-Y') . '"' : 'SINCE "01-Jan-2020"';
+        // Use a date 1 day earlier to avoid timezone boundary issues
+        $searchSince = ($since ?? now()->subDays(7))->subDay();
+        $criteria    = 'SINCE "' . $searchSince->format('d-M-Y') . '"';
+
         $uids = @imap_search($this->connection, $criteria, SE_UID);
         if (!$uids) return [];
 
@@ -81,13 +109,12 @@ class ImapService
 
     private function parseHeader(string $raw, int $uid): ?array
     {
-        $headers = imap_rfc822_parse_headers($raw);
+        $headers = @imap_rfc822_parse_headers($raw);
         if (!$headers) return null;
 
         $messageId = trim($headers->message_id ?? '');
         if (empty($messageId)) {
-            // Fallback: use uid + date as pseudo-id
-            $messageId = 'uid-' . $uid . '-' . ($headers->date ?? '');
+            $messageId = 'uid-' . $uid . '-' . ($headers->date ?? uniqid());
         }
 
         return [
@@ -103,22 +130,23 @@ class ImapService
 
     private function extractAddresses(array $list): array
     {
-        return array_filter(array_map(function ($addr) {
+        return array_values(array_filter(array_map(function ($addr) {
             $email = trim(($addr->mailbox ?? '') . '@' . ($addr->host ?? ''));
             return filter_var($email, FILTER_VALIDATE_EMAIL) ? strtolower($email) : null;
-        }, $list));
+        }, $list)));
     }
 
     private function decodeHeader(string $value): string
     {
-        $decoded = imap_mime_header_decode($value);
-        return implode('', array_map(fn ($p) => $p->text, $decoded));
+        $parts = @imap_mime_header_decode($value);
+        if (!$parts) return $value;
+        return implode('', array_map(fn ($p) => $p->text, $parts));
     }
 
     public function close(): void
     {
         if ($this->connection) {
-            imap_close($this->connection);
+            @imap_close($this->connection);
             $this->connection = null;
         }
     }

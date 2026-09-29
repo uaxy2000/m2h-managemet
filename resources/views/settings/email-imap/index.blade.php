@@ -91,6 +91,13 @@
                 ▶ Sync Now
             </button>
         </form>
+        <form method="POST" action="{{ route('settings.email-imap.reset-sync-date') }}">
+            @csrf
+            <button type="submit" class="text-xs text-orange-600 border border-orange-300 px-3 py-1.5 rounded-lg hover:bg-orange-50"
+                    onclick="return confirm('Reset sync date? Next sync will re-scan the last 7 days.')">
+                Reset Sync Date
+            </button>
+        </form>
         <p class="text-xs text-gray-400">Configure cron-job.org to call the URL above every 15 minutes.</p>
     </div>
 </div>
