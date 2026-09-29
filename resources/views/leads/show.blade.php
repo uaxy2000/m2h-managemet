@@ -1115,7 +1115,12 @@
                                     <span x-text="open ? 'hide' : 'show body'"></span>
                                 </button>
                             </p>
-                            <div x-show="open" x-cloak class="mt-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-xs text-gray-600 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">{{ $item->meta['body'] ?? '' }}</div>
+                            <div x-show="open" x-cloak class="mt-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-xs text-gray-700 space-y-1">
+                                @if(!empty($item->meta['from']))<div><span class="text-gray-400 w-8 inline-block">From:</span> {{ $item->meta['from'] }}</div>@endif
+                                @if(!empty($item->meta['to']))<div><span class="text-gray-400 w-8 inline-block">To:</span> {{ is_array($item->meta['to']) ? implode(', ', $item->meta['to']) : $item->meta['to'] }}</div>@endif
+                                @if(!empty($item->meta['cc']))<div><span class="text-gray-400 w-8 inline-block">CC:</span> {{ is_array($item->meta['cc']) ? implode(', ', $item->meta['cc']) : $item->meta['cc'] }}</div>@endif
+                                @if(!empty($item->meta['body']))<div class="mt-1 pt-1 border-t border-blue-100 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">{{ $item->meta['body'] }}</div>@endif
+                            </div>
                         </div>
                         @else
                         <p class="text-sm text-gray-600">{{ $item->description }}</p>
