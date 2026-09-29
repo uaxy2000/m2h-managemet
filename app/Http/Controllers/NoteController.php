@@ -47,6 +47,24 @@ class NoteController extends Controller
         return back()->with('note_success', 'Note added.')->withFragment('timeline');
     }
 
+    public function update(Request $request, Lead $lead, Note $note): RedirectResponse
+    {
+        $user = auth()->user();
+
+        // Only own notes, within 12h
+        if ($note->created_by !== $user->id) {
+            abort(403);
+        }
+        if ($note->created_at->diffInHours(now()) >= 12) {
+            return back()->with('note_error', 'Notes can only be edited within 12 hours of creation.');
+        }
+
+        $validated = $request->validate(['content' => ['required', 'string', 'max:5000']]);
+        $note->update(['content' => $validated['content']]);
+
+        return back()->with('note_success', 'Note updated.')->withFragment('timeline');
+    }
+
     public function destroy(Lead $lead, Note $note): RedirectResponse
     {
         $user = auth()->user();

@@ -175,6 +175,7 @@ Route::middleware('auth')->group(function () {
     // Notes (nested under lead)
     Route::post('leads/{lead}/notes', [NoteController::class, 'store'])->name('leads.notes.store');
     Route::delete('leads/{lead}/notes/{note}', [NoteController::class, 'destroy'])->name('leads.notes.destroy');
+    Route::put('leads/{lead}/notes/{note}', [NoteController::class, 'update'])->name('leads.notes.update');
 
     // Tasks (nested under lead)
     Route::post('leads/{lead}/tasks', [TaskController::class, 'store'])->name('leads.tasks.store');

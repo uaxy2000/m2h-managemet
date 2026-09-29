@@ -879,14 +879,35 @@
                             <span class="text-xs text-emerald-600">· shared</span>
                             @endif
                         </div>
-                        <div class="mt-1.5 bg-gray-50 rounded-lg px-3 py-2.5">
-                            <p class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{{ $item->content }}</p>
-                        </div>
                         @php
-                            $canDeleteNote = auth()->user()->isAdmin()
-                                || ($item->created_by === auth()->id() && $item->created_at->diffInHours(now()) < 12);
+                            $withinWindow  = $item->created_at->diffInHours(now()) < 12;
+                            $isOwner       = $item->created_by === auth()->id();
+                            $isAdmin       = auth()->user()->isAdmin();
+                            $canEditNote   = $isOwner && $withinWindow;
+                            $canDeleteNote = $isAdmin || ($isOwner && $withinWindow);
                         @endphp
+                        <div x-data="{ editing: false }" class="mt-1.5">
+                            <div x-show="!editing" class="bg-gray-50 rounded-lg px-3 py-2.5">
+                                <p class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{{ $item->content }}</p>
+                            </div>
+                            @if($canEditNote)
+                            <div x-show="editing" x-cloak>
+                                <form method="POST" action="{{ route('leads.notes.update', [$lead, $item]) }}">
+                                    @csrf @method('PUT')
+                                    <textarea name="content" rows="4" required
+                                              class="w-full border border-indigo-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none">{{ $item->content }}</textarea>
+                                    <div class="flex gap-2 mt-1.5">
+                                        <button type="submit" class="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 font-medium">Save</button>
+                                    </div>
+                                </form>
+                            </div>
+                            @endif
+                        </div>
                         <div class="flex items-center gap-3 mt-1">
+                        @if($canEditNote)
+                        <button @click="editing = !editing"
+                                class="text-xs text-gray-300 hover:text-indigo-500 transition-colors" x-text="editing ? 'Cancel' : 'Edit'"></button>
+                        @endif
                         @if($canDeleteNote)
                         <form method="POST" action="{{ route('leads.notes.destroy', [$lead, $item]) }}"
                               onsubmit="return confirm('Delete this note?')">
@@ -894,8 +915,8 @@
                             <button type="submit"
                                     class="text-xs text-gray-300 hover:text-red-500 transition-colors">Delete</button>
                         </form>
-                        @elseif($item->created_by === auth()->id())
-                        <span class="text-xs text-gray-300 inline-block" title="Can only delete within 12 hours">
+                        @elseif($isOwner && !$withinWindow)
+                        <span class="text-xs text-gray-300 inline-block" title="Can only edit/delete within 12 hours">
                             <svg class="w-3 h-3 inline" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>
                             </svg>
