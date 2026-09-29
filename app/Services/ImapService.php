@@ -95,35 +95,35 @@ class ImapService
         return mb_substr($body, 0, $limit);
     }
 
+    /** Recursively collect all text parts as [{num, encoding, subtype}] */
+    private function collectTextParts(object $structure, string $prefix = ''): array
+    {
+        $parts = [];
+        if ($structure->type === TYPEMULTIPART && !empty($structure->parts)) {
+            foreach ($structure->parts as $i => $part) {
+                $num    = $prefix === '' ? (string)($i + 1) : $prefix . '.' . ($i + 1);
+                $parts  = array_merge($parts, $this->collectTextParts($part, $num));
+            }
+        } elseif ($structure->type === TYPETEXT) {
+            $parts[] = [
+                'num'      => $prefix === '' ? '1' : $prefix,
+                'encoding' => $structure->encoding ?? ENC7BIT,
+                'subtype'  => strtolower($structure->subtype ?? 'plain'),
+            ];
+        }
+        return $parts;
+    }
+
     private function extractPlainText(int $uid, object $structure, string $partNum): string
     {
-        // Multipart
-        if ($structure->type === TYPEMULTIPART && !empty($structure->parts)) {
-            // prefer plain (subtype TEXT/PLAIN) over html
-            $plain = null; $html = null;
-            foreach ($structure->parts as $i => $part) {
-                $num = $partNum === '' ? (string)($i + 1) : $partNum . '.' . ($i + 1);
-                if ($part->type === TYPETEXT) {
-                    if (strtolower($part->subtype) === 'plain') $plain = $num;
-                    if (strtolower($part->subtype) === 'html')  $html  = $num;
-                } elseif ($part->type === TYPEMULTIPART) {
-                    $nested = $this->extractPlainText($uid, $part, $num);
-                    if ($nested !== '') return $nested;
-                }
-            }
-            $target = $plain ?? $html;
-            if (!$target) return '';
-            $part = $structure->parts[(int)explode('.', $target)[count(explode('.', $target)) - 1] - 1];
-            return $this->decodePart(@imap_fetchbody($this->connection, $uid, $target, FT_UID), $part->encoding ?? ENC7BIT);
-        }
+        $all   = $this->collectTextParts($structure);
+        $plain = array_values(array_filter($all, fn ($p) => $p['subtype'] === 'plain'));
+        $html  = array_values(array_filter($all, fn ($p) => $p['subtype'] === 'html'));
+        $pick  = $plain[0] ?? $html[0] ?? null;
+        if (!$pick) return '';
 
-        // Single part
-        if ($structure->type === TYPETEXT) {
-            $raw = @imap_fetchbody($this->connection, $uid, $partNum === '' ? '1' : $partNum, FT_UID);
-            return $this->decodePart($raw, $structure->encoding ?? ENC7BIT);
-        }
-
-        return '';
+        $raw = @imap_fetchbody($this->connection, $uid, $pick['num'], FT_UID);
+        return $this->decodePart($raw ?: '', $pick['encoding']);
     }
 
     private function decodePart(string $raw, int $encoding): string
@@ -161,7 +161,7 @@ class ImapService
             $parsed = $this->parseHeader($header, $uid);
             if (!$parsed) continue;
 
-            $parsed['body'] = $this->fetchBody($uid);
+            try { $parsed['body'] = $this->fetchBody($uid); } catch (\Throwable) { $parsed['body'] = ''; }
             $emails[] = $parsed;
         }
 
