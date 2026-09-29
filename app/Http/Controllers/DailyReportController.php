@@ -34,7 +34,7 @@ class DailyReportController extends Controller
             : ($isAdmin ? null : $user->id);
 
         $users = $isAdmin
-            ? User::whereIn('role', ['super_admin', 'admin', 'member'])->orderBy('name')->get()
+            ? User::whereHas('company', fn ($q) => $q->where('type', 'internal'))->orderBy('name')->get()
             : collect();
 
         // --- New Leads ---
