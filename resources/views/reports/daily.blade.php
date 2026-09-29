@@ -102,7 +102,7 @@ $typeColor = [
 </div>
 
 {{-- Summary stat bar --}}
-<div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
+<div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-3 mb-6">
     @php
     $stats = [
         ['label' => 'New Leads',      'value' => $newLeads->count(),     'color' => '#6366f1'],
@@ -112,6 +112,8 @@ $typeColor = [
         ['label' => 'Notes',          'value' => $notes->count(),        'color' => '#6366f1'],
         ['label' => 'Tasks Created',  'value' => $tasksCreated->count(), 'color' => '#8b5cf6'],
         ['label' => 'Stage Changes',  'value' => $stageChanges,          'color' => '#f59e0b'],
+        ['label' => 'Email Received', 'value' => $emailIn,               'color' => '#06b6d4'],
+        ['label' => 'Email Sent',     'value' => $emailOut,              'color' => '#3b82f6'],
     ];
     @endphp
     @foreach($stats as $stat)

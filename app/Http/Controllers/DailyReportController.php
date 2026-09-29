@@ -124,6 +124,25 @@ class DailyReportController extends Controller
         $stageChanges = $activities->where('type', 'stage_changed')->count();
         $totalLeadsTouched = $feed->pluck('lead.id')->filter()->unique()->count();
 
+        // Email counts (IMAP synced)
+        $emailInQuery = LeadActivity::where('type', 'email_in')
+            ->whereNotNull('imap_message_id')
+            ->whereBetween('created_at', [$start, $end]);
+        $emailOutQuery = LeadActivity::where('type', 'email_out')
+            ->whereNotNull('imap_message_id')
+            ->whereBetween('created_at', [$start, $end]);
+
+        if (!$isAdmin) {
+            $emailInQuery->whereHas('lead', fn ($q) => $q->where('assigned_to', $user->id));
+            $emailOutQuery->whereHas('lead', fn ($q) => $q->where('assigned_to', $user->id));
+        } elseif ($filterUserId) {
+            $emailInQuery->whereHas('lead', fn ($q) => $q->where('assigned_to', $filterUserId));
+            $emailOutQuery->whereHas('lead', fn ($q) => $q->where('assigned_to', $filterUserId));
+        }
+
+        $emailIn  = $emailInQuery->count();
+        $emailOut = $emailOutQuery->count();
+
         // Stuck leads: no stage change for 7+ days
         $stuckLeads = Lead::select('leads.*', 'lh.last_changed')
             ->join(
@@ -143,7 +162,8 @@ class DailyReportController extends Controller
             'filterUserId', 'users', 'isAdmin',
             'newLeads', 'feedByLead',
             'waIn', 'waOut', 'stageChanges', 'totalLeadsTouched',
-            'notes', 'tasksCreated', 'stuckLeads'
+            'notes', 'tasksCreated', 'stuckLeads',
+            'emailIn', 'emailOut'
         ));
     }
 }

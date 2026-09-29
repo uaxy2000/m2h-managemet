@@ -207,6 +207,16 @@
                     </svg>
                     <span x-show="sidebar || mobileNav" class="whitespace-nowrap">Daily Report</span>
                 </a>
+                <a href="{{ route('reports.emails') }}"
+                   :class="(sidebar || mobileNav) ? 'px-3 gap-3' : 'lg:justify-center lg:px-0 px-3 gap-3'"
+                   class="group flex items-center py-2 rounded-lg text-sm font-medium transition-colors
+                          {{ request()->routeIs('reports.emails') ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}"
+                   :title="(!sidebar && !mobileNav) ? 'Email Activity' : ''">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/>
+                    </svg>
+                    <span x-show="sidebar || mobileNav" class="whitespace-nowrap">Email Activity</span>
+                </a>
                 <a href="{{ route('reports.meta-ads') }}"
                    :class="(sidebar || mobileNav) ? 'px-3 gap-3' : 'lg:justify-center lg:px-0 px-3 gap-3'"
                    class="group flex items-center py-2 rounded-lg text-sm font-medium transition-colors
@@ -269,6 +279,16 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/>
                     </svg>
                     <span x-show="sidebar || mobileNav" class="whitespace-nowrap">Daily Report</span>
+                </a>
+                <a href="{{ route('reports.emails') }}"
+                   :class="(sidebar || mobileNav) ? 'px-3 gap-3' : 'lg:justify-center lg:px-0 px-3 gap-3'"
+                   class="group flex items-center py-2 rounded-lg text-sm font-medium transition-colors
+                          {{ request()->routeIs('reports.emails') ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}"
+                   :title="(!sidebar && !mobileNav) ? 'Email Activity' : ''">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/>
+                    </svg>
+                    <span x-show="sidebar || mobileNav" class="whitespace-nowrap">Email Activity</span>
                 </a>
             </div>
             @endif
