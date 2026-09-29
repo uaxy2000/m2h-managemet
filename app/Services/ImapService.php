@@ -78,6 +78,64 @@ class ImapService
     }
 
     /**
+     * Fetch plain-text body of a single message by UID, max $limit chars.
+     * Returns empty string if not found or binary-only.
+     */
+    public function fetchBody(int $uid, int $limit = 3000): string
+    {
+        $structure = @imap_fetchstructure($this->connection, $uid, FT_UID);
+        if (!$structure) return '';
+
+        $body = $this->extractPlainText($uid, $structure, '');
+        $body = strip_tags($body);
+        $body = html_entity_decode($body, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $body = preg_replace('/\r\n|\r/', "\n", $body);
+        $body = preg_replace('/\n{3,}/', "\n\n", trim($body));
+
+        return mb_substr($body, 0, $limit);
+    }
+
+    private function extractPlainText(int $uid, object $structure, string $partNum): string
+    {
+        // Multipart
+        if ($structure->type === TYPEMULTIPART && !empty($structure->parts)) {
+            // prefer plain (subtype TEXT/PLAIN) over html
+            $plain = null; $html = null;
+            foreach ($structure->parts as $i => $part) {
+                $num = $partNum === '' ? (string)($i + 1) : $partNum . '.' . ($i + 1);
+                if ($part->type === TYPETEXT) {
+                    if (strtolower($part->subtype) === 'plain') $plain = $num;
+                    if (strtolower($part->subtype) === 'html')  $html  = $num;
+                } elseif ($part->type === TYPEMULTIPART) {
+                    $nested = $this->extractPlainText($uid, $part, $num);
+                    if ($nested !== '') return $nested;
+                }
+            }
+            $target = $plain ?? $html;
+            if (!$target) return '';
+            $part = $structure->parts[(int)explode('.', $target)[count(explode('.', $target)) - 1] - 1];
+            return $this->decodePart(@imap_fetchbody($this->connection, $uid, $target, FT_UID), $part->encoding ?? ENC7BIT);
+        }
+
+        // Single part
+        if ($structure->type === TYPETEXT) {
+            $raw = @imap_fetchbody($this->connection, $uid, $partNum === '' ? '1' : $partNum, FT_UID);
+            return $this->decodePart($raw, $structure->encoding ?? ENC7BIT);
+        }
+
+        return '';
+    }
+
+    private function decodePart(string $raw, int $encoding): string
+    {
+        return match ($encoding) {
+            ENCBASE64          => base64_decode($raw),
+            ENCQUOTEDPRINTABLE => quoted_printable_decode($raw),
+            default            => $raw,
+        };
+    }
+
+    /**
      * Fetch emails from a folder since a given date.
      * Returns array of parsed email data.
      */
@@ -101,7 +159,10 @@ class ImapService
             if (!$header) continue;
 
             $parsed = $this->parseHeader($header, $uid);
-            if ($parsed) $emails[] = $parsed;
+            if (!$parsed) continue;
+
+            $parsed['body'] = $this->fetchBody($uid);
+            $emails[] = $parsed;
         }
 
         return $emails;

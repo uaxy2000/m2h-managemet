@@ -137,6 +137,7 @@ class EmailSyncService
                     'to'          => $email['to'],
                     'cc'          => $email['cc'],
                     'subject'     => $email['subject'],
+                    'body'        => $email['body'] ?? '',
                     'synced_from' => $accountEmail,
                     'via_imap'    => true,
                 ],
