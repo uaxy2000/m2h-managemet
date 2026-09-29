@@ -98,6 +98,48 @@ class ImapService
         return mb_substr($body, 0, $limit);
     }
 
+    /**
+     * Return list of attachments [{name, size, mime}] for a message.
+     */
+    public function fetchAttachments(int $uid): array
+    {
+        $structure = @imap_fetchstructure($this->connection, $uid, FT_UID);
+        if (!$structure || empty($structure->parts)) return [];
+
+        $result = [];
+        foreach ($structure->parts as $part) {
+            $disposition = strtolower($part->ifdisposition ? $part->disposition : '');
+            $name = null;
+
+            // Check dparameters (Content-Disposition params)
+            if (!empty($part->dparameters)) {
+                foreach ($part->dparameters as $p) {
+                    if (strtolower($p->attribute) === 'filename') { $name = $p->value; break; }
+                }
+            }
+            // Fallback: parameters (Content-Type params)
+            if (!$name && !empty($part->parameters)) {
+                foreach ($part->parameters as $p) {
+                    if (strtolower($p->attribute) === 'name') { $name = $p->value; break; }
+                }
+            }
+
+            if (!$name) continue;
+            if ($disposition === 'inline' && $part->type === TYPETEXT) continue; // skip inline text
+
+            $name = $this->decodeHeader($name);
+            $name = @iconv('UTF-8', 'UTF-8//IGNORE', $name) ?: $name;
+
+            $result[] = [
+                'name' => $name,
+                'size' => $part->bytes ?? 0,
+                'mime' => ($part->type === TYPEAPPLICATION ? 'application' : imap_mime_header_decode($part->subtype ?? '')[0]->text ?? '') . '/' . strtolower($part->subtype ?? 'octet-stream'),
+            ];
+        }
+
+        return $result;
+    }
+
     /** Recursively collect all text parts as [{num, encoding, subtype, charset}] */
     private function collectTextParts(object $structure, string $prefix = ''): array
     {
@@ -179,7 +221,8 @@ class ImapService
             $parsed = $this->parseHeader($header, $uid);
             if (!$parsed) continue;
 
-            try { $parsed['body'] = $this->fetchBody($uid); } catch (\Throwable) { $parsed['body'] = ''; }
+            try { $parsed['body']        = $this->fetchBody($uid); }        catch (\Throwable) { $parsed['body'] = ''; }
+            try { $parsed['attachments'] = $this->fetchAttachments($uid); } catch (\Throwable) { $parsed['attachments'] = []; }
             $emails[] = $parsed;
         }
 
