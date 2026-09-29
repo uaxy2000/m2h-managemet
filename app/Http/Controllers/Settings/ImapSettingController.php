@@ -96,8 +96,7 @@ class ImapSettingController extends Controller
     {
         $results = $sync->syncAll();
         $total   = collect($results)->sum('synced');
-        $detail  = collect($results)->map(fn ($r) => json_encode($r))->join(' | ');
-        return back()->with('success', "Sync complete — {$total} new email(s). Detail: {$detail}");
+        return back()->with('success', "Sync complete — {$total} new email(s) added to timelines.");
     }
 
     public function resetSyncDate()
