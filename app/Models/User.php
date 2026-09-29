@@ -21,8 +21,12 @@ class User extends Authenticatable
         'phone',
         'whatsapp_number',
         'imap_host',
+        'imap_port',
+        'imap_encryption',
         'imap_user',
         'imap_pass_enc',
+        'imap_enabled',
+        'imap_last_sync_at',
         'role',
         'password',
         'google_email',
@@ -45,9 +49,11 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'google_connected_at' => 'datetime',
-            'password' => 'hashed',
+            'email_verified_at'  => 'datetime',
+            'google_connected_at'=> 'datetime',
+            'imap_last_sync_at'  => 'datetime',
+            'imap_enabled'       => 'boolean',
+            'password'           => 'hashed',
         ];
     }
 

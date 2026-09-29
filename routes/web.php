@@ -311,6 +311,13 @@ Route::middleware('auth')->group(function () {
             Route::delete('email-template-files/{emailTemplateFile}', [\App\Http\Controllers\Settings\EmailTemplateController::class, 'destroyFile'])->name('email-template-files.destroy');
             Route::get('email-template-files/{emailTemplateFile}/download', [\App\Http\Controllers\Settings\EmailTemplateController::class, 'downloadFile'])->name('email-template-files.download');
 
+            // Email IMAP Sync
+            Route::get('email-imap', [\App\Http\Controllers\Settings\ImapSettingController::class, 'index'])->name('email-imap.index');
+            Route::put('email-imap', [\App\Http\Controllers\Settings\ImapSettingController::class, 'update'])->name('email-imap.update');
+            Route::post('email-imap/regenerate-token', [\App\Http\Controllers\Settings\ImapSettingController::class, 'regenerateToken'])->name('email-imap.regenerate-token');
+            Route::put('email-imap/users/{user}', [\App\Http\Controllers\Settings\ImapSettingController::class, 'updateUser'])->name('email-imap.update-user');
+            Route::post('email-imap/sync-now', [\App\Http\Controllers\Settings\ImapSettingController::class, 'syncNow'])->name('email-imap.sync-now');
+
             // Meeting Rooms
             Route::get('meeting-rooms', [\App\Http\Controllers\Settings\MeetingRoomController::class, 'index'])->name('meeting-rooms.index');
             Route::post('meeting-rooms', [\App\Http\Controllers\Settings\MeetingRoomController::class, 'store'])->name('meeting-rooms.store');
