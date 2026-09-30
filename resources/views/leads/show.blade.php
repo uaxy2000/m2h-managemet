@@ -1211,10 +1211,11 @@
                                 @if(!empty($emailMeta['attachments']))
                                 <div class="mt-1 pt-1 border-t border-blue-100 flex flex-wrap gap-1.5">
                                     @foreach($emailMeta['attachments'] as $att)
+                                    @php $attName = is_array($att) ? ($att['name'] ?? '') : (string) $att; $attSize = is_array($att) ? ($att['size'] ?? null) : null; @endphp
                                     <span class="inline-flex items-center gap-1 text-xs bg-white border border-blue-200 text-gray-600 px-2 py-0.5 rounded-full">
                                         <svg class="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13"/></svg>
-                                        {{ $att['name'] }}
-                                        @if(!empty($att['size'])) <span class="text-gray-400">({{ number_format($att['size'] / 1024, 0) }}KB)</span>@endif
+                                        {{ $attName }}
+                                        @if(!empty($attSize)) <span class="text-gray-400">({{ number_format($attSize / 1024, 0) }}KB)</span>@endif
                                     </span>
                                     @endforeach
                                 </div>
