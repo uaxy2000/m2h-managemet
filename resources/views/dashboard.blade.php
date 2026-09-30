@@ -308,6 +308,7 @@
 
 </div>
 
+@if(auth()->user()->isInternalAdmin())
 {{-- Build Progress --}}
 @php
 $done = 'w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0';
@@ -482,5 +483,6 @@ $totalCount = $allItems->count();
         @endforeach
     </div>
 </div>
+@endif
 
 @endsection
