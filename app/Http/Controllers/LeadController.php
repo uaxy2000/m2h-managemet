@@ -401,6 +401,8 @@ class LeadController extends Controller
               ->orWhereHas('company', fn ($q) => $q->where('type', 'internal'));
         })->orderBy('name')->get();
 
+        $lead->loadMissing('programs');
+
         return view('leads.edit', compact('lead', 'pipelines', 'users'));
     }
 

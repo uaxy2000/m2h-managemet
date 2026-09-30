@@ -83,10 +83,38 @@ class LeadProgramController extends Controller
         $wasPrimary = $leadProgram->is_primary;
         $leadProgram->delete();
 
+        $successMsg = 'Program removed.';
+
         if ($wasPrimary) {
-            LeadProgram::where('lead_id', $lead->id)->first()?->update(['is_primary' => true]);
+            // Always clear deal values when primary is removed
+            $lead->update(['potential_value' => null, 'our_commission' => null]);
+
+            $next = LeadProgram::where('lead_id', $lead->id)->first();
+            if ($next) {
+                $next->update(['is_primary' => true]);
+
+                // Auto-fill from new primary if SP is set
+                $lead->refresh();
+                if ($lead->service_provider_id) {
+                    $pricing = ProgramPricing::latestFor($next->program_id, $lead->service_provider_id);
+                    if ($pricing) {
+                        $lead->update([
+                            'potential_value' => $pricing->client_legal_fees,
+                            'our_commission'  => $pricing->partner_share,
+                        ]);
+                        $symbol = $pricing->currency === 'EUR' ? '€' : '$';
+                        $successMsg = 'Program removed. Deal auto-filled from new primary: ' . $symbol . number_format((float) $pricing->client_legal_fees) . ' / commission ' . $symbol . number_format((float) $pricing->partner_share) . '.';
+                    } else {
+                        $successMsg = 'Program removed. Deal values cleared (no pricing found for new primary).';
+                    }
+                } else {
+                    $successMsg = 'Program removed. Deal values cleared.';
+                }
+            } else {
+                $successMsg = 'Program removed. Deal values cleared.';
+            }
         }
 
-        return back()->with('success', 'Program removed.');
+        return back()->with('success', $successMsg);
     }
 }

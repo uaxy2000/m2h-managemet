@@ -180,10 +180,14 @@
             </div>
 
             {{-- Deal --}}
+            @php
+                $editPrimaryProg = $lead->programs->first(fn($p) => $p->pivot->is_primary);
+                $editCurrency    = $editPrimaryProg?->currency ?? 'USD';
+            @endphp
             <div class="grid grid-cols-3 gap-4 mb-7">
                 @if(auth()->user()->isInternalAdmin())
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Potential Value</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Potential Value ({{ $editCurrency }})</label>
                     <input type="number" name="potential_value"
                            value="{{ old('potential_value', $lead->potential_value) }}"
                            min="0" step="0.01"
@@ -191,7 +195,7 @@
                                   focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Our Commission</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Our Commission ({{ $editCurrency }})</label>
                     <input type="number" name="our_commission"
                            value="{{ old('our_commission', $lead->our_commission) }}"
                            min="0" step="0.01"
