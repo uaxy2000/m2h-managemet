@@ -1098,7 +1098,7 @@
                                 <path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.554 4.118 1.522 5.845L.057 23.25l5.565-1.457A11.938 11.938 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.712 9.712 0 0 1-4.95-1.354l-.355-.21-3.305.866.881-3.218-.231-.371A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
                             </svg>
                             <span class="text-xs font-medium {{ $isOutgoing ? 'text-green-700' : 'text-gray-500' }}">
-                                {{ $isOutgoing ? ($entry['messages'][0]->meta['sender_label'] ?? $entry['messages'][0]->user?->name ?? 'M2H System') : 'WhatsApp' }}
+                                {{ $isOutgoing ? ((is_array($entry['messages'][0]->meta) ? ($entry['messages'][0]->meta['sender_label'] ?? null) : null) ?? $entry['messages'][0]->user?->name ?? 'M2H System') : 'WhatsApp' }}
                             </span>
                         </div>
                         <div class="space-y-2">
@@ -1107,7 +1107,7 @@
                                 <p class="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{{ $msg->description }}</p>
                                 @if($isOutgoing)
                                 @php
-                                    $waMeta       = $msg->meta ?? [];
+                                    $waMeta       = is_array($msg->meta) ? $msg->meta : [];
                                     $waSentTs     = $waMeta['sent_at'] ?? null;
                                     $waDelivTs    = $waMeta['delivered_at'] ?? null;
                                     $waReadTs     = $waMeta['read_at'] ?? null;
@@ -1203,13 +1203,14 @@
                                 </button>
                             </p>
                             <div x-show="open" x-cloak class="mt-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-xs text-gray-700 space-y-1">
-                                @if(!empty($item->meta['from']))<div><span class="text-gray-400 w-8 inline-block">From:</span> {{ $item->meta['from'] }}</div>@endif
-                                @if(!empty($item->meta['to']))<div><span class="text-gray-400 w-8 inline-block">To:</span> {{ is_array($item->meta['to']) ? implode(', ', $item->meta['to']) : $item->meta['to'] }}</div>@endif
-                                @if(!empty($item->meta['cc']))<div><span class="text-gray-400 w-8 inline-block">CC:</span> {{ is_array($item->meta['cc']) ? implode(', ', $item->meta['cc']) : $item->meta['cc'] }}</div>@endif
-                                @if(!empty($item->meta['body']))<div class="mt-1 pt-1 border-t border-blue-100 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">{{ $item->meta['body'] }}</div>@endif
-                                @if(!empty($item->meta['attachments']))
+                                @php $emailMeta = is_array($item->meta) ? $item->meta : []; @endphp
+                                @if(!empty($emailMeta['from']))<div><span class="text-gray-400 w-8 inline-block">From:</span> {{ $emailMeta['from'] }}</div>@endif
+                                @if(!empty($emailMeta['to']))<div><span class="text-gray-400 w-8 inline-block">To:</span> {{ is_array($emailMeta['to']) ? implode(', ', $emailMeta['to']) : $emailMeta['to'] }}</div>@endif
+                                @if(!empty($emailMeta['cc']))<div><span class="text-gray-400 w-8 inline-block">CC:</span> {{ is_array($emailMeta['cc']) ? implode(', ', $emailMeta['cc']) : $emailMeta['cc'] }}</div>@endif
+                                @if(!empty($emailMeta['body']))<div class="mt-1 pt-1 border-t border-blue-100 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">{{ $emailMeta['body'] }}</div>@endif
+                                @if(!empty($emailMeta['attachments']))
                                 <div class="mt-1 pt-1 border-t border-blue-100 flex flex-wrap gap-1.5">
-                                    @foreach($item->meta['attachments'] as $att)
+                                    @foreach($emailMeta['attachments'] as $att)
                                     <span class="inline-flex items-center gap-1 text-xs bg-white border border-blue-200 text-gray-600 px-2 py-0.5 rounded-full">
                                         <svg class="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13"/></svg>
                                         {{ $att['name'] }}
