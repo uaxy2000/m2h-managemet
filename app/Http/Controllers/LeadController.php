@@ -354,7 +354,8 @@ class LeadController extends Controller
 
         // Collaborator-eligible users (internal, not already assignee)
         $collaboratorCandidates = $canManageAssignment
-            ? User::whereHas('company', fn ($q) => $q->where('type', 'internal'))
+            ? User::where('role', 'member')
+                ->whereHas('company', fn ($q) => $q->where('type', 'internal'))
                 ->where('id', '!=', $lead->assigned_to)
                 ->orderBy('name')->get()
             : collect();

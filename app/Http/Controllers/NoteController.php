@@ -66,6 +66,17 @@ class NoteController extends Controller
         $validated = $request->validate(['content' => ['required', 'string', 'max:5000']]);
         $note->update(['content' => $validated['content']]);
 
+        if ($lead->assigned_to && $lead->assigned_to !== $user->id) {
+            NotificationService::send(
+                userId: $lead->assigned_to,
+                type:   'note_updated',
+                title:  'Note edited on your lead',
+                body:   $lead->first_name . ' ' . $lead->last_name . ': ' . mb_strimwidth($validated['content'], 0, 80, '…'),
+                url:    route('leads.show', $lead->id),
+                meta:   ['lead_id' => $lead->id],
+            );
+        }
+
         return back()->with('note_success', 'Note updated.')->withFragment('timeline');
     }
 
