@@ -218,22 +218,28 @@
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
 
     {{-- Notifications --}}
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col">
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col"
+         x-data="{
+             hasItems: {{ $unreadNotifications->isNotEmpty() ? 'true' : 'false' }},
+             done: false,
+             async markAll() {
+                 await fetch('{{ route('notifications.read-all') }}', {
+                     method: 'POST',
+                     headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                 });
+                 this.hasItems = false;
+                 this.done = true;
+             }
+         }">
         <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 flex-shrink-0">
             <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Notifications</h3>
-            @if($unreadNotifications->isNotEmpty())
-            <form method="POST" action="{{ route('notifications.read-all') }}" class="contents">
-                @csrf
-                <button type="submit" class="text-xs text-indigo-600 hover:text-indigo-800 transition-colors">Mark all as read</button>
-            </form>
-            @endif
+            <button x-show="hasItems" @click="markAll()"
+                    class="text-xs text-indigo-600 hover:text-indigo-800 transition-colors">Mark all as read</button>
         </div>
-        @if($unreadNotifications->isEmpty())
-        <div class="px-5 py-8 text-center flex-1 flex items-center justify-center">
-            <p class="text-sm text-gray-400">No unread notifications.</p>
+        <div x-show="!hasItems" class="px-5 py-8 text-center flex-1 flex items-center justify-center">
+            <p class="text-sm text-gray-400" x-text="done ? 'All notifications marked as read.' : 'No unread notifications.'"></p>
         </div>
-        @else
-        <div class="divide-y divide-gray-50 overflow-y-auto" style="max-height:246px">
+        <div x-show="hasItems" class="divide-y divide-gray-50 overflow-y-auto" style="max-height:246px">
             @foreach($unreadNotifications as $notif)
             <div class="flex items-start gap-3 px-5 py-2.5">
                 <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0"></span>
@@ -251,7 +257,6 @@
             </div>
             @endforeach
         </div>
-        @endif
     </div>
 
     {{-- Recent Leads --}}
