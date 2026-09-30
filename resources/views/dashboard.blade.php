@@ -226,7 +226,7 @@
         <a href="{{ route('leads.create') }}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mt-1 inline-block">Add your first lead →</a>
     </div>
     @else
-    <div class="divide-y divide-gray-50">
+    <div class="divide-y divide-gray-50 overflow-y-auto" style="max-height:246px">
         @foreach($recentLeads as $lead)
         <a href="{{ route('leads.show', $lead) }}"
            class="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 transition-colors">
