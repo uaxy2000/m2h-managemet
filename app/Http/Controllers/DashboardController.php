@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CardTask;
 use App\Models\Lead;
 use App\Models\Meeting;
+use App\Models\Notification;
 use App\Models\Task;
 use Carbon\Carbon;
 use Illuminate\View\View;
@@ -89,11 +90,18 @@ class DashboardController extends Controller
             $weekMeetingDayMap[$m->start_at->format('Y-m-d')][] = $m;
         }
 
+        $unreadNotifications = Notification::where('user_id', $user->id)
+            ->whereNull('read_at')
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get();
+
         return view('dashboard', compact(
             'totalLeads', 'metaLeads', 'duplicates', 'newThisWeek',
             'openTasks', 'todayTasks', 'overdueTasks', 'recentLeads', 'ownOnly',
             'weekStart', 'weekEnd', 'weekTasks', 'weekDayMap',
-            'weekMeetings', 'weekMeetingDayMap'
+            'weekMeetings', 'weekMeetingDayMap',
+            'unreadNotifications'
         ));
     }
 

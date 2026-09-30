@@ -214,51 +214,93 @@
     @endif
 </div>
 
-{{-- Recent Leads --}}
-<div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
-    <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
-        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Recent Leads</h3>
-        <a href="{{ route('leads.index') }}" class="text-xs text-indigo-600 hover:text-indigo-800">View all →</a>
-    </div>
-    @if($recentLeads->isEmpty())
-    <div class="px-5 py-8 text-center">
-        <p class="text-sm text-gray-400">No leads yet.</p>
-        <a href="{{ route('leads.create') }}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mt-1 inline-block">Add your first lead →</a>
-    </div>
-    @else
-    <div class="divide-y divide-gray-50 overflow-y-auto" style="max-height:246px">
-        @foreach($recentLeads as $lead)
-        <a href="{{ route('leads.show', $lead) }}"
-           class="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 transition-colors">
-            <div class="w-7 h-7 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                {{ $lead->initials() }}
-            </div>
-            <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2">
-                    <p class="text-sm font-medium text-gray-800 truncate">{{ $lead->fullName() }}</p>
-                    @if($lead->is_duplicate_flag)
-                    <span class="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full flex-shrink-0">dup</span>
+{{-- Notifications + Recent Leads --}}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
+
+    {{-- Notifications --}}
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col">
+        <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 flex-shrink-0">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Notifications</h3>
+            @if($unreadNotifications->isNotEmpty())
+            <form method="POST" action="{{ route('notifications.read-all') }}" class="contents">
+                @csrf
+                <button type="submit" class="text-xs text-indigo-600 hover:text-indigo-800 transition-colors">Mark all as read</button>
+            </form>
+            @endif
+        </div>
+        @if($unreadNotifications->isEmpty())
+        <div class="px-5 py-8 text-center flex-1 flex items-center justify-center">
+            <p class="text-sm text-gray-400">No unread notifications.</p>
+        </div>
+        @else
+        <div class="divide-y divide-gray-50 overflow-y-auto" style="max-height:246px">
+            @foreach($unreadNotifications as $notif)
+            <div class="flex items-start gap-3 px-5 py-2.5">
+                <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0"></span>
+                <div class="flex-1 min-w-0">
+                    @if($notif->url)
+                    <a href="{{ $notif->url }}" class="text-sm font-medium text-gray-800 hover:text-indigo-600 transition-colors truncate block">{{ $notif->title }}</a>
+                    @else
+                    <p class="text-sm font-medium text-gray-800 truncate">{{ $notif->title }}</p>
+                    @endif
+                    @if($notif->body)
+                    <p class="text-xs text-gray-400 truncate mt-0.5">{{ $notif->body }}</p>
                     @endif
                 </div>
+                <span class="text-xs text-gray-300 flex-shrink-0 mt-0.5">{{ $notif->created_at->diffForHumans(null, true, true) }}</span>
             </div>
-            <div class="flex items-center gap-3 flex-shrink-0">
-                @if($lead->stage)
-                <span class="text-xs font-medium px-2 py-0.5 rounded-full text-white" style="background:{{ $lead->stage->color }}">
-                    {{ $lead->stage->name }}
-                </span>
-                @endif
-                @foreach($lead->tags->take(2) as $tag)
-                <span class="text-xs px-2 py-0.5 rounded-full text-white" style="background:{{ $tag->color }}">{{ $tag->name }}</span>
-                @endforeach
-                @if($lead->assignedTo)
-                <span class="text-xs text-gray-400">{{ $lead->assignedTo->name }}</span>
-                @endif
-                <span class="text-xs text-gray-300 w-16 text-right">{{ $lead->created_at->diffForHumans(null, true, true) }}</span>
-            </div>
-        </a>
-        @endforeach
+            @endforeach
+        </div>
+        @endif
     </div>
-    @endif
+
+    {{-- Recent Leads --}}
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col">
+        <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 flex-shrink-0">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Recent Leads</h3>
+            <a href="{{ route('leads.index') }}" class="text-xs text-indigo-600 hover:text-indigo-800">View all →</a>
+        </div>
+        @if($recentLeads->isEmpty())
+        <div class="px-5 py-8 text-center flex-1 flex items-center justify-center">
+            <p class="text-sm text-gray-400">No leads yet.</p>
+            <a href="{{ route('leads.create') }}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mt-1 inline-block">Add your first lead →</a>
+        </div>
+        @else
+        <div class="divide-y divide-gray-50 overflow-y-auto" style="max-height:246px">
+            @foreach($recentLeads as $lead)
+            <a href="{{ route('leads.show', $lead) }}"
+               class="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 transition-colors">
+                <div class="w-7 h-7 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                    {{ $lead->initials() }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                        <p class="text-sm font-medium text-gray-800 truncate">{{ $lead->fullName() }}</p>
+                        @if($lead->is_duplicate_flag)
+                        <span class="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full flex-shrink-0">dup</span>
+                        @endif
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    @if($lead->stage)
+                    <span class="text-xs font-medium px-2 py-0.5 rounded-full text-white" style="background:{{ $lead->stage->color }}">
+                        {{ $lead->stage->name }}
+                    </span>
+                    @endif
+                    @foreach($lead->tags->take(2) as $tag)
+                    <span class="text-xs px-2 py-0.5 rounded-full text-white" style="background:{{ $tag->color }}">{{ $tag->name }}</span>
+                    @endforeach
+                    @if($lead->assignedTo)
+                    <span class="text-xs text-gray-400">{{ $lead->assignedTo->name }}</span>
+                    @endif
+                    <span class="text-xs text-gray-300 w-16 text-right">{{ $lead->created_at->diffForHumans(null, true, true) }}</span>
+                </div>
+            </a>
+            @endforeach
+        </div>
+        @endif
+    </div>
+
 </div>
 
 {{-- Build Progress --}}
