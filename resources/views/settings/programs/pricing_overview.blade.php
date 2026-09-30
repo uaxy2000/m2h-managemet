@@ -64,13 +64,14 @@
             </thead>
             <tbody class="divide-y divide-gray-100">
                 @foreach($grouped as $country => $countryPrograms)
+                @php $countryBg = $loop->index % 2 === 0 ? 'bg-white' : 'bg-slate-50'; @endphp
                 @foreach($countryPrograms as $program)
                 @php
                     $latestBySp = $program->pricing->groupBy('service_provider_id')->map->first();
                     $isFirstInCountry = $loop->first;
                     $countryRowspan = $countryPrograms->count();
                 @endphp
-                <tr class="hover:bg-gray-50 transition-colors">
+                <tr class="{{ $countryBg }} transition-colors">
                     @if($isFirstInCountry)
                     <td rowspan="{{ $countryRowspan }}"
                         class="px-4 py-3 font-semibold text-gray-500 uppercase tracking-wider text-[10px] align-top border-r border-gray-100 whitespace-nowrap">
