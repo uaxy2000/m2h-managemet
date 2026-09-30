@@ -984,20 +984,20 @@
                             <button @click="editing = !editing"
                                     class="text-xs text-gray-300 hover:text-indigo-500 transition-colors" x-text="editing ? 'Cancel' : 'Edit'"></button>
                             @endif
-                        @if($canDeleteNote)
-                        <form method="POST" action="{{ route('leads.notes.destroy', [$lead, $item]) }}"
-                              onsubmit="return confirm('Delete this note?')">
-                            @csrf @method('DELETE')
-                            <button type="submit"
-                                    class="text-xs text-gray-300 hover:text-red-500 transition-colors">Delete</button>
-                        </form>
-                        @elseif($isOwner && !$withinWindow)
-                        <span class="text-xs text-gray-300 inline-block" title="Can only edit/delete within 12 hours">
-                            <svg class="w-3 h-3 inline" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>
-                            </svg>
-                        </span>
-                        @endif
+                            @if($canDeleteNote)
+                            <form method="POST" action="{{ route('leads.notes.destroy', [$lead, $item]) }}"
+                                  onsubmit="return confirm('Delete this note?')" class="contents">
+                                @csrf @method('DELETE')
+                                <button type="submit"
+                                        class="text-xs text-gray-300 hover:text-red-500 transition-colors">Delete</button>
+                            </form>
+                            @elseif($isOwner && !$withinWindow)
+                            <span class="text-xs text-gray-300" title="Can only edit/delete within 12 hours">
+                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>
+                                </svg>
+                            </span>
+                            @endif
                         @php
                             $formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLScugMTauTcWVP6A7C5THzkVW-vhzcir8QfytkcBGO1az9XBOw/viewform'
                                 . '?usp=pp_url'
