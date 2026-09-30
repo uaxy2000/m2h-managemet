@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Lead;
 use App\Models\LeadProgram;
+use App\Models\ProgramPricing;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -31,7 +32,22 @@ class LeadProgramController extends Controller
             'is_primary' => $isFirst,
         ]);
 
-        return back()->with('success', 'Program added.');
+        $successMsg = 'Program added.';
+
+        // Auto-fill deal values when this is the first (primary) program and SP is set
+        if ($isFirst && $lead->service_provider_id) {
+            $pricing = ProgramPricing::latestFor($validated['program_id'], $lead->service_provider_id);
+            if ($pricing) {
+                $lead->update([
+                    'potential_value' => $pricing->client_legal_fees,
+                    'our_commission'  => $pricing->partner_share,
+                ]);
+                $symbol = $pricing->currency === 'EUR' ? '€' : '$';
+                $successMsg = "Program added. Deal auto-filled: {$symbol}" . number_format((float) $pricing->client_legal_fees) . " / commission {$symbol}" . number_format((float) $pricing->partner_share) . '.';
+            }
+        }
+
+        return back()->with('success', $successMsg);
     }
 
     public function setPrimary(Lead $lead, LeadProgram $leadProgram): RedirectResponse
@@ -41,7 +57,23 @@ class LeadProgramController extends Controller
         LeadProgram::where('lead_id', $lead->id)->update(['is_primary' => false]);
         $leadProgram->update(['is_primary' => true]);
 
-        return back()->with('success', 'Primary program updated.');
+        $successMsg = 'Primary program updated.';
+
+        // Auto-fill deal values when primary program changes and SP is set
+        $lead->refresh();
+        if ($lead->service_provider_id) {
+            $pricing = ProgramPricing::latestFor($leadProgram->program_id, $lead->service_provider_id);
+            if ($pricing) {
+                $lead->update([
+                    'potential_value' => $pricing->client_legal_fees,
+                    'our_commission'  => $pricing->partner_share,
+                ]);
+                $symbol = $pricing->currency === 'EUR' ? '€' : '$';
+                $successMsg = "Primary program updated. Deal auto-filled: {$symbol}" . number_format((float) $pricing->client_legal_fees) . " / commission {$symbol}" . number_format((float) $pricing->partner_share) . '.';
+            }
+        }
+
+        return back()->with('success', $successMsg);
     }
 
     public function destroy(Lead $lead, LeadProgram $leadProgram): RedirectResponse

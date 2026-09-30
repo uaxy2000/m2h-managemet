@@ -12,6 +12,7 @@ use App\Models\LeadCustomValue;
 use App\Models\LeadStatusHistory;
 use App\Models\Pipeline;
 use App\Models\Program;
+use App\Models\ProgramPricing;
 use App\Models\Stage;
 use App\Models\Tag;
 use App\Models\TagGroup;
@@ -431,6 +432,10 @@ class LeadController extends Controller
             'expected_close_date' => ['nullable', 'date'],
         ]);
 
+        if (!$user->isInternalAdmin()) {
+            unset($validated['potential_value'], $validated['our_commission']);
+        }
+
         $fromStageId    = $lead->stage_id;
         $fromSubStageId = $lead->sub_stage_id;
         $emailChanged   = ($validated['email'] ?? null) !== $lead->email;
@@ -558,7 +563,25 @@ class LeadController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Lead updated.');
+        $successMsg = 'Lead updated.';
+
+        // Auto-fill deal values when SP is set and a primary program exists
+        if ($field === 'service_provider_id' && $newId) {
+            $primaryProgram = $lead->programs()->wherePivot('is_primary', true)->first();
+            if ($primaryProgram) {
+                $pricing = ProgramPricing::latestFor($primaryProgram->id, $newId);
+                if ($pricing) {
+                    $lead->update([
+                        'potential_value' => $pricing->client_legal_fees,
+                        'our_commission'  => $pricing->partner_share,
+                    ]);
+                    $symbol = $pricing->currency === 'EUR' ? '€' : '$';
+                    $successMsg = "Lead updated. Deal auto-filled: {$symbol}" . number_format((float) $pricing->client_legal_fees) . " / commission {$symbol}" . number_format((float) $pricing->partner_share) . '.';
+                }
+            }
+        }
+
+        return back()->with('success', $successMsg);
     }
 
     public function clearDuplicateFlag(Lead $lead): RedirectResponse

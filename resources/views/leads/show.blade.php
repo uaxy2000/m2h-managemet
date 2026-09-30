@@ -860,20 +860,26 @@
         @endif
 
         {{-- Deal --}}
-        @if($lead->potential_value || $lead->our_commission || $lead->expected_close_date)
+        @php
+            $primaryProgram = $lead->programs->first(fn($p) => $p->pivot->is_primary);
+            $currencySymbol = $primaryProgram?->currency === 'EUR' ? '€' : '$';
+            $showDeal = $lead->expected_close_date
+                || (auth()->user()->isInternalAdmin() && ($lead->potential_value || $lead->our_commission));
+        @endphp
+        @if($showDeal)
         <div class="bg-white rounded-xl border border-gray-200 p-5">
             <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Deal</h3>
             <dl class="grid grid-cols-3 gap-x-6 gap-y-3">
-                @if($lead->potential_value)
+                @if(auth()->user()->isInternalAdmin() && $lead->potential_value)
                 <div>
                     <dt class="text-xs text-gray-400">Potential Value</dt>
-                    <dd class="text-base font-semibold text-emerald-600 mt-0.5">${{ number_format((float) $lead->potential_value) }}</dd>
+                    <dd class="text-base font-semibold text-emerald-600 mt-0.5">{{ $currencySymbol }}{{ number_format((float) $lead->potential_value) }}</dd>
                 </div>
                 @endif
-                @if($lead->our_commission)
+                @if(auth()->user()->isInternalAdmin() && $lead->our_commission)
                 <div>
                     <dt class="text-xs text-gray-400">Our Commission</dt>
-                    <dd class="text-base font-semibold text-indigo-600 mt-0.5">${{ number_format((float) $lead->our_commission) }}</dd>
+                    <dd class="text-base font-semibold text-indigo-600 mt-0.5">{{ $currencySymbol }}{{ number_format((float) $lead->our_commission) }}</dd>
                 </div>
                 @endif
                 @if($lead->expected_close_date)

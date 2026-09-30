@@ -25,6 +25,7 @@ m2h-crm-spec.md
 /public/test-*.php
 /public/run-*.php
 /public/create-*.php
+/public/setup-*.php
 /public/clear-*.php
 /public/create-*.php
 /public/clear-*.php

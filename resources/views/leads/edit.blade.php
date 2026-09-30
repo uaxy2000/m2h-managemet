@@ -181,8 +181,9 @@
 
             {{-- Deal --}}
             <div class="grid grid-cols-3 gap-4 mb-7">
+                @if(auth()->user()->isInternalAdmin())
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Potential Value ($)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Potential Value</label>
                     <input type="number" name="potential_value"
                            value="{{ old('potential_value', $lead->potential_value) }}"
                            min="0" step="0.01"
@@ -190,13 +191,14 @@
                                   focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Our Commission ($)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Our Commission</label>
                     <input type="number" name="our_commission"
                            value="{{ old('our_commission', $lead->our_commission) }}"
                            min="0" step="0.01"
                            class="block w-full rounded-lg border-gray-300 text-sm shadow-sm
                                   focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
+                @endif
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">Expected Close</label>
                     <input type="date" name="expected_close_date"

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Program extends Model
 {
@@ -42,5 +43,15 @@ class Program extends Model
     public function leads(): BelongsToMany
     {
         return $this->belongsToMany(Lead::class, 'lead_program')->withPivot('id', 'is_primary');
+    }
+
+    public function pricing(): HasMany
+    {
+        return $this->hasMany(ProgramPricing::class)->orderByDesc('effective_from');
+    }
+
+    public function latestPricingFor(string $serviceProviderId): ?ProgramPricing
+    {
+        return ProgramPricing::latestFor($this->id, $serviceProviderId);
     }
 }

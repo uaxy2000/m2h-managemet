@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Models\Company;
 use App\Models\Program;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,9 +13,12 @@ class ProgramController extends Controller
 {
     public function index(): View
     {
-        $programs = Program::orderBy('country')->orderBy('name')->get();
+        $programs = Program::with(['pricing.serviceProvider'])
+            ->orderBy('country')->orderBy('name')->get();
 
-        return view('settings.programs.index', compact('programs'));
+        $serviceProviders = Company::where('type', 'service_provider')->orderBy('name')->get();
+
+        return view('settings.programs.index', compact('programs', 'serviceProviders'));
     }
 
     public function create(): View

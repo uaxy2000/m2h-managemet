@@ -11,6 +11,7 @@ use App\Http\Controllers\Settings\MetaPageController;
 use App\Http\Controllers\Settings\PipelineController;
 use App\Http\Controllers\Settings\UserController;
 use App\Http\Controllers\Settings\ProgramController;
+use App\Http\Controllers\Settings\ProgramPricingController;
 use App\Http\Controllers\Settings\StageController;
 use App\Http\Controllers\Settings\SubStageController;
 use App\Http\Controllers\Settings\CustomFieldController;
@@ -267,6 +268,8 @@ Route::middleware('auth')->group(function () {
             Route::get('programs/{program}/edit', [ProgramController::class, 'edit'])->name('programs.edit');
             Route::put('programs/{program}', [ProgramController::class, 'update'])->name('programs.update');
             Route::delete('programs/{program}', [ProgramController::class, 'destroy'])->name('programs.destroy');
+            Route::post('programs/{program}/pricing', [ProgramPricingController::class, 'store'])->name('programs.pricing.store');
+            Route::delete('programs/{program}/pricing/{pricing}', [ProgramPricingController::class, 'destroy'])->name('programs.pricing.destroy');
 
             // Companies
             Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
