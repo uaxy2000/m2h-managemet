@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lead;
+use App\Models\LeadActivity;
 use App\Models\LeadProgram;
+use App\Models\Program;
 use App\Models\ProgramPricing;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,6 +34,15 @@ class LeadProgramController extends Controller
             'is_primary' => $isFirst,
         ]);
 
+        $program = Program::find($validated['program_id']);
+        LeadActivity::create([
+            'lead_id'     => $lead->id,
+            'user_id'     => auth()->id(),
+            'type'        => 'program_added',
+            'description' => 'Program added: ' . ($program?->displayName() ?? 'Unknown') . ($isFirst ? ' (primary)' : ''),
+            'visible_to'  => ['internal'],
+        ]);
+
         $successMsg = 'Program added.';
 
         // Auto-fill deal values when this is the first (primary) program and SP is set
@@ -57,6 +68,15 @@ class LeadProgramController extends Controller
         LeadProgram::where('lead_id', $lead->id)->update(['is_primary' => false]);
         $leadProgram->update(['is_primary' => true]);
 
+        $program = Program::find($leadProgram->program_id);
+        LeadActivity::create([
+            'lead_id'     => $lead->id,
+            'user_id'     => auth()->id(),
+            'type'        => 'program_primary_changed',
+            'description' => 'Primary program changed to: ' . ($program?->displayName() ?? 'Unknown'),
+            'visible_to'  => ['internal'],
+        ]);
+
         $successMsg = 'Primary program updated.';
 
         // Auto-fill deal values when primary program changes and SP is set
@@ -80,8 +100,17 @@ class LeadProgramController extends Controller
     {
         abort_if($leadProgram->lead_id !== $lead->id, 404);
 
-        $wasPrimary = $leadProgram->is_primary;
+        $wasPrimary  = $leadProgram->is_primary;
+        $removedName = Program::find($leadProgram->program_id)?->displayName() ?? 'Unknown';
         $leadProgram->delete();
+
+        LeadActivity::create([
+            'lead_id'     => $lead->id,
+            'user_id'     => auth()->id(),
+            'type'        => 'program_removed',
+            'description' => 'Program removed: ' . $removedName . ($wasPrimary ? ' (was primary)' : ''),
+            'visible_to'  => ['internal'],
+        ]);
 
         $successMsg = 'Program removed.';
 
