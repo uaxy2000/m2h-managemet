@@ -47,10 +47,20 @@
         @endif
     </div>
 
-    @if($lead->assignedTo)
-    <div style="position:absolute;bottom:10px;right:10px;width:22px;height:22px;border-radius:50%;background:#6366f1;display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:600;flex-shrink:0"
-         title="{{ $lead->assignedTo->name }}">
-        {{ strtoupper(substr($lead->assignedTo->name, 0, 1)) }}
+    @if($lead->assignedTo || $lead->collaborators->isNotEmpty())
+    <div style="position:absolute;bottom:10px;right:10px;display:flex;align-items:center;gap:2px;flex-direction:row-reverse">
+        @if($lead->assignedTo)
+        <div style="width:22px;height:22px;border-radius:50%;background:#6366f1;display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:600;flex-shrink:0"
+             title="{{ $lead->assignedTo->name }}">
+            {{ strtoupper(substr($lead->assignedTo->name, 0, 1)) }}
+        </div>
+        @endif
+        @foreach($lead->collaborators->take(3) as $collab)
+        <div style="width:17px;height:17px;border-radius:50%;background:#e0e7ff;display:flex;align-items:center;justify-content:center;color:#6366f1;font-size:9px;font-weight:600;flex-shrink:0;margin-right:1px"
+             title="{{ $collab->name }} (collaborator)">
+            {{ strtoupper(substr($collab->name, 0, 1)) }}
+        </div>
+        @endforeach
     </div>
     @endif
 

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -106,6 +107,27 @@ class Lead extends Model
         return $this->hasOne(LeadActivity::class)
             ->where('type', 'whatsapp_incoming')
             ->latestOfMany('created_at');
+    }
+
+    public function collaborators(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'lead_collaborators')
+            ->withPivot('created_by', 'created_at');
+    }
+
+    /** Can this user view the lead at all? */
+    public function isAccessibleBy(User $user): bool
+    {
+        if ($user->isInternalAdmin()) return true;
+        if ($this->assigned_to === $user->id) return true;
+        return $this->collaborators->contains('id', $user->id);
+    }
+
+    /** Can this user make full edits (name, stage, program, provider…)? */
+    public function isFullyEditableBy(User $user): bool
+    {
+        if ($user->isInternalAdmin()) return true;
+        return $this->assigned_to === $user->id;
     }
 
     public function fullName(): string

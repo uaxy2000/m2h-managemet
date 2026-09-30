@@ -239,10 +239,16 @@ class LeadController extends Controller
     {
         $user = auth()->user();
 
-        // Internal non-admin users may only view leads assigned to them
+        // Load collaborators early so isAccessibleBy() can check them
+        $lead->load('collaborators');
+
         if ($this->forceOwnLeads($user)) {
-            abort_unless($lead->assigned_to === $user->id, 403);
+            abort_unless($lead->isAccessibleBy($user), 403);
         }
+
+        $isCollaborator = !$user->isInternalAdmin()
+            && $lead->assigned_to !== $user->id
+            && $lead->collaborators->contains('id', $user->id);
 
         $lead->load([
             'pipeline', 'stage', 'subStage', 'assignedTo',
@@ -343,8 +349,15 @@ class LeadController extends Controller
 
         $pipelines = Pipeline::with(['stages' => fn ($q) => $q->orderBy('sort_order')])->orderBy('sort_order')->get();
 
-        $canManageAssignment     = $user->isInternalAdmin();
+        $canManageAssignment      = $user->isInternalAdmin();
         $canChangeServiceProvider = $canManageAssignment || $lead->assigned_to === $user->id;
+
+        // Collaborator-eligible users (internal, not already assignee)
+        $collaboratorCandidates = $canManageAssignment
+            ? User::whereHas('company', fn ($q) => $q->where('type', 'internal'))
+                ->where('id', '!=', $lead->assigned_to)
+                ->orderBy('name')->get()
+            : collect();
 
         // Find leads sharing the same email or phone
         $duplicateMatches = collect();
@@ -362,12 +375,20 @@ class LeadController extends Controller
         return view('leads.show', compact(
             'lead', 'internalUsers', 'serviceProviders', 'agents', 'allTags', 'availablePrograms',
             'customFields', 'customValuesByKey', 'timeline', 'waTemplates', 'pipelines',
-            'canManageAssignment', 'canChangeServiceProvider', 'duplicateMatches'
+            'canManageAssignment', 'canChangeServiceProvider', 'duplicateMatches',
+            'isCollaborator', 'collaboratorCandidates'
         ));
     }
 
     public function edit(Lead $lead): View
     {
+        $user = auth()->user();
+        $lead->loadMissing('collaborators');
+        abort_if(
+            !$user->isInternalAdmin() && $lead->assigned_to !== $user->id && $lead->collaborators->contains('id', $user->id),
+            403
+        );
+
         $pipelines = Pipeline::where('is_active', true)
             ->with(['stages' => fn ($q) => $q->orderBy('sort_order')->with(['subStages' => fn ($q) => $q->orderBy('sort_order')])])
             ->orderBy('sort_order')
@@ -383,6 +404,14 @@ class LeadController extends Controller
 
     public function update(Request $request, Lead $lead): RedirectResponse
     {
+        $user = auth()->user();
+        $lead->loadMissing('collaborators');
+        // Collaborators can only edit custom fields, not core lead data
+        abort_if(
+            !$user->isInternalAdmin() && $lead->assigned_to !== $user->id && $lead->collaborators->contains('id', $user->id),
+            403
+        );
+
         $validated = $request->validate([
             'first_name'          => ['required', 'string', 'max:100'],
             'last_name'           => ['nullable', 'string', 'max:100'],
@@ -654,22 +683,30 @@ class LeadController extends Controller
 
     private function parseFilters(Request $request): array
     {
-        $authUser = auth()->user();
-        $rawCf    = (array) $request->get('cf', []);
+        $authUser     = auth()->user();
+        $forceOwn     = $this->forceOwnLeads($authUser);
+        $rawCf        = (array) $request->get('cf', []);
+
+        // For non-admin: default to "assigned to me" unless they explicitly chose collaborated
+        $assignedToMe   = $forceOwn ? ($request->boolean('assigned_to_me', true)) : false;
+        $collaboratedByMe = $forceOwn ? $request->boolean('collaborated_by_me', false) : false;
+
         return [
-            'search'           => trim((string) $request->get('search')),
-            'assigned_to'      => $this->forceOwnLeads($authUser) ? $authUser->id : $request->get('assigned_to'),
-            'source'           => $request->get('source'),
-            'duplicate'        => $request->boolean('duplicate'),
-            'program_id'       => $request->get('program_id'),
-            'tags'             => array_values(array_filter((array) $request->get('tags', []))),
-            'cf'               => array_filter($rawCf, fn ($v) => $v !== '' && $v !== null),
-            'meta_campaign_id' => $request->get('meta_campaign_id'),
-            'meta_adset_id'    => $request->get('meta_adset_id'),
-            'meta_ad_id'       => $request->get('meta_ad_id'),
-            'sort'             => in_array($request->get('sort'), ['stage_entered_at'])
-                                    ? 'stage_entered_at'
-                                    : 'application_date',
+            'search'            => trim((string) $request->get('search')),
+            'assigned_to'       => (!$forceOwn) ? $request->get('assigned_to') : null,
+            'assigned_to_me'    => $assignedToMe,
+            'collaborated_by_me'=> $collaboratedByMe,
+            'source'            => $request->get('source'),
+            'duplicate'         => $request->boolean('duplicate'),
+            'program_id'        => $request->get('program_id'),
+            'tags'              => array_values(array_filter((array) $request->get('tags', []))),
+            'cf'                => array_filter($rawCf, fn ($v) => $v !== '' && $v !== null),
+            'meta_campaign_id'  => $request->get('meta_campaign_id'),
+            'meta_adset_id'     => $request->get('meta_adset_id'),
+            'meta_ad_id'        => $request->get('meta_ad_id'),
+            'sort'              => in_array($request->get('sort'), ['stage_entered_at'])
+                                     ? 'stage_entered_at'
+                                     : 'application_date',
         ];
     }
 
@@ -689,6 +726,22 @@ class LeadController extends Controller
             ->when($filters['assigned_to'], fn ($q, $uid) =>
                 $q->where('assigned_to', $uid)
             )
+            ->when($filters['assigned_to_me'] ?? false, function ($q) use ($filters) {
+                $uid = auth()->id();
+                if ($filters['collaborated_by_me'] ?? false) {
+                    // Both checked: assigned OR collaborated
+                    $q->where(fn ($q) => $q
+                        ->where('assigned_to', $uid)
+                        ->orWhereHas('collaborators', fn ($q) => $q->where('users.id', $uid))
+                    );
+                } else {
+                    $q->where('assigned_to', $uid);
+                }
+            })
+            ->when(($filters['collaborated_by_me'] ?? false) && !($filters['assigned_to_me'] ?? false), function ($q) {
+                $uid = auth()->id();
+                $q->whereHas('collaborators', fn ($q) => $q->where('users.id', $uid));
+            })
             ->when($filters['source'] === 'meta_ad',
                 fn ($q) => $q->where('source', 'meta_ad')
             )
@@ -753,6 +806,7 @@ class LeadController extends Controller
             ])
             ->with([
                 'assignedTo',
+                'collaborators',
                 'tags',
                 'subStage',
                 'programs' => fn ($q) => $q->wherePivot('is_primary', true),

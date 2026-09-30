@@ -12,6 +12,9 @@ class WhatsAppController extends Controller
 {
     public function send(Lead $lead, Request $request, WhatsAppService $wa): RedirectResponse
     {
+        $lead->loadMissing('collaborators');
+        abort_unless($lead->isAccessibleBy(auth()->user()), 403);
+
         $request->validate(['message' => ['required', 'string', 'max:4096']]);
 
         if (!$lead->phone) {
@@ -27,6 +30,9 @@ class WhatsAppController extends Controller
 
     public function sendTemplate(Lead $lead, Request $request, WhatsAppService $wa): RedirectResponse
     {
+        $lead->loadMissing('collaborators');
+        abort_unless($lead->isAccessibleBy(auth()->user()), 403);
+
         $request->validate(['template_id' => ['required', 'integer', 'exists:wa_templates,id']]);
 
         if (!$lead->phone) {

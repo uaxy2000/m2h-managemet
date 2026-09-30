@@ -33,6 +33,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/>
             </svg>
         </button>
+        @if(!$isCollaborator)
         <a href="{{ route('leads.edit', $lead) }}"
            class="inline-flex items-center gap-1.5 text-sm text-gray-600 px-3.5 py-2 rounded-lg
                   border border-gray-200 hover:bg-gray-50 transition-colors">
@@ -53,6 +54,7 @@
                 Delete
             </button>
         </form>
+        @endif
     </div>
 </div>
 
@@ -347,6 +349,53 @@
 </div>
 @endif
 
+{{-- Collaborator management modal (admin only) --}}
+@if($canManageAssignment)
+<div x-data="{ open: false, selected: {{ json_encode($lead->collaborators->pluck('id')) }} }"
+     @open-collaborator-modal.window="open = true"
+     @keydown.escape.window="if(open) open = false">
+    <div x-show="open" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/40" @click="open = false"></div>
+        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <h3 class="text-sm font-semibold text-gray-800">Manage Collaborators</h3>
+                <button @click="open = false" type="button" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <form method="POST" action="{{ route('leads.collaborators.update', $lead) }}" class="px-6 py-4">
+                @csrf @method('PUT')
+                <p class="text-xs text-gray-400 mb-3">Select internal users who can view and add notes/tasks/WA/email on this lead.</p>
+                <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    @foreach($collaboratorCandidates as $candidate)
+                    <label class="flex items-center gap-3 cursor-pointer group">
+                        <input type="checkbox"
+                               name="collaborator_ids[]"
+                               value="{{ $candidate->id }}"
+                               @checked($lead->collaborators->contains('id', $candidate->id))
+                               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <div style="width:28px;height:28px;border-radius:50%;background:#e0e7ff;display:flex;align-items:center;justify-content:center;color:#6366f1;font-size:12px;font-weight:600;flex-shrink:0">
+                            {{ strtoupper(substr($candidate->name, 0, 1)) }}
+                        </div>
+                        <span class="text-sm text-gray-700 group-hover:text-gray-900">{{ $candidate->name }}</span>
+                    </label>
+                    @endforeach
+                </div>
+                <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
+                    <button @click="open = false" type="button"
+                            class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors">Cancel</button>
+                    <button type="submit"
+                            class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
 {{-- Two-column layout: 40% left | 60% right --}}
 <div class="flex flex-col lg:flex-row gap-5 items-start">
 
@@ -360,6 +409,7 @@
                     <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Contact</h3>
                     <p class="text-sm font-semibold text-gray-800 mt-0.5">{{ $lead->fullName() }}</p>
                 </div>
+                @if(!$isCollaborator)
                 <a href="{{ route('leads.edit', $lead) }}"
                    class="text-gray-300 hover:text-indigo-500 transition-colors flex-shrink-0 mt-0.5"
                    title="Edit lead">
@@ -367,6 +417,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z"/>
                     </svg>
                 </a>
+                @endif
             </div>
             <dl class="grid grid-cols-1 gap-y-3">
                 @if($lead->email)
@@ -516,7 +567,7 @@
                 </div>
 
                 {{-- Stage --}}
-                @if($canManageAssignment || auth()->user()->isInternal())
+                @if(!$isCollaborator && ($canManageAssignment || auth()->user()->isInternal()))
                 <div x-data="{editing:false}">
                     <div class="flex items-center gap-1 mb-1">
                         <p class="text-xs text-gray-400">Stage</p>
@@ -558,6 +609,32 @@
                 @endif
 
             </div>
+
+            {{-- Collaborators --}}
+            @if($lead->collaborators->isNotEmpty() || $canManageAssignment)
+            <div class="mt-4 pt-4 border-t border-gray-100">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs text-gray-400">Collaborators</p>
+                    @if($canManageAssignment)
+                    <button @click="$dispatch('open-collaborator-modal')" type="button"
+                            class="text-xs text-indigo-500 hover:text-indigo-700 transition-colors font-medium">
+                        Edit
+                    </button>
+                    @endif
+                </div>
+                @forelse($lead->collaborators as $collab)
+                <div class="flex items-center gap-2 mb-1">
+                    <div style="width:22px;height:22px;border-radius:50%;background:#e0e7ff;display:flex;align-items:center;justify-content:center;color:#6366f1;font-size:10px;font-weight:600;flex-shrink:0">
+                        {{ strtoupper(substr($collab->name, 0, 1)) }}
+                    </div>
+                    <span class="text-sm text-gray-600">{{ $collab->name }}</span>
+                </div>
+                @empty
+                <p class="text-sm text-gray-400">No collaborators</p>
+                @endforelse
+            </div>
+            @endif
+
         </div>
 
         {{-- Programs --}}

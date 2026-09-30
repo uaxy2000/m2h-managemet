@@ -12,6 +12,9 @@ class TaskController extends Controller
 {
     public function store(Request $request, Lead $lead): RedirectResponse
     {
+        $lead->loadMissing('collaborators');
+        abort_unless($lead->isAccessibleBy(auth()->user()), 403);
+
         $validated = $request->validate([
             'title'       => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],

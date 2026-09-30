@@ -240,6 +240,20 @@
         </div>
         @endif
 
+        {{-- Assigned / Collaborated checkboxes (non-admin only) --}}
+        @if($ownOnly)
+        <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none flex-shrink-0">
+            <input type="checkbox" name="assigned_to_me" value="1" @checked($filters['assigned_to_me'])
+                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            Assigned to me
+        </label>
+        <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none flex-shrink-0">
+            <input type="checkbox" name="collaborated_by_me" value="1" @checked($filters['collaborated_by_me'])
+                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            Collaborated by me
+        </label>
+        @endif
+
         {{-- Duplicate toggle --}}
         <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none flex-shrink-0">
             <input type="checkbox" name="duplicate" value="1" @checked($filters['duplicate'])

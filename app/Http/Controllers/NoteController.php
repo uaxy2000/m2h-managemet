@@ -12,6 +12,10 @@ class NoteController extends Controller
 {
     public function store(Request $request, Lead $lead): RedirectResponse
     {
+        $user = auth()->user();
+        $lead->loadMissing('collaborators');
+        abort_unless($lead->isAccessibleBy($user), 403);
+
         $validated = $request->validate([
             'content'    => ['required', 'string', 'max:5000'],
             'visibility' => ['required', 'string', function ($attr, $value, $fail) {

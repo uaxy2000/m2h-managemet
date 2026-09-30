@@ -14,6 +14,9 @@ class LeadEmailController extends Controller
 
     public function send(Request $request, Lead $lead)
     {
+        $lead->loadMissing('collaborators');
+        abort_unless($lead->isAccessibleBy(auth()->user()), 403);
+
         $request->validate([
             'template_id'    => 'required|exists:email_templates,id',
             'subject'        => 'required|string|max:500',

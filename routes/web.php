@@ -170,6 +170,7 @@ Route::middleware('auth')->group(function () {
 
     // Leads
     Route::post('leads/{lead}/move', [LeadController::class, 'move'])->name('leads.move');
+    Route::put('leads/{lead}/collaborators', [\App\Http\Controllers\LeadCollaboratorController::class, 'update'])->name('leads.collaborators.update');
     Route::get('kanban-cards/{stage}', [LeadController::class, 'kanbanCards'])->name('leads.kanban-cards');
     Route::resource('leads', LeadController::class);
 
