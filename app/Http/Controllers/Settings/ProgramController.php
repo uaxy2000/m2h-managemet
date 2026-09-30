@@ -21,6 +21,16 @@ class ProgramController extends Controller
         return view('settings.programs.index', compact('programs', 'serviceProviders'));
     }
 
+    public function pricingOverview(): View
+    {
+        $programs = Program::with(['pricing.serviceProvider'])
+            ->orderBy('country')
+            ->orderBy('name')
+            ->get();
+
+        return view('settings.programs.pricing_overview', compact('programs'));
+    }
+
     public function create(): View
     {
         return view('settings.programs.create');

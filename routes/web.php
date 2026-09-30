@@ -263,6 +263,7 @@ Route::middleware('auth')->group(function () {
 
             // Programs
             Route::get('programs', [ProgramController::class, 'index'])->name('programs.index');
+            Route::get('programs/pricing-overview', [ProgramController::class, 'pricingOverview'])->name('programs.pricing-overview');
             Route::get('programs/create', [ProgramController::class, 'create'])->name('programs.create');
             Route::post('programs', [ProgramController::class, 'store'])->name('programs.store');
             Route::get('programs/{program}/edit', [ProgramController::class, 'edit'])->name('programs.edit');

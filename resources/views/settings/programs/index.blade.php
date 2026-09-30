@@ -8,13 +8,23 @@
 
 <div class="flex items-center justify-between mb-6">
     <p class="text-sm text-gray-500">Manage residency and investment programs offered to leads.</p>
-    <a href="{{ route('settings.programs.create') }}"
-       class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
-        </svg>
-        New Program
-    </a>
+    <div class="flex items-center gap-3">
+        <a href="{{ route('settings.programs.pricing-overview') }}"
+           class="inline-flex items-center gap-2 text-sm font-medium text-gray-600 border border-gray-300 hover:bg-gray-50 px-4 py-2 rounded-lg transition-colors">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125M3.375 19.5h1.5C5.496 19.5 6 18.996 6 18.375m-3.75.125a1.125 1.125 0 0 0 1.125 1.125m0 0H6m0 0c0-.621.504-1.125 1.125-1.125h5.25M6 18.375V7.875c0-.621.504-1.125 1.125-1.125h2.25"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18.375c0 .621.504 1.125 1.125 1.125h10.5c.621 0 1.125-.504 1.125-1.125V7.875c0-.621-.504-1.125-1.125-1.125H7.125C6.504 6.75 6 7.254 6 7.875v10.5Z"/>
+            </svg>
+            Pricing Overview
+        </a>
+        <a href="{{ route('settings.programs.create') }}"
+           class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+            </svg>
+            New Program
+        </a>
+    </div>
 </div>
 
 @foreach(['success','error'] as $key)
