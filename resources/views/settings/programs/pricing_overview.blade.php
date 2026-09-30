@@ -64,14 +64,14 @@
             </thead>
             <tbody class="divide-y divide-gray-100">
                 @foreach($grouped as $country => $countryPrograms)
-                @php $countryBg = $loop->index % 2 === 0 ? 'bg-white' : 'bg-slate-50'; @endphp
+                @php $countryBg = $loop->index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-indigo-50/40 hover:bg-indigo-50/70'; @endphp
                 @foreach($countryPrograms as $program)
                 @php
                     $latestBySp = $program->pricing->groupBy('service_provider_id')->map->first();
                     $isFirstInCountry = $loop->first;
                     $countryRowspan = $countryPrograms->count();
                 @endphp
-                <tr class="{{ $countryBg }} transition-colors">
+                <tr class="{{ $countryBg }} transition-colors group">
                     @if($isFirstInCountry)
                     <td rowspan="{{ $countryRowspan }}"
                         class="px-4 py-3 font-semibold text-gray-500 uppercase tracking-wider text-[10px] align-top border-r border-gray-100 whitespace-nowrap">
@@ -90,9 +90,9 @@
                     <td class="text-right px-3 py-3 tabular-nums text-gray-500">{{ number_format((float)$price->provider_share) }}</td>
                     <td class="text-right px-3 py-3 tabular-nums font-semibold text-emerald-600">{{ number_format((float)$price->partner_share) }}</td>
                     <td class="text-right px-3 py-3 text-gray-500 whitespace-nowrap">
-                        {{ $price->commission_pct_legal_fees }}%
+                        {{ $price->commission_pct_legal_fees + 0 }}%
                         @if($price->commission_pct_investment)
-                        / {{ $price->commission_pct_investment }}%
+                        / {{ $price->commission_pct_investment + 0 }}%
                         @else
                         <span class="text-gray-300">/ —</span>
                         @endif
