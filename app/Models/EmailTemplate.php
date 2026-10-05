@@ -10,13 +10,18 @@ class EmailTemplate extends Model
 {
     use HasUuids;
 
-    protected $fillable = ['name', 'subject', 'body', 'is_active', 'visible_to_users'];
+    protected $fillable = ['name', 'subject', 'body', 'is_active'];
 
-    protected $casts = ['is_active' => 'boolean', 'visible_to_users' => 'boolean'];
+    protected $casts = ['is_active' => 'boolean'];
 
     public function files(): HasMany
     {
         return $this->hasMany(EmailTemplateFile::class);
+    }
+
+    public function allowedUsers()
+    {
+        return $this->belongsToMany(User::class, 'email_template_users', 'email_template_id', 'user_id');
     }
 
     public static function availableVariables(): array

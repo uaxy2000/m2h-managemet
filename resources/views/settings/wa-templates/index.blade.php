@@ -107,25 +107,31 @@
                     @endfor
                 </div>
                 @endif
-                <div class="space-y-2">
-                    <div class="flex items-center gap-2">
-                        <input type="hidden" name="is_active" value="0">
-                        <input type="checkbox" name="is_active" value="1" id="active_{{ $tpl->id }}"
-                               @checked($tpl->is_active)
-                               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                        <label for="active_{{ $tpl->id }}" class="text-sm text-gray-700">Aktif (lead sayfasında göster)</label>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <input type="hidden" name="visible_to_users" value="0">
-                        <input type="checkbox" name="visible_to_users" value="1" id="visible_{{ $tpl->id }}"
-                               @checked($tpl->visible_to_users)
-                               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                        <label for="visible_{{ $tpl->id }}" class="text-sm text-gray-700">
-                            Kullanıcılara da göster
-                            <span class="text-xs text-gray-400 ml-1">(admin olmayanlar bu şablonu gönderebilir)</span>
-                        </label>
-                    </div>
+                <div class="flex items-center gap-2">
+                    <input type="hidden" name="is_active" value="0">
+                    <input type="checkbox" name="is_active" value="1" id="active_{{ $tpl->id }}"
+                           @checked($tpl->is_active)
+                           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <label for="active_{{ $tpl->id }}" class="text-sm text-gray-700">Aktif (lead sayfasında göster)</label>
                 </div>
+                @if($selectableUsers->isNotEmpty())
+                <div>
+                    <p class="text-xs font-medium text-gray-600 mb-2">Bu şablonu gönderebilecek kullanıcılar</p>
+                    <div class="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto border border-gray-100 rounded-lg p-2.5 bg-gray-50">
+                        @foreach($selectableUsers as $u)
+                        @php $allowed = $tpl->allowedUsers->contains('id', $u->id); @endphp
+                        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                            <input type="checkbox" name="allowed_user_ids[]" value="{{ $u->id }}"
+                                   {{ $allowed ? 'checked' : '' }}
+                                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 flex-shrink-0">
+                            <span class="truncate">{{ $u->name }}</span>
+                            <span class="text-[10px] text-gray-400 flex-shrink-0">{{ $u->roleLabel() }}</span>
+                        </label>
+                        @endforeach
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">Seçilmeyenler bu şablonu göremez. Admin'ler her zaman görebilir.</p>
+                </div>
+                @endif
                 <div class="flex justify-end">
                     <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">Kaydet</button>
                 </div>
@@ -212,25 +218,31 @@
                     @endfor
                 </div>
                 @endif
-                <div class="space-y-2">
-                    <div class="flex items-center gap-2">
-                        <input type="hidden" name="is_active" value="0">
-                        <input type="checkbox" name="is_active" value="1" id="active_{{ $tpl->id }}"
-                               @checked($tpl->is_active)
-                               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                        <label for="active_{{ $tpl->id }}" class="text-sm text-gray-700">Aktif (lead sayfasında göster)</label>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <input type="hidden" name="visible_to_users" value="0">
-                        <input type="checkbox" name="visible_to_users" value="1" id="visible_{{ $tpl->id }}"
-                               @checked($tpl->visible_to_users)
-                               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                        <label for="visible_{{ $tpl->id }}" class="text-sm text-gray-700">
-                            Kullanıcılara da göster
-                            <span class="text-xs text-gray-400 ml-1">(admin olmayanlar bu şablonu gönderebilir)</span>
-                        </label>
-                    </div>
+                <div class="flex items-center gap-2">
+                    <input type="hidden" name="is_active" value="0">
+                    <input type="checkbox" name="is_active" value="1" id="active_{{ $tpl->id }}"
+                           @checked($tpl->is_active)
+                           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <label for="active_{{ $tpl->id }}" class="text-sm text-gray-700">Aktif (lead sayfasında göster)</label>
                 </div>
+                @if($selectableUsers->isNotEmpty())
+                <div>
+                    <p class="text-xs font-medium text-gray-600 mb-2">Bu şablonu gönderebilecek kullanıcılar</p>
+                    <div class="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto border border-gray-100 rounded-lg p-2.5 bg-gray-50">
+                        @foreach($selectableUsers as $u)
+                        @php $allowed = $tpl->allowedUsers->contains('id', $u->id); @endphp
+                        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                            <input type="checkbox" name="allowed_user_ids[]" value="{{ $u->id }}"
+                                   {{ $allowed ? 'checked' : '' }}
+                                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 flex-shrink-0">
+                            <span class="truncate">{{ $u->name }}</span>
+                            <span class="text-[10px] text-gray-400 flex-shrink-0">{{ $u->roleLabel() }}</span>
+                        </label>
+                        @endforeach
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">Seçilmeyenler bu şablonu göremez. Admin'ler her zaman görebilir.</p>
+                </div>
+                @endif
                 <div class="flex justify-end">
                     <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">Kaydet</button>
                 </div>

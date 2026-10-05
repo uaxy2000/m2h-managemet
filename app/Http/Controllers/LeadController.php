@@ -348,7 +348,7 @@ class LeadController extends Controller
 
         $waTemplatesQuery = \App\Models\WaTemplate::where('is_active', true);
         if (!$user->isInternalAdmin()) {
-            $waTemplatesQuery->where('visible_to_users', true);
+            $waTemplatesQuery->whereHas('allowedUsers', fn ($q) => $q->where('users.id', $user->id));
         }
         $waTemplates = $waTemplatesQuery->orderBy('display_name')->orderBy('name')->get();
 

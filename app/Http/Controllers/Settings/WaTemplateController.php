@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Models\WaTemplate;
 use App\Services\WhatsAppService;
 use Illuminate\Http\RedirectResponse;
@@ -13,9 +14,10 @@ class WaTemplateController extends Controller
 {
     public function index(): View
     {
-        $activeTemplates   = WaTemplate::where('is_active', true)->orderBy('name')->get();
-        $inactiveTemplates = WaTemplate::where('is_active', false)->orderBy('name')->get();
-        return view('settings.wa-templates.index', compact('activeTemplates', 'inactiveTemplates'));
+        $activeTemplates   = WaTemplate::where('is_active', true)->with('allowedUsers')->orderBy('name')->get();
+        $inactiveTemplates = WaTemplate::where('is_active', false)->with('allowedUsers')->orderBy('name')->get();
+        $selectableUsers   = User::whereNotIn('role', ['super_admin', 'admin'])->orderBy('name')->get();
+        return view('settings.wa-templates.index', compact('activeTemplates', 'inactiveTemplates', 'selectableUsers'));
     }
 
     public function sync(WhatsAppService $wa): RedirectResponse
@@ -38,8 +40,9 @@ class WaTemplateController extends Controller
             'parameter_fields.*.component' => 'required|string',
             'parameter_fields.*.index'   => 'required|integer',
             'parameter_fields.*.field'   => 'required|string',
-            'is_active'                  => 'boolean',
-            'visible_to_users'           => 'boolean',
+            'is_active'        => 'boolean',
+            'allowed_user_ids' => 'nullable|array',
+            'allowed_user_ids.*' => 'integer|exists:users,id',
         ]);
 
         $waTemplate->update([
@@ -47,8 +50,9 @@ class WaTemplateController extends Controller
             'header_image_url' => $request->input('header_image_url'),
             'parameter_fields' => $request->input('parameter_fields'),
             'is_active'        => $request->boolean('is_active'),
-            'visible_to_users' => $request->boolean('visible_to_users'),
         ]);
+
+        $waTemplate->allowedUsers()->sync($request->input('allowed_user_ids', []));
 
         $label = $waTemplate->display_name ?? $waTemplate->name;
         return back()->with('success', "'{$label}' güncellendi.");

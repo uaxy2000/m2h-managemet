@@ -80,7 +80,7 @@ class LeadEmailController extends Controller
         $user = auth()->user();
         $query = EmailTemplate::with('files')->where('is_active', true);
         if (!$user->isInternalAdmin()) {
-            $query->where('visible_to_users', true);
+            $query->whereHas('allowedUsers', fn ($q) => $q->where('users.id', $user->id));
         }
         $templates = $query->orderBy('name')->get();
         return response()->json($templates->map(fn ($t) => [

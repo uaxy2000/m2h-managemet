@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Models\EmailTemplate;
 use App\Models\EmailTemplateFile;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -13,9 +14,10 @@ class EmailTemplateController extends Controller
 {
     public function index()
     {
-        $templates = EmailTemplate::with('files')->orderBy('name')->get();
-        $variables = EmailTemplate::availableVariables();
-        return view('settings.email-templates.index', compact('templates', 'variables'));
+        $templates       = EmailTemplate::with(['files', 'allowedUsers'])->orderBy('name')->get();
+        $variables       = EmailTemplate::availableVariables();
+        $selectableUsers = User::whereNotIn('role', ['super_admin', 'admin'])->orderBy('name')->get();
+        return view('settings.email-templates.index', compact('templates', 'variables', 'selectableUsers'));
     }
 
     public function store(Request $request)
@@ -43,22 +45,24 @@ class EmailTemplateController extends Controller
     public function update(Request $request, EmailTemplate $emailTemplate)
     {
         $data = $request->validate([
-            'name'             => 'required|string|max:255',
-            'subject'          => 'required|string|max:500',
-            'body'             => 'required|string',
-            'is_active'        => 'boolean',
-            'visible_to_users' => 'boolean',
-            'new_files'        => 'nullable|array|max:10',
-            'new_files.*'      => 'file|max:20480',
+            'name'               => 'required|string|max:255',
+            'subject'            => 'required|string|max:500',
+            'body'               => 'required|string',
+            'is_active'          => 'boolean',
+            'allowed_user_ids'   => 'nullable|array',
+            'allowed_user_ids.*' => 'string|exists:users,id',
+            'new_files'          => 'nullable|array|max:10',
+            'new_files.*'        => 'file|max:20480',
         ]);
 
         $emailTemplate->update([
-            'name'             => $data['name'],
-            'subject'          => $data['subject'],
-            'body'             => $data['body'],
-            'is_active'        => $data['is_active'] ?? false,
-            'visible_to_users' => $request->boolean('visible_to_users'),
+            'name'      => $data['name'],
+            'subject'   => $data['subject'],
+            'body'      => $data['body'],
+            'is_active' => $data['is_active'] ?? false,
         ]);
+
+        $emailTemplate->allowedUsers()->sync($request->input('allowed_user_ids', []));
 
         $this->storeFiles($emailTemplate, $request->file('new_files', []));
 

@@ -9,16 +9,20 @@ class WaTemplate extends Model
     protected $fillable = [
         'name', 'display_name', 'language', 'category', 'status',
         'components', 'header_image_url', 'parameter_fields',
-        'is_active', 'visible_to_users', 'synced_at',
+        'is_active', 'synced_at',
     ];
 
     protected $casts = [
         'components'       => 'array',
         'parameter_fields' => 'array',
         'is_active'        => 'boolean',
-        'visible_to_users' => 'boolean',
         'synced_at'        => 'datetime',
     ];
+
+    public function allowedUsers()
+    {
+        return $this->belongsToMany(User::class, 'whatsapp_template_users', 'wa_template_id', 'user_id');
+    }
 
     public function bodyText(): string
     {
