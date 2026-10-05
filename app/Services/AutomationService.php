@@ -11,6 +11,7 @@ use App\Models\LeadActivity;
 use App\Models\LeadStatusHistory;
 use App\Models\Tag;
 use App\Models\User;
+use App\Models\EmailTemplate;
 use App\Models\WaTemplate;
 use Illuminate\Support\Facades\Log;
 
@@ -268,6 +269,51 @@ class AutomationService
                             $log['ok']    = $ok;
                             $log['note']  = $ok ? 'Sent template: ' . $template->name : 'WA send failed';
                             $log['label'] = $ok ? 'WhatsApp \'' . ($template->display_name ?? $template->name) . '\' sent' : 'WhatsApp send failed';
+                        }
+                    }
+                    break;
+
+                case 'send_email':
+                    $templateId = $params['template_id'] ?? null;
+                    if ($templateId) {
+                        $template = EmailTemplate::with('files')->find($templateId);
+                        if ($template && $lead->email) {
+                            $mailer = new \App\Services\MailerService();
+                            if ($mailer->isConfigured()) {
+                                $resolved = $template->resolve($lead);
+                                try {
+                                    $mailer->sendRaw(
+                                        $lead->email,
+                                        $lead->fullName(),
+                                        $resolved['subject'],
+                                        $resolved['body'],
+                                        [],
+                                        $template->files->all()
+                                    );
+                                    \App\Models\LeadActivity::create([
+                                        'lead_id'     => $lead->id,
+                                        'user_id'     => null,
+                                        'type'        => 'email_out',
+                                        'description' => $resolved['subject'],
+                                        'meta'        => [
+                                            'to'            => $lead->email,
+                                            'subject'       => $resolved['subject'],
+                                            'body'          => $resolved['body'],
+                                            'template_name' => $template->name,
+                                            'sent_by'       => $senderLabel,
+                                        ],
+                                    ]);
+                                    $log['ok']    = true;
+                                    $log['note']  = 'Email sent: ' . $template->name;
+                                    $log['label'] = 'Email \'' . $template->name . '\' sent to ' . $lead->email;
+                                } catch (\Exception $e) {
+                                    $log['note'] = 'Email send failed: ' . $e->getMessage();
+                                }
+                            } else {
+                                $log['note'] = 'SMTP not configured';
+                            }
+                        } elseif (!$lead->email) {
+                            $log['note'] = 'Lead has no email address';
                         }
                     }
                     break;

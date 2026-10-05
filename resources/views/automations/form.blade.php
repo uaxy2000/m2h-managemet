@@ -22,6 +22,7 @@
     $tagsGroupedJson = json_encode($tagsGroupedArr);
     $usersJson   = $users->map(fn($u) => ['id' => $u->id, 'name' => $u->name])->toJson();
     $waJson      = $waTemplates->map(fn($t) => ['id' => $t->id, 'name' => $t->display_name ?: $t->name])->toJson();
+    $emailJson   = $emailTemplates->map(fn($t) => ['id' => $t->id, 'name' => $t->name])->toJson();
     $cfJson      = $customFields->map(fn($f) => [
         'id'      => $f->id,
         'key'     => $f->key,
@@ -57,7 +58,7 @@
 @endphp
 
 <div class="max-w-3xl mx-auto"
-     x-data="ruleBuilder({{ $stagesJson }}, {{ $tagsJson }}, {{ $usersJson }}, {{ $waJson }}, {{ $cfJson }}, {{ $initConditions }}, {{ $initActions }}, {{ $tagsGroupedJson }})">
+     x-data="ruleBuilder({{ $stagesJson }}, {{ $tagsJson }}, {{ $usersJson }}, {{ $waJson }}, {{ $cfJson }}, {{ $initConditions }}, {{ $initActions }}, {{ $tagsGroupedJson }}, {{ $emailJson }})">
 
     <form method="POST"
           action="{{ $isEdit ? route('automations.update', $rule) : route('automations.store') }}"
@@ -372,6 +373,7 @@
                                 <option value="assign_to">Assign to user</option>
                                 <option value="change_stage">Change stage</option>
                                 <option value="send_wa">Send WhatsApp message</option>
+                                <option value="send_email">Send email</option>
                                 <option value="add_tag">Add tag</option>
                                 <option value="send_notification">Send in-app notification</option>
                             </select>
@@ -408,6 +410,17 @@
                                         class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
                                     <option value="">Select template…</option>
                                     <template x-for="t in waTemplates" :key="t.id">
+                                        <option :value="t.id" x-text="t.name" :selected="t.id == action.parameters.template_id"></option>
+                                    </template>
+                                </select>
+                            </template>
+
+                            {{-- send_email --}}
+                            <template x-if="action.action_type === 'send_email'">
+                                <select x-model="action.parameters.template_id"
+                                        class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                    <option value="">Select template…</option>
+                                    <template x-for="t in emailTemplates" :key="t.id">
                                         <option :value="t.id" x-text="t.name" :selected="t.id == action.parameters.template_id"></option>
                                     </template>
                                 </select>
@@ -491,7 +504,7 @@
 
 @push('scripts')
 <script>
-function ruleBuilder(stages, tags, users, waTemplates, customFields, initConditions, initActions, tagsGrouped) {
+function ruleBuilder(stages, tags, users, waTemplates, customFields, initConditions, initActions, tagsGrouped, emailTemplates) {
     return {
         stages,
         tags,
@@ -499,6 +512,7 @@ function ruleBuilder(stages, tags, users, waTemplates, customFields, initConditi
         stagesGrouped: [],
         users,
         waTemplates,
+        emailTemplates,
         customFields,
 
         // conditionGroups: array of groups; each group is array of condition objects

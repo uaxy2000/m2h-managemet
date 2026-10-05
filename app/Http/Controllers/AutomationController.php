@@ -12,6 +12,7 @@ use App\Models\Stage;
 use App\Models\Tag;
 use App\Models\TagGroup;
 use App\Models\User;
+use App\Models\EmailTemplate;
 use App\Models\WaTemplate;
 use App\Services\AutomationService;
 use Illuminate\Http\JsonResponse;
@@ -158,9 +159,10 @@ class AutomationController extends Controller
             $q->whereNull('company_id')
               ->orWhereHas('company', fn ($q) => $q->where('type', 'internal'));
         })->orderBy('name')->get();
-        $waTemplates  = WaTemplate::where('is_active', true)->orderBy('display_name')->get();
+        $waTemplates    = WaTemplate::where('is_active', true)->orderBy('display_name')->get();
+        $emailTemplates = EmailTemplate::where('is_active', true)->orderBy('name')->get();
 
-        return compact('stages', 'tagGroups', 'tags', 'customFields', 'users', 'waTemplates');
+        return compact('stages', 'tagGroups', 'tags', 'customFields', 'users', 'waTemplates', 'emailTemplates');
     }
 
     private function syncConditions(AutomationRule $rule, string $json): void
