@@ -77,7 +77,12 @@ class LeadEmailController extends Controller
 
     public function templates(Lead $lead)
     {
-        $templates = EmailTemplate::with('files')->where('is_active', true)->orderBy('name')->get();
+        $user = auth()->user();
+        $query = EmailTemplate::with('files')->where('is_active', true);
+        if (!$user->isInternalAdmin()) {
+            $query->where('visible_to_users', true);
+        }
+        $templates = $query->orderBy('name')->get();
         return response()->json($templates->map(fn ($t) => [
             'id'      => $t->id,
             'name'    => $t->name,

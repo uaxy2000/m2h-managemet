@@ -85,10 +85,18 @@
                 </div>
 
                 <div class="flex items-center justify-between">
-                    <label class="flex items-center gap-2 text-sm text-gray-700">
-                        <input type="checkbox" name="is_active" value="1" {{ $tpl->is_active ? 'checked' : '' }} class="rounded">
-                        Active
-                    </label>
+                    <div class="space-y-1.5">
+                        <label class="flex items-center gap-2 text-sm text-gray-700">
+                            <input type="checkbox" name="is_active" value="1" {{ $tpl->is_active ? 'checked' : '' }} class="rounded">
+                            Active
+                        </label>
+                        <label class="flex items-center gap-2 text-sm text-gray-700">
+                            <input type="hidden" name="visible_to_users" value="0">
+                            <input type="checkbox" name="visible_to_users" value="1" {{ $tpl->visible_to_users ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600">
+                            Kullanıcılara da göster
+                            <span class="text-xs text-gray-400">(admin olmayanlar gönderebilir)</span>
+                        </label>
+                    </div>
                     <div class="flex gap-2">
                         <button type="button" @click="editing = false" class="text-sm text-gray-500 px-4 py-2">Cancel</button>
                         <button type="submit" class="bg-indigo-600 text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-indigo-700">Save</button>

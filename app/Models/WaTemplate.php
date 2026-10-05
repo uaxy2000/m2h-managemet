@@ -9,13 +9,14 @@ class WaTemplate extends Model
     protected $fillable = [
         'name', 'display_name', 'language', 'category', 'status',
         'components', 'header_image_url', 'parameter_fields',
-        'is_active', 'synced_at',
+        'is_active', 'visible_to_users', 'synced_at',
     ];
 
     protected $casts = [
         'components'       => 'array',
         'parameter_fields' => 'array',
         'is_active'        => 'boolean',
+        'visible_to_users' => 'boolean',
         'synced_at'        => 'datetime',
     ];
 

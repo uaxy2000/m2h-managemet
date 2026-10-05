@@ -10,9 +10,9 @@ class EmailTemplate extends Model
 {
     use HasUuids;
 
-    protected $fillable = ['name', 'subject', 'body', 'is_active'];
+    protected $fillable = ['name', 'subject', 'body', 'is_active', 'visible_to_users'];
 
-    protected $casts = ['is_active' => 'boolean'];
+    protected $casts = ['is_active' => 'boolean', 'visible_to_users' => 'boolean'];
 
     public function files(): HasMany
     {

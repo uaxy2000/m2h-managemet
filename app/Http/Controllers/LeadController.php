@@ -346,7 +346,11 @@ class LeadController extends Controller
         $customFields      = CustomField::where('is_active', true)->with('options')->orderBy('sort_order')->get();
         $customValuesByKey = $lead->customValues->keyBy(fn ($cv) => $cv->field?->key);
 
-        $waTemplates = \App\Models\WaTemplate::where('is_active', true)->orderBy('display_name')->orderBy('name')->get();
+        $waTemplatesQuery = \App\Models\WaTemplate::where('is_active', true);
+        if (!$user->isInternalAdmin()) {
+            $waTemplatesQuery->where('visible_to_users', true);
+        }
+        $waTemplates = $waTemplatesQuery->orderBy('display_name')->orderBy('name')->get();
 
         $pipelines = Pipeline::with(['stages' => fn ($q) => $q->orderBy('sort_order')])->orderBy('sort_order')->get();
 

@@ -43,19 +43,21 @@ class EmailTemplateController extends Controller
     public function update(Request $request, EmailTemplate $emailTemplate)
     {
         $data = $request->validate([
-            'name'         => 'required|string|max:255',
-            'subject'      => 'required|string|max:500',
-            'body'         => 'required|string',
-            'is_active'    => 'boolean',
-            'new_files'    => 'nullable|array|max:10',
-            'new_files.*'  => 'file|max:20480',
+            'name'             => 'required|string|max:255',
+            'subject'          => 'required|string|max:500',
+            'body'             => 'required|string',
+            'is_active'        => 'boolean',
+            'visible_to_users' => 'boolean',
+            'new_files'        => 'nullable|array|max:10',
+            'new_files.*'      => 'file|max:20480',
         ]);
 
         $emailTemplate->update([
-            'name'      => $data['name'],
-            'subject'   => $data['subject'],
-            'body'      => $data['body'],
-            'is_active' => $data['is_active'] ?? false,
+            'name'             => $data['name'],
+            'subject'          => $data['subject'],
+            'body'             => $data['body'],
+            'is_active'        => $data['is_active'] ?? false,
+            'visible_to_users' => $request->boolean('visible_to_users'),
         ]);
 
         $this->storeFiles($emailTemplate, $request->file('new_files', []));

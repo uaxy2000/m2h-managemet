@@ -39,6 +39,7 @@ class WaTemplateController extends Controller
             'parameter_fields.*.index'   => 'required|integer',
             'parameter_fields.*.field'   => 'required|string',
             'is_active'                  => 'boolean',
+            'visible_to_users'           => 'boolean',
         ]);
 
         $waTemplate->update([
@@ -46,6 +47,7 @@ class WaTemplateController extends Controller
             'header_image_url' => $request->input('header_image_url'),
             'parameter_fields' => $request->input('parameter_fields'),
             'is_active'        => $request->boolean('is_active'),
+            'visible_to_users' => $request->boolean('visible_to_users'),
         ]);
 
         $label = $waTemplate->display_name ?? $waTemplate->name;
