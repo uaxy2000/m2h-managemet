@@ -16,7 +16,9 @@ class EmailTemplateController extends Controller
     {
         $templates       = EmailTemplate::with(['files', 'allowedUsers'])->orderBy('name')->get();
         $variables       = EmailTemplate::availableVariables();
-        $selectableUsers = User::whereNotIn('role', ['super_admin', 'admin'])->orderBy('name')->get();
+        $selectableUsers = User::where('role', 'member')
+            ->whereHas('company', fn ($q) => $q->where('type', 'internal'))
+            ->orderBy('name')->get();
         return view('settings.email-templates.index', compact('templates', 'variables', 'selectableUsers'));
     }
 

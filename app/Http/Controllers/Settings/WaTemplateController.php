@@ -16,7 +16,9 @@ class WaTemplateController extends Controller
     {
         $activeTemplates   = WaTemplate::where('is_active', true)->with('allowedUsers')->orderBy('name')->get();
         $inactiveTemplates = WaTemplate::where('is_active', false)->with('allowedUsers')->orderBy('name')->get();
-        $selectableUsers   = User::whereNotIn('role', ['super_admin', 'admin'])->orderBy('name')->get();
+        $selectableUsers   = User::where('role', 'member')
+            ->whereHas('company', fn ($q) => $q->where('type', 'internal'))
+            ->orderBy('name')->get();
         return view('settings.wa-templates.index', compact('activeTemplates', 'inactiveTemplates', 'selectableUsers'));
     }
 
