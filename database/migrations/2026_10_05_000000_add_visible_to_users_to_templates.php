@@ -10,13 +10,13 @@ return new class extends Migration
     {
         Schema::create('whatsapp_template_users', function (Blueprint $table) {
             $table->unsignedBigInteger('wa_template_id');
-            $table->unsignedBigInteger('user_id');
+            $table->char('user_id', 36);
             $table->primary(['wa_template_id', 'user_id']);
         });
 
         Schema::create('email_template_users', function (Blueprint $table) {
             $table->char('email_template_id', 36);
-            $table->unsignedBigInteger('user_id');
+            $table->char('user_id', 36);
             $table->primary(['email_template_id', 'user_id']);
         });
     }

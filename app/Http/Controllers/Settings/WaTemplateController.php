@@ -43,8 +43,8 @@ class WaTemplateController extends Controller
             'parameter_fields.*.index'   => 'required|integer',
             'parameter_fields.*.field'   => 'required|string',
             'is_active'        => 'boolean',
-            'allowed_user_ids' => 'nullable|array',
-            'allowed_user_ids.*' => 'integer|exists:users,id',
+            'allowed_user_ids'   => 'nullable|array',
+            'allowed_user_ids.*' => 'string|exists:users,id',
         ]);
 
         $waTemplate->update([
