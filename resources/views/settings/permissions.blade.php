@@ -58,6 +58,15 @@
             ['Add / delete task', '', [
                 [$yes, '✓'], [$yes, '✓'], [$yes, '✓'], [$yes, '✓'], [$yes, '✓'],
             ]],
+            ['Send WhatsApp template', 'From lead timeline', [
+                [$yes, 'All'], [$yes, 'All'], [$cond, 'Permitted only'], [$no, '✗'], [$no, '✗'],
+            ]],
+            ['Send email template', 'From lead timeline', [
+                [$yes, 'All'], [$yes, 'All'], [$cond, 'Permitted only'], [$no, '✗'], [$no, '✗'],
+            ]],
+            ['Deal value fields (Potential Value / Commission)', 'Hidden from non-admins', [
+                [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'], [$no, '✗'],
+            ]],
         ],
         'Boards' => [
             ['Board create / edit / delete', '', [
@@ -144,7 +153,13 @@
             ['Tags / Programs / Custom Fields', '', [
                 [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'], [$no, '✗'],
             ]],
-            ['WA Templates / Meta connection', '', [
+            ['Program Pricing', 'Versioned pricing per SP, effective dates', [
+                [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'], [$no, '✗'],
+            ]],
+            ['WA Templates / Email Templates', 'Sync, configure, assign user permissions', [
+                [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'], [$no, '✗'],
+            ]],
+            ['Meta connection / WhatsApp number', '', [
                 [$yes, '✓'], [$yes, '✓'], [$no, '✗'], [$no, '✗'], [$no, '✗'],
             ]],
         ],
