@@ -20,6 +20,14 @@
 {{-- Template list --}}
 <div class="space-y-3 mb-6">
     @forelse($templates as $tpl)
+    {{-- Standalone file-delete forms (outside edit form to avoid nesting) --}}
+    @foreach($tpl->files as $f)
+    <form id="del-etplfile-{{ $f->id }}" method="POST" action="{{ route('settings.email-template-files.destroy', $f->id) }}"
+          onsubmit="return confirm('Remove this file?')" style="display:none">
+        @csrf @method('DELETE')
+    </form>
+    @endforeach
+
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden" x-data="{ editing: false }">
         <div class="flex items-center justify-between px-5 py-3.5">
             <div class="flex items-center gap-3">
@@ -38,7 +46,7 @@
             </div>
         </div>
         <div x-show="editing" x-cloak class="border-t border-gray-100 px-5 py-4">
-            <form method="POST" action="{{ route('settings.email-templates.update', $tpl) }}" class="space-y-3" enctype="multipart/form-data">
+            <form id="edit-etpl-{{ $tpl->id }}" method="POST" action="{{ route('settings.email-templates.update', $tpl) }}" class="space-y-3" enctype="multipart/form-data">
                 @csrf @method('PUT')
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -66,11 +74,8 @@
                         <div class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                             <a href="{{ route('settings.email-template-files.download', $f->id) }}" target="_blank"
                                class="text-xs text-indigo-600 hover:text-indigo-800 font-medium truncate max-w-xs">{{ $f->original_name }}</a>
-                            <form method="POST" action="{{ route('settings.email-template-files.destroy', $f->id) }}"
-                                  onsubmit="return confirm('Remove this file?')" class="ml-3 flex-shrink-0">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="text-xs text-red-500 hover:text-red-700">Remove</button>
-                            </form>
+                            <button type="submit" form="del-etplfile-{{ $f->id }}"
+                                    class="text-xs text-red-500 hover:text-red-700 ml-3 flex-shrink-0">Remove</button>
                         </div>
                         @endforeach
                     </div>
@@ -109,7 +114,8 @@
                     @endif
                     <div class="flex justify-end gap-2">
                         <button type="button" @click="editing = false" class="text-sm text-gray-500 px-4 py-2">Cancel</button>
-                        <button type="submit" class="bg-indigo-600 text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-indigo-700">Save</button>
+                        <button type="submit" form="edit-etpl-{{ $tpl->id }}"
+                                class="bg-indigo-600 text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-indigo-700">Save</button>
                     </div>
                 </div>
             </form>
