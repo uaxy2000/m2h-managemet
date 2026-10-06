@@ -91,22 +91,6 @@
                    class="rounded-lg border-gray-200 text-sm py-1.5 px-2 focus:ring-indigo-500 focus:border-indigo-500 w-36 {{ $filters['date_to'] ? 'border-indigo-300 bg-indigo-50' : '' }}">
         </div>
 
-        {{-- Program --}}
-        @if($programsByCountry->isNotEmpty())
-        <select name="program_id"
-                class="flex-shrink-0 rounded-lg border-gray-200 text-sm py-1.5 pl-2.5 pr-7 focus:ring-indigo-500 focus:border-indigo-500">
-            <option value="">All programs</option>
-            @foreach($programsByCountry as $country => $countryPrograms)
-            <optgroup label="{{ $country }}">
-                <option value="country:{{ $country }}" @selected($filters['program_id'] === 'country:'.$country)>— All {{ $country }}</option>
-                @foreach($countryPrograms as $prog)
-                <option value="{{ $prog->id }}" @selected($filters['program_id'] === $prog->id)>{{ $prog->name }}</option>
-                @endforeach
-            </optgroup>
-            @endforeach
-        </select>
-        @endif
-
         {{-- Tags popup (multi-select) --}}
         @if($hasTags)
         <div x-data="{
@@ -205,9 +189,9 @@
         </div>
         @endif
 
-        {{-- All filters (custom fields) --}}
-        @if($filterableFields->isNotEmpty())
-        @php $activeCfCount = count($filters['cf']); @endphp
+        {{-- All filters (program + custom fields) --}}
+        @if($filterableFields->isNotEmpty() || $programsByCountry->isNotEmpty())
+        @php $activeCfCount = count($filters['cf']) + ($filters['program_id'] ? 1 : 0); @endphp
         <div x-data="{ open: false }" class="relative flex-shrink-0" @click.outside="open = false">
 
             <button type="button" @click="open = !open"
@@ -234,9 +218,26 @@
                  x-transition:leave-start="opacity-100 scale-100"
                  x-transition:leave-end="opacity-0 scale-95"
                  class="absolute left-0 top-full mt-1 bg-white rounded-xl border border-gray-200 shadow-lg z-50 p-4 min-w-56"
-                 style="width: max-content; max-width: 22rem;">
+                 style="width: max-content; max-width: 26rem;">
                 <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Filter by field</p>
-                <div class="grid gap-3 {{ $filterableFields->count() > 2 ? 'grid-cols-2' : 'grid-cols-1' }}">
+                <div class="grid gap-3 {{ ($filterableFields->count() + ($programsByCountry->isNotEmpty() ? 1 : 0)) > 2 ? 'grid-cols-2' : 'grid-cols-1' }}">
+                    @if($programsByCountry->isNotEmpty())
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Program</label>
+                        <select name="program_id"
+                                class="w-full rounded-lg border-gray-200 text-sm py-1.5 pl-2.5 pr-7 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">All programs</option>
+                            @foreach($programsByCountry as $country => $countryPrograms)
+                            <optgroup label="{{ $country }}">
+                                <option value="country:{{ $country }}" @selected($filters['program_id'] === 'country:'.$country)>— All {{ $country }}</option>
+                                @foreach($countryPrograms as $prog)
+                                <option value="{{ $prog->id }}" @selected($filters['program_id'] === $prog->id)>{{ $prog->name }}</option>
+                                @endforeach
+                            </optgroup>
+                            @endforeach
+                        </select>
+                    </div>
+                    @endif
                     @foreach($filterableFields as $cf)
                     <div>
                         <label class="block text-xs font-medium text-gray-500 mb-1">{{ $cf->label }}</label>
