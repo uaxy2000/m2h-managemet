@@ -483,6 +483,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.stage-column').forEach(col => {
         Sortable.create(col, {
             group: 'leads',
+            disabled: true,
             animation: 150,
             ghostClass: 'opacity-40',
             dragClass: 'shadow-xl',

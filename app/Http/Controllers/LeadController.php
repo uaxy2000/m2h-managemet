@@ -849,7 +849,7 @@ class LeadController extends Controller
                 'subStage',
                 'programs' => fn ($q) => $q->wherePivot('is_primary', true),
             ])
-            ->orderByDesc('has_unread_wa');
+            ->orderByRaw('(exists(select 1 from `lead_activities` where `lead_activities`.`lead_id` = `leads`.`id` and `lead_activities`.`type` = \'whatsapp_incoming\' and `lead_activities`.`is_read` = 0)) DESC');
 
         if ($sort === 'stage_entered_at') {
             $q->orderByRaw('(SELECT MAX(lsh.changed_at) FROM lead_status_history lsh WHERE lsh.lead_id = leads.id AND lsh.to_stage_id = leads.stage_id) DESC');
