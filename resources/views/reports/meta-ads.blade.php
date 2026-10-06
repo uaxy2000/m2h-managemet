@@ -379,6 +379,10 @@
                         <th colspan="3" class="text-center px-3 py-1.5 text-blue-700 bg-blue-50 border-l-2 border-blue-200">Meeting 1</th>
                         <th colspan="3" class="text-center px-3 py-1.5 text-violet-700 bg-violet-50 border-l-2 border-violet-200">Won</th>
                         <th colspan="2" class="text-center px-3 py-1.5 text-amber-700 bg-amber-50 border-l-2 border-amber-200">Stage Conv.</th>
+                        @foreach($otherPipelines as $op)
+                        <th colspan="2" class="text-center px-3 py-1.5 text-slate-700 bg-slate-50 border-l-2 border-slate-200 whitespace-nowrap">{{ $op->name }}</th>
+                        @endforeach
+                        <th colspan="2" class="text-center px-3 py-1.5 text-red-700 bg-red-50 border-l-2 border-red-200">Lost</th>
                         <th rowspan="2" class="px-3 py-2"></th>
                     </tr>
                     {{-- Sub-column header row --}}
@@ -394,6 +398,12 @@
                         <th class="text-right px-3 py-1.5">CPW</th>
                         <th class="text-right px-3 py-1.5 border-l-2 border-amber-200">R→M</th>
                         <th class="text-right px-3 py-1.5">M→W</th>
+                        @foreach($otherPipelines as $op)
+                        <th class="text-right px-3 py-1.5 border-l-2 border-slate-200">#</th>
+                        <th class="text-right px-3 py-1.5">%</th>
+                        @endforeach
+                        <th class="text-right px-3 py-1.5 border-l-2 border-red-200">#</th>
+                        <th class="text-right px-3 py-1.5">%</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -443,6 +453,15 @@
                             <td class="px-3 py-3 text-right text-xs font-medium">
                                 <span class="{{ $campaign->f->mtg_to_won !== null ? 'text-amber-700' : 'text-gray-300' }}">{{ $campaign->f->mtg_to_won !== null ? $campaign->f->mtg_to_won.'%' : '—' }}</span>
                             </td>
+                            {{-- Other pipelines --}}
+                            @foreach($otherPipelines as $op)
+                            @php $opRow = $campaign->f->op[$op->id] ?? ['count' => 0, 'pct' => 0]; @endphp
+                            <td class="px-3 py-3 text-right border-l-2 border-slate-100"><span class="{{ $opRow['count'] > 0 ? 'font-semibold text-slate-700' : 'text-gray-300' }}">{{ $opRow['count'] ?: '—' }}</span></td>
+                            <td class="px-3 py-3 text-right text-xs text-gray-500 whitespace-nowrap">{{ $opRow['pct'] > 0 ? $opRow['pct'].'%' : '—' }}</td>
+                            @endforeach
+                            {{-- Lost --}}
+                            <td class="px-3 py-3 text-right border-l-2 border-red-100"><span class="{{ $campaign->f->lost > 0 ? 'font-semibold text-red-600' : 'text-gray-300' }}">{{ $campaign->f->lost ?: '—' }}</span></td>
+                            <td class="px-3 py-3 text-right text-xs text-gray-500 whitespace-nowrap">{{ $campaign->f->lost_pct > 0 ? $campaign->f->lost_pct.'%' : '—' }}</td>
                             <td class="px-3 py-3 text-right">
                                 @if($campaign->leads_count > 0)
                                     <a href="{{ route('leads.index', ['meta_campaign_id' => $campaign->entity_id, 'date_from' => $from, 'date_to' => $to]) }}"
@@ -496,6 +515,15 @@
                                 <td class="px-3 py-2.5 text-right text-xs font-medium">
                                     <span class="{{ $adset->f->mtg_to_won !== null ? 'text-amber-600' : 'text-gray-300' }}">{{ $adset->f->mtg_to_won !== null ? $adset->f->mtg_to_won.'%' : '—' }}</span>
                                 </td>
+                                {{-- Other pipelines --}}
+                                @foreach($otherPipelines as $op)
+                                @php $opRow = $adset->f->op[$op->id] ?? ['count' => 0, 'pct' => 0]; @endphp
+                                <td class="px-3 py-2.5 text-right text-xs border-l-2 border-slate-100"><span class="{{ $opRow['count'] > 0 ? 'font-medium text-slate-600' : 'text-gray-300' }}">{{ $opRow['count'] ?: '—' }}</span></td>
+                                <td class="px-3 py-2.5 text-right text-xs text-gray-500 whitespace-nowrap">{{ $opRow['pct'] > 0 ? $opRow['pct'].'%' : '—' }}</td>
+                                @endforeach
+                                {{-- Lost --}}
+                                <td class="px-3 py-2.5 text-right text-xs border-l-2 border-red-100"><span class="{{ $adset->f->lost > 0 ? 'font-medium text-red-600' : 'text-gray-300' }}">{{ $adset->f->lost ?: '—' }}</span></td>
+                                <td class="px-3 py-2.5 text-right text-xs text-gray-500 whitespace-nowrap">{{ $adset->f->lost_pct > 0 ? $adset->f->lost_pct.'%' : '—' }}</td>
                                 <td class="px-3 py-2.5 text-right">
                                     @if($adset->leads_count > 0)
                                         <a href="{{ route('leads.index', ['meta_adset_id' => $adset->entity_id, 'date_from' => $from, 'date_to' => $to]) }}"
@@ -541,6 +569,15 @@
                                     <td class="px-3 py-2 text-right text-xs font-medium">
                                         <span class="{{ $ad->f->mtg_to_won !== null ? 'text-amber-600' : 'text-gray-300' }}">{{ $ad->f->mtg_to_won !== null ? $ad->f->mtg_to_won.'%' : '—' }}</span>
                                     </td>
+                                    {{-- Other pipelines --}}
+                                    @foreach($otherPipelines as $op)
+                                    @php $opRow = $ad->f->op[$op->id] ?? ['count' => 0, 'pct' => 0]; @endphp
+                                    <td class="px-3 py-2 text-right text-xs border-l-2 border-slate-100"><span class="{{ $opRow['count'] > 0 ? 'font-medium text-slate-600' : 'text-gray-300' }}">{{ $opRow['count'] ?: '—' }}</span></td>
+                                    <td class="px-3 py-2 text-right text-xs text-gray-500 whitespace-nowrap">{{ $opRow['pct'] > 0 ? $opRow['pct'].'%' : '—' }}</td>
+                                    @endforeach
+                                    {{-- Lost --}}
+                                    <td class="px-3 py-2 text-right text-xs border-l-2 border-red-100"><span class="{{ $ad->f->lost > 0 ? 'font-medium text-red-600' : 'text-gray-300' }}">{{ $ad->f->lost ?: '—' }}</span></td>
+                                    <td class="px-3 py-2 text-right text-xs text-gray-500 whitespace-nowrap">{{ $ad->f->lost_pct > 0 ? $ad->f->lost_pct.'%' : '—' }}</td>
                                     <td class="px-3 py-2 text-right">
                                         @if($ad->leads_count > 0)
                                             <a href="{{ route('leads.index', ['meta_ad_id' => $ad->entity_id, 'date_from' => $from, 'date_to' => $to]) }}"
