@@ -445,7 +445,7 @@
                             </td>
                             <td class="px-3 py-3 text-right">
                                 @if($campaign->leads_count > 0)
-                                    <a href="{{ route('leads.index', ['meta_campaign_id' => $campaign->entity_id]) }}"
+                                    <a href="{{ route('leads.index', ['meta_campaign_id' => $campaign->entity_id, 'date_from' => $from, 'date_to' => $to]) }}"
                                        class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-full hover:bg-indigo-100 transition whitespace-nowrap">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>
                                         View Leads
@@ -498,7 +498,7 @@
                                 </td>
                                 <td class="px-3 py-2.5 text-right">
                                     @if($adset->leads_count > 0)
-                                        <a href="{{ route('leads.index', ['meta_adset_id' => $adset->entity_id]) }}"
+                                        <a href="{{ route('leads.index', ['meta_adset_id' => $adset->entity_id, 'date_from' => $from, 'date_to' => $to]) }}"
                                            class="inline-flex items-center gap-1 px-2 py-0.5 text-xs text-indigo-600 bg-indigo-50 rounded-full hover:bg-indigo-100 transition whitespace-nowrap">
                                             View Leads
                                         </a>
@@ -543,7 +543,7 @@
                                     </td>
                                     <td class="px-3 py-2 text-right">
                                         @if($ad->leads_count > 0)
-                                            <a href="{{ route('leads.index', ['meta_ad_id' => $ad->entity_id]) }}"
+                                            <a href="{{ route('leads.index', ['meta_ad_id' => $ad->entity_id, 'date_from' => $from, 'date_to' => $to]) }}"
                                                class="inline-flex items-center gap-1 px-2 py-0.5 text-xs text-indigo-600 bg-indigo-50 rounded-full hover:bg-indigo-100 transition whitespace-nowrap">
                                                 View Leads
                                             </a>

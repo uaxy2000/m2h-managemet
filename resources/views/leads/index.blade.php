@@ -46,6 +46,9 @@
     <form method="GET" action="{{ route('leads.index') }}" id="filter-form"
           class="flex-shrink-0 flex flex-wrap items-center gap-2 px-6 py-2.5 bg-white border-b border-gray-200">
         <input type="hidden" name="pipeline" value="{{ $currentPipeline?->id }}">
+        @if($filters['meta_campaign_id'])<input type="hidden" name="meta_campaign_id" value="{{ $filters['meta_campaign_id'] }}">@endif
+        @if($filters['meta_adset_id'])<input type="hidden" name="meta_adset_id" value="{{ $filters['meta_adset_id'] }}">@endif
+        @if($filters['meta_ad_id'])<input type="hidden" name="meta_ad_id" value="{{ $filters['meta_ad_id'] }}">@endif
 
         {{-- Name search --}}
         <div class="relative flex-shrink-0">
@@ -76,6 +79,17 @@
             <option value="manual"  @selected($filters['source'] === 'manual')>Manual</option>
             <option value="agent"   @selected($filters['source'] === 'agent')>Agent</option>
         </select>
+
+        {{-- Date range --}}
+        <div class="flex items-center gap-1 flex-shrink-0">
+            <input type="date" name="date_from" value="{{ $filters['date_from'] }}"
+                   title="Created from"
+                   class="rounded-lg border-gray-200 text-sm py-1.5 px-2 focus:ring-indigo-500 focus:border-indigo-500 w-36 {{ $filters['date_from'] ? 'border-indigo-300 bg-indigo-50' : '' }}">
+            <span class="text-xs text-gray-400 flex-shrink-0">–</span>
+            <input type="date" name="date_to" value="{{ $filters['date_to'] }}"
+                   title="Created to"
+                   class="rounded-lg border-gray-200 text-sm py-1.5 px-2 focus:ring-indigo-500 focus:border-indigo-500 w-36 {{ $filters['date_to'] ? 'border-indigo-300 bg-indigo-50' : '' }}">
+        </div>
 
         {{-- Program --}}
         @if($programsByCountry->isNotEmpty())
@@ -284,6 +298,7 @@
 
         {{-- Active filter count + clear all --}}
         @php
+        $metaFilterActive = $filters['meta_campaign_id'] || $filters['meta_adset_id'] || $filters['meta_ad_id'];
         $activeCount = collect([
             $filters['search'] ?: null,
             (!$ownOnly && $filters['assigned_to']) ? $filters['assigned_to'] : null,
@@ -292,8 +307,17 @@
             $filters['duplicate'] ? 1 : null,
             count($filters['tags']) > 0 ? 1 : null,
             count($filters['cf']) > 0 ? 1 : null,
+            $filters['date_from'] ?: null,
+            $filters['date_to'] ?: null,
+            $metaFilterActive ? 1 : null,
         ])->filter()->count();
         @endphp
+        @if($metaFilterActive)
+        <span class="flex-shrink-0 flex items-center gap-1 text-xs font-medium text-violet-700 bg-violet-50 border border-violet-200 px-2 py-1 rounded-full">
+            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5"/></svg>
+            Meta Ad filter
+        </span>
+        @endif
         @if($activeCount > 0)
         <span class="flex-shrink-0 text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
             {{ $activeCount }} active

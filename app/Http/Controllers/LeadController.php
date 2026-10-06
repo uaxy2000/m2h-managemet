@@ -734,6 +734,8 @@ class LeadController extends Controller
             'meta_campaign_id'  => $request->get('meta_campaign_id'),
             'meta_adset_id'     => $request->get('meta_adset_id'),
             'meta_ad_id'        => $request->get('meta_ad_id'),
+            'date_from'         => $request->get('date_from'),
+            'date_to'           => $request->get('date_to'),
             'sort'              => in_array($request->get('sort'), ['stage_entered_at'])
                                      ? 'stage_entered_at'
                                      : 'application_date',
@@ -792,6 +794,12 @@ class LeadController extends Controller
             )
             ->when($filters['meta_ad_id'] ?? null, fn ($q, $v) =>
                 $q->where('meta_ad_id', $v)
+            )
+            ->when($filters['date_from'] ?? null, fn ($q, $v) =>
+                $q->whereDate('created_at', '>=', $v)
+            )
+            ->when($filters['date_to'] ?? null, fn ($q, $v) =>
+                $q->whereDate('created_at', '<=', $v)
             )
             ->when($filters['program_id'], fn ($q, $progId) =>
                 str_starts_with($progId, 'country:')
