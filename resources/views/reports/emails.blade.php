@@ -1,5 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Email Activity')
+@section('heading', 'Email Activity')
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 py-6">
@@ -114,7 +115,7 @@
                     <td class="px-4 py-3">
                         @if($lead)
                         <a href="{{ route('leads.show', $lead) }}" class="font-medium text-gray-800 hover:text-blue-600">{{ $lead->name }}</a>
-                        <p class="text-xs text-gray-400">{{ $lead->email }}</p>
+                        <a href="{{ route('leads.show', $lead) }}" class="text-xs text-gray-400 hover:text-blue-500">{{ $lead->email }}</a>
                         @else
                         <span class="text-gray-400 text-xs">—</span>
                         @endif
