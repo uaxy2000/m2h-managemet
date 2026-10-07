@@ -216,6 +216,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:super_admin,admin')->group(function () {
         Route::resource('automations', AutomationController::class);
         Route::post('automations/{automation}/toggle', [AutomationController::class, 'toggleActive'])->name('automations.toggle');
+        Route::post('automations/{automation}/duplicate', [AutomationController::class, 'duplicate'])->name('automations.duplicate');
         Route::get('automations/{automation}/preview', [AutomationController::class, 'preview'])->name('automations.preview');
         Route::post('automations/{automation}/run', [AutomationController::class, 'run'])->name('automations.run');
     });

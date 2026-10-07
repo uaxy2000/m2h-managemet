@@ -218,7 +218,18 @@ class AutomationService
         try {
             switch ($action->action_type) {
                 case 'assign_to':
-                    $userId = $params['user_id'] ?? null;
+                    $mode = $params['mode'] ?? 'fixed';
+                    if ($mode === 'round_robin') {
+                        $userIds = array_values(array_filter($params['user_ids'] ?? []));
+                        if (!empty($userIds)) {
+                            $idx    = (int) $action->round_robin_index;
+                            $userId = $userIds[$idx % count($userIds)];
+                            // Atomic increment so concurrent runs don't pick the same slot
+                            \App\Models\AutomationAction::where('id', $action->id)->increment('round_robin_index');
+                        }
+                    } else {
+                        $userId = $params['user_id'] ?? null;
+                    }
                     if ($userId) {
                         $assignee = User::find($userId);
                         $lead->update(['assigned_to' => $userId]);

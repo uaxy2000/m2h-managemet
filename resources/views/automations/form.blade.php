@@ -380,13 +380,69 @@
 
                             {{-- assign_to --}}
                             <template x-if="action.action_type === 'assign_to'">
-                                <select x-model="action.parameters.user_id"
-                                        class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                    <option value="">Select user…</option>
-                                    <template x-for="u in users" :key="u.id">
-                                        <option :value="u.id" x-text="u.name" :selected="u.id == action.parameters.user_id"></option>
+                                <div class="flex flex-col gap-2">
+                                    {{-- Mode toggle --}}
+                                    <div class="flex items-center gap-2">
+                                        <label class="flex items-center gap-1.5 text-xs cursor-pointer">
+                                            <input type="radio" :name="'assign_mode_' + ai"
+                                                   value="fixed"
+                                                   x-model="action.parameters.mode"
+                                                   @change="action.parameters.mode = 'fixed'"
+                                                   class="text-indigo-600">
+                                            Fixed user
+                                        </label>
+                                        <label class="flex items-center gap-1.5 text-xs cursor-pointer">
+                                            <input type="radio" :name="'assign_mode_' + ai"
+                                                   value="round_robin"
+                                                   x-model="action.parameters.mode"
+                                                   @change="action.parameters.mode = 'round_robin'"
+                                                   class="text-indigo-600">
+                                            Round robin
+                                        </label>
+                                    </div>
+
+                                    {{-- Fixed: single user --}}
+                                    <template x-if="(action.parameters.mode || 'fixed') === 'fixed'">
+                                        <select x-model="action.parameters.user_id"
+                                                class="border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                            <option value="">Select user…</option>
+                                            <template x-for="u in users" :key="u.id">
+                                                <option :value="u.id" x-text="u.name" :selected="u.id == action.parameters.user_id"></option>
+                                            </template>
+                                        </select>
                                     </template>
-                                </select>
+
+                                    {{-- Round robin: ordered user list --}}
+                                    <template x-if="action.parameters.mode === 'round_robin'">
+                                        <div class="flex flex-col gap-1.5">
+                                            <template x-for="(uid, uidx) in (action.parameters.user_ids || [])" :key="uidx">
+                                                <div class="flex items-center gap-1">
+                                                    <span class="text-[10px] text-gray-400 w-4 text-right flex-shrink-0" x-text="uidx + 1 + '.'"></span>
+                                                    <select :value="uid"
+                                                            @change="action.parameters.user_ids[uidx] = $event.target.value"
+                                                            class="border border-gray-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 flex-1">
+                                                        <option value="">Select user…</option>
+                                                        <template x-for="u in users" :key="u.id">
+                                                            <option :value="u.id" x-text="u.name" :selected="u.id == uid"></option>
+                                                        </template>
+                                                    </select>
+                                                    <button type="button"
+                                                            @click="action.parameters.user_ids.splice(uidx, 1)"
+                                                            class="text-gray-300 hover:text-red-500 flex-shrink-0">
+                                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </template>
+                                            <button type="button"
+                                                    @click="if (!action.parameters.user_ids) action.parameters.user_ids = []; action.parameters.user_ids.push('')"
+                                                    class="text-xs text-indigo-600 hover:text-indigo-800 text-left">
+                                                + Add user
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
                             </template>
 
                             {{-- change_stage --}}
@@ -633,7 +689,7 @@ function ruleBuilder(stages, tags, users, waTemplates, customFields, initConditi
         },
 
         onActionTypeChange(action) {
-            action.parameters = {};
+            action.parameters = action.action_type === 'assign_to' ? { mode: 'fixed' } : {};
         },
 
         serializeHidden() {

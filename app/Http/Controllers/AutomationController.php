@@ -116,6 +116,43 @@ class AutomationController extends Controller
         return redirect()->route('automations.index')->with('success', 'Rule deleted.');
     }
 
+    public function duplicate(AutomationRule $automation): RedirectResponse
+    {
+        $automation->load(['conditions', 'actions']);
+
+        $copy = AutomationRule::create([
+            'name'            => $automation->name . ' - Copy',
+            'description'     => $automation->description,
+            'is_active'       => false,
+            'priority'        => $automation->priority,
+            're_run_mode'     => $automation->re_run_mode,
+            'trigger_events'  => $automation->trigger_events,
+            'skip_duplicates' => $automation->skip_duplicates,
+        ]);
+
+        foreach ($automation->conditions as $c) {
+            AutomationCondition::create([
+                'rule_id'     => $copy->id,
+                'group_index' => $c->group_index,
+                'field'       => $c->field,
+                'field_key'   => $c->field_key,
+                'operator'    => $c->operator,
+                'value'       => $c->value,
+            ]);
+        }
+
+        foreach ($automation->actions as $a) {
+            AutomationAction::create([
+                'rule_id'     => $copy->id,
+                'sort_order'  => $a->sort_order,
+                'action_type' => $a->action_type,
+                'parameters'  => $a->parameters,
+            ]);
+        }
+
+        return redirect()->route('automations.edit', $copy)->with('success', 'Rule duplicated. Review and activate when ready.');
+    }
+
     public function toggleActive(AutomationRule $automation): JsonResponse
     {
         $automation->update(['is_active' => !$automation->is_active]);
