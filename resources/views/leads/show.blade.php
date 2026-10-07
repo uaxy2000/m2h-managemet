@@ -1111,9 +1111,10 @@
                                     $waSentTs     = $waMeta['sent_at'] ?? null;
                                     $waDelivTs    = $waMeta['delivered_at'] ?? null;
                                     $waReadTs     = $waMeta['read_at'] ?? null;
-                                    $waSentDt     = $waSentTs ? \Carbon\Carbon::createFromTimestamp($waSentTs) : $msg->created_at;
-                                    $waDelivDt    = $waDelivTs ? \Carbon\Carbon::createFromTimestamp($waDelivTs) : null;
-                                    $waReadDt     = $waReadTs  ? \Carbon\Carbon::createFromTimestamp($waReadTs)  : null;
+                                    $waTz         = new \DateTimeZone(config('app.timezone', 'Europe/Istanbul'));
+                                    $waSentDt     = $waSentTs ? \Carbon\Carbon::createFromTimestampUTC($waSentTs)->setTimezone($waTz) : $msg->created_at;
+                                    $waDelivDt    = $waDelivTs ? \Carbon\Carbon::createFromTimestampUTC($waDelivTs)->setTimezone($waTz) : null;
+                                    $waReadDt     = $waReadTs  ? \Carbon\Carbon::createFromTimestampUTC($waReadTs)->setTimezone($waTz)  : null;
                                 @endphp
                                 <div class="mt-1.5 space-y-0.5 text-right">
                                     <div class="flex items-center justify-end gap-1">
