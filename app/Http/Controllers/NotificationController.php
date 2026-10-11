@@ -75,14 +75,22 @@ class NotificationController extends Controller
             ->get();
 
         foreach ($dueTasks as $task) {
-            NotificationService::send(
-                userId: $userId,
-                type:   'task_due',
-                title:  'Task due today',
-                body:   $task->title,
-                url:    $task->lead_id ? route('leads.show', $task->lead_id) : null,
-                meta:   ['task_id' => $task->id],
-            );
+            $alreadyToday = Notification::where('user_id', $userId)
+                ->where('type', 'task_due')
+                ->whereDate('created_at', $today)
+                ->whereJsonContains('meta->task_id', $task->id)
+                ->exists();
+
+            if (!$alreadyToday) {
+                NotificationService::send(
+                    userId: $userId,
+                    type:   'task_due',
+                    title:  'Task due today',
+                    body:   $task->title,
+                    url:    $task->lead_id ? route('leads.show', $task->lead_id) : null,
+                    meta:   ['task_id' => $task->id],
+                );
+            }
         }
 
         // Overdue tasks (due_at < today, not completed, not yet notified today)
