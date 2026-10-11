@@ -39,9 +39,26 @@ class NotificationController extends Controller
 
         $unread = $notifications->where('read', false)->count();
 
+        // Advance alerts: unread time-sensitive notifications created today → triggers modal
+        $advanceAlerts = Notification::where('user_id', $user->id)
+            ->whereIn('type', ['task_due_30min', 'task_due_5min', 'task_overdue'])
+            ->whereNull('read_at')
+            ->whereDate('created_at', now()->toDateString())
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get()
+            ->map(fn($n) => [
+                'id'    => $n->id,
+                'type'  => $n->type,
+                'title' => $n->title,
+                'body'  => $n->body,
+                'url'   => $n->url,
+            ]);
+
         return response()->json([
-            'unread'        => $unread,
-            'notifications' => $notifications,
+            'unread'         => $unread,
+            'notifications'  => $notifications,
+            'advance_alerts' => $advanceAlerts,
         ]);
     }
 
@@ -67,10 +84,11 @@ class NotificationController extends Controller
 
     private function checkTaskNotifications(string $userId): void
     {
-        $today    = now()->toDateString();
-        $todayDt  = now()->startOfDay();
+        $today   = now()->toDateString();
+        $todayDt = now()->startOfDay();
+        $now     = now();
 
-        // Collect lead tasks + board tasks due today
+        // Due today
         $dueTasks = Task::where('assigned_to', $userId)
             ->where('is_done', false)->whereNotNull('due_at')->whereDate('due_at', $today)->get()
             ->map(fn ($t) => ['id' => $t->id, 'title' => $t->title, 'url' => $t->lead_id ? route('leads.show', $t->lead_id) : null])
@@ -99,7 +117,7 @@ class NotificationController extends Controller
             }
         }
 
-        // Overdue: lead tasks + board tasks past due, not yet notified today
+        // Overdue: past due, once per task per day
         $overdue = Task::where('assigned_to', $userId)
             ->where('is_done', false)->whereNotNull('due_at')->where('due_at', '<', $todayDt)->get()
             ->map(fn ($t) => ['id' => $t->id, 'title' => $t->title, 'url' => $t->lead_id ? route('leads.show', $t->lead_id) : null])
@@ -121,6 +139,68 @@ class NotificationController extends Controller
                     userId: $userId,
                     type:   'task_overdue',
                     title:  'Overdue task',
+                    body:   $task['title'],
+                    url:    $task['url'],
+                    meta:   ['task_id' => $task['id']],
+                );
+            }
+        }
+
+        // 30-minute advance warning: due between now+25min and now+35min
+        $w30s = $now->copy()->addMinutes(25);
+        $w30e = $now->copy()->addMinutes(35);
+
+        $due30 = Task::where('assigned_to', $userId)
+            ->where('is_done', false)->whereNotNull('due_at')->whereBetween('due_at', [$w30s, $w30e])->get()
+            ->map(fn ($t) => ['id' => $t->id, 'title' => $t->title, 'url' => $t->lead_id ? route('leads.show', $t->lead_id) : null])
+            ->concat(
+                CardTask::where('assigned_to', $userId)
+                    ->where('is_done', false)->whereNotNull('due_at')->whereBetween('due_at', [$w30s, $w30e])->get()
+                    ->map(fn ($t) => ['id' => 'card_' . $t->id, 'title' => $t->title, 'url' => null])
+            );
+
+        foreach ($due30 as $task) {
+            $alreadySent = Notification::where('user_id', $userId)
+                ->where('type', 'task_due_30min')
+                ->where('meta', 'LIKE', '%' . $task['id'] . '%')
+                ->exists();
+
+            if (!$alreadySent) {
+                NotificationService::send(
+                    userId: $userId,
+                    type:   'task_due_30min',
+                    title:  'Task in 30 minutes',
+                    body:   $task['title'],
+                    url:    $task['url'],
+                    meta:   ['task_id' => $task['id']],
+                );
+            }
+        }
+
+        // 5-minute advance warning: due between now+2min and now+8min
+        $w5s = $now->copy()->addMinutes(2);
+        $w5e = $now->copy()->addMinutes(8);
+
+        $due5 = Task::where('assigned_to', $userId)
+            ->where('is_done', false)->whereNotNull('due_at')->whereBetween('due_at', [$w5s, $w5e])->get()
+            ->map(fn ($t) => ['id' => $t->id, 'title' => $t->title, 'url' => $t->lead_id ? route('leads.show', $t->lead_id) : null])
+            ->concat(
+                CardTask::where('assigned_to', $userId)
+                    ->where('is_done', false)->whereNotNull('due_at')->whereBetween('due_at', [$w5s, $w5e])->get()
+                    ->map(fn ($t) => ['id' => 'card_' . $t->id, 'title' => $t->title, 'url' => null])
+            );
+
+        foreach ($due5 as $task) {
+            $alreadySent = Notification::where('user_id', $userId)
+                ->where('type', 'task_due_5min')
+                ->where('meta', 'LIKE', '%' . $task['id'] . '%')
+                ->exists();
+
+            if (!$alreadySent) {
+                NotificationService::send(
+                    userId: $userId,
+                    type:   'task_due_5min',
+                    title:  'Task in 5 minutes',
                     body:   $task['title'],
                     url:    $task['url'],
                     meta:   ['task_id' => $task['id']],
