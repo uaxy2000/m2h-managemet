@@ -48,8 +48,9 @@ class NotificationController extends Controller
             ->limit(10)
             ->get()
             ->map(function ($n) {
-                $taskId   = ($n->meta ?? [])['task_id'] ?? null;
-                $leadInfo = null;
+                $taskId      = ($n->meta ?? [])['task_id'] ?? null;
+                $leadInfo    = null;
+                $description = null;
 
                 if ($taskId && !str_starts_with((string) $taskId, 'card_')) {
                     $task = Task::with([
@@ -58,22 +59,27 @@ class NotificationController extends Controller
                         'lead.stage:id,name',
                     ])->find($taskId);
 
-                    if ($task && $task->lead) {
-                        $lead     = $task->lead;
-                        $leadInfo = [
-                            'name'     => trim($lead->first_name . ' ' . $lead->last_name),
-                            'pipeline' => $lead->pipeline?->name,
-                            'stage'    => $lead->stage?->name,
-                        ];
+                    if ($task) {
+                        $description = $task->description ?: null;
+
+                        if ($task->lead) {
+                            $lead     = $task->lead;
+                            $leadInfo = [
+                                'name'     => trim($lead->first_name . ' ' . $lead->last_name),
+                                'pipeline' => $lead->pipeline?->name,
+                                'stage'    => $lead->stage?->name,
+                            ];
+                        }
                     }
                 }
 
                 return [
-                    'id'   => $n->id,
-                    'type' => $n->type,
-                    'body' => $n->body,
-                    'url'  => $n->url,
-                    'lead' => $leadInfo,
+                    'id'          => $n->id,
+                    'type'        => $n->type,
+                    'body'        => $n->body,
+                    'url'         => $n->url,
+                    'description' => $description,
+                    'lead'        => $leadInfo,
                 ];
             });
 

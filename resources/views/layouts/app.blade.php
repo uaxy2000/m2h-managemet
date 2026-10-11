@@ -600,6 +600,9 @@
                                   :style="a.type==='task_overdue'?'background:#ef4444;':(a.type==='task_due_5min'?'background:#f97316;':'background:#f59e0b;')"></span>
                             <div style="flex:1;min-width:0;">
                                 <p style="font-size:13px;font-weight:600;color:#111827;line-height:1.4;margin:0 0 2px;" x-text="a.body"></p>
+                                <template x-if="a.description">
+                                    <p style="font-size:12px;color:#6b7280;margin:0 0 3px;line-height:1.4;" x-text="a.description"></p>
+                                </template>
                                 <template x-if="a.lead">
                                     <p style="font-size:12px;color:#6b7280;margin:0 0 2px;">
                                         <span x-text="a.lead.name" style="font-weight:500;color:#374151;"></span>
