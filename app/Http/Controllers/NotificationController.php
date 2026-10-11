@@ -82,7 +82,7 @@ class NotificationController extends Controller
             $alreadyToday = Notification::where('user_id', $userId)
                 ->where('type', 'task_due')
                 ->whereDate('created_at', $today)
-                ->whereJsonContains('meta->task_id', $task['id'])
+                ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(meta, '$.task_id')) = ?", [$task['id']])
                 ->exists();
 
             if (!$alreadyToday) {
@@ -111,7 +111,7 @@ class NotificationController extends Controller
             $alreadyToday = Notification::where('user_id', $userId)
                 ->where('type', 'task_overdue')
                 ->whereDate('created_at', $today)
-                ->whereJsonContains('meta->task_id', $task['id'])
+                ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(meta, '$.task_id')) = ?", [$task['id']])
                 ->exists();
 
             if (!$alreadyToday) {

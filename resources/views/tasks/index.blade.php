@@ -189,10 +189,11 @@ function taskNavUrl(array $overrides): string {
                 </div>
                 <div class="flex-1 p-1.5 space-y-1">
                     @forelse($day['tasks'] as $task)
+                    @php $isOverdue = !$task['is_done'] && $task['due_at'] && $task['due_at']->isPast(); @endphp
                     <div class="flex items-start gap-1.5 group">
                         <button type="button"
                                 @click="toggle('{{ $task['toggle_url'] ?? '' }}', $event)"
-                                class="mt-0.5 w-3.5 h-3.5 flex-shrink-0 rounded-sm border {{ $task['is_done'] ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 hover:border-indigo-400' }} flex items-center justify-center transition-all">
+                                class="mt-0.5 w-3.5 h-3.5 flex-shrink-0 rounded-sm border {{ $task['is_done'] ? 'bg-emerald-500 border-emerald-500' : ($isOverdue ? 'border-red-400 hover:border-red-500' : 'border-gray-300 hover:border-indigo-400') }} flex items-center justify-center transition-all">
                             @if($task['is_done'])
                             <svg class="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
@@ -200,7 +201,7 @@ function taskNavUrl(array $overrides): string {
                             @endif
                         </button>
                         <div class="min-w-0 flex-1">
-                            <p class="text-xs leading-snug {{ $task['is_done'] ? 'line-through text-gray-300' : 'text-gray-700' }} truncate" title="{{ $task['title'] }}">{{ $task['title'] }}</p>
+                            <p class="text-xs leading-snug {{ $task['is_done'] ? 'line-through text-gray-300' : ($isOverdue ? 'text-red-500' : 'text-gray-700') }} truncate" title="{{ $task['title'] }}">{{ $task['title'] }}</p>
                             <a href="{{ $task['context_url'] }}"
                                class="text-[11px] {{ $task['type'] === 'lead' ? 'text-indigo-400' : 'text-purple-400' }} hover:underline truncate block leading-tight">
                                 {{ Str::limit($task['context'], 20) }}
