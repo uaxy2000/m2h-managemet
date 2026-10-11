@@ -142,7 +142,7 @@
             </div>
             @forelse($dayTasks as $t)
             <div style="font-size:10px;padding:3px 5px;border-radius:4px;margin-bottom:3px;line-height:1.35;
-                {{ $t['is_done'] ? 'background:#f0fdf4;color:#6b7280;text-decoration:line-through;' : ($isPast && !$t['is_done'] ? 'background:#fef2f2;color:#dc2626;' : 'background:#eff6ff;color:#1e40af;') }}">
+                {{ $t['is_done'] ? 'background:#f0fdf4;color:#6b7280;text-decoration:line-through;' : (!$t['is_done'] && $t['due_at']->isPast() ? 'background:#fef2f2;color:#dc2626;' : 'background:#eff6ff;color:#1e40af;') }}">
                 @if($t['context_url'])
                 <a href="{{ $t['context_url'] }}" style="color:inherit;text-decoration:none;">{{ $t['title'] }}</a>
                 @else

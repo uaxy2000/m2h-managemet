@@ -19,7 +19,9 @@ class NotificationController extends Controller
     {
         $user = auth()->user();
 
-        $this->checkTaskNotifications($user->id);
+        try { $this->checkTaskNotifications($user->id); } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('checkTaskNotifications failed', ['error' => $e->getMessage()]);
+        }
 
         $notifications = Notification::where('user_id', $user->id)
             ->orderByDesc('created_at')
@@ -82,7 +84,7 @@ class NotificationController extends Controller
             $alreadyToday = Notification::where('user_id', $userId)
                 ->where('type', 'task_due')
                 ->whereDate('created_at', $today)
-                ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(meta, '$.task_id')) = ?", [$task['id']])
+                ->where('meta', 'LIKE', '%' . $task['id'] . '%')
                 ->exists();
 
             if (!$alreadyToday) {
@@ -111,7 +113,7 @@ class NotificationController extends Controller
             $alreadyToday = Notification::where('user_id', $userId)
                 ->where('type', 'task_overdue')
                 ->whereDate('created_at', $today)
-                ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(meta, '$.task_id')) = ?", [$task['id']])
+                ->where('meta', 'LIKE', '%' . $task['id'] . '%')
                 ->exists();
 
             if (!$alreadyToday) {
