@@ -1369,7 +1369,7 @@
                                     </option>
                                     @endforeach
                                 </select>
-                                <input type="datetime-local" name="due_at" required value="{{ old('due_at') }}"
+                                <input type="datetime-local" name="due_at" required value="{{ old('due_at') }}" step="300"
                                        class="rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                             </div>
                         </div>
