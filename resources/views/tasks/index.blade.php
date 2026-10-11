@@ -257,10 +257,11 @@ function taskNavUrl(array $overrides): string {
                     </div>
                     <div class="space-y-0.5">
                         @foreach($visibleTasks as $task)
+                        @php $isOverdue = !$task['is_done'] && $task['due_at'] && $task['due_at']->isPast(); @endphp
                         <div class="flex items-center gap-1 group">
                             <button type="button"
                                     @click="toggle('{{ $task['toggle_url'] ?? '' }}', $event)"
-                                    class="w-2.5 h-2.5 flex-shrink-0 rounded-sm border {{ $task['is_done'] ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 hover:border-indigo-400' }} flex items-center justify-center transition-all">
+                                    class="w-2.5 h-2.5 flex-shrink-0 rounded-sm border {{ $task['is_done'] ? 'bg-emerald-500 border-emerald-500' : ($isOverdue ? 'border-red-400 hover:border-red-500' : 'border-gray-300 hover:border-indigo-400') }} flex items-center justify-center transition-all">
                                 @if($task['is_done'])
                                 <svg class="w-1.5 h-1.5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
@@ -268,7 +269,7 @@ function taskNavUrl(array $overrides): string {
                                 @endif
                             </button>
                             <a href="{{ $task['context_url'] }}"
-                               class="text-[11px] leading-tight truncate {{ $task['is_done'] ? 'line-through text-gray-300' : ($task['type'] === 'lead' ? 'text-indigo-600' : 'text-purple-600') }} hover:underline"
+                               class="text-[11px] leading-tight truncate {{ $task['is_done'] ? 'line-through text-gray-300' : ($isOverdue ? 'text-red-500' : ($task['type'] === 'lead' ? 'text-indigo-600' : 'text-purple-600')) }} hover:underline"
                                title="{{ $task['title'] }}">
                                 {{ Str::limit($task['title'], 18) }}
                             </a>

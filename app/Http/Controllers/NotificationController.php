@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CardTask;
 use App\Models\Notification;
 use App\Models\Task;
 use App\Services\NotificationService;
@@ -67,18 +68,21 @@ class NotificationController extends Controller
         $today    = now()->toDateString();
         $todayDt  = now()->startOfDay();
 
-        // Tasks due today (time == 00:00 means board task → just date)
+        // Collect lead tasks + board tasks due today
         $dueTasks = Task::where('assigned_to', $userId)
-            ->where('is_done', false)
-            ->whereNotNull('due_at')
-            ->whereDate('due_at', $today)
-            ->get();
+            ->where('is_done', false)->whereNotNull('due_at')->whereDate('due_at', $today)->get()
+            ->map(fn ($t) => ['id' => $t->id, 'title' => $t->title, 'url' => $t->lead_id ? route('leads.show', $t->lead_id) : null])
+            ->concat(
+                CardTask::where('assigned_to', $userId)
+                    ->where('is_done', false)->whereNotNull('due_at')->whereDate('due_at', $today)->get()
+                    ->map(fn ($t) => ['id' => 'card_' . $t->id, 'title' => $t->title, 'url' => null])
+            );
 
         foreach ($dueTasks as $task) {
             $alreadyToday = Notification::where('user_id', $userId)
                 ->where('type', 'task_due')
                 ->whereDate('created_at', $today)
-                ->whereJsonContains('meta->task_id', $task->id)
+                ->whereJsonContains('meta->task_id', $task['id'])
                 ->exists();
 
             if (!$alreadyToday) {
@@ -86,26 +90,28 @@ class NotificationController extends Controller
                     userId: $userId,
                     type:   'task_due',
                     title:  'Task due today',
-                    body:   $task->title,
-                    url:    $task->lead_id ? route('leads.show', $task->lead_id) : null,
-                    meta:   ['task_id' => $task->id],
+                    body:   $task['title'],
+                    url:    $task['url'],
+                    meta:   ['task_id' => $task['id']],
                 );
             }
         }
 
-        // Overdue tasks (due_at < today, not completed, not yet notified today)
+        // Overdue: lead tasks + board tasks past due, not yet notified today
         $overdue = Task::where('assigned_to', $userId)
-            ->where('is_done', false)
-            ->whereNotNull('due_at')
-            ->where('due_at', '<', $todayDt)
-            ->get();
+            ->where('is_done', false)->whereNotNull('due_at')->where('due_at', '<', $todayDt)->get()
+            ->map(fn ($t) => ['id' => $t->id, 'title' => $t->title, 'url' => $t->lead_id ? route('leads.show', $t->lead_id) : null])
+            ->concat(
+                CardTask::where('assigned_to', $userId)
+                    ->where('is_done', false)->whereNotNull('due_at')->where('due_at', '<', $todayDt)->get()
+                    ->map(fn ($t) => ['id' => 'card_' . $t->id, 'title' => $t->title, 'url' => null])
+            );
 
         foreach ($overdue as $task) {
-            // Only notify once per day per overdue task
             $alreadyToday = Notification::where('user_id', $userId)
                 ->where('type', 'task_overdue')
                 ->whereDate('created_at', $today)
-                ->whereJsonContains('meta->task_id', $task->id)
+                ->whereJsonContains('meta->task_id', $task['id'])
                 ->exists();
 
             if (!$alreadyToday) {
@@ -113,9 +119,9 @@ class NotificationController extends Controller
                     userId: $userId,
                     type:   'task_overdue',
                     title:  'Overdue task',
-                    body:   $task->title,
-                    url:    $task->lead_id ? route('leads.show', $task->lead_id) : null,
-                    meta:   ['task_id' => $task->id],
+                    body:   $task['title'],
+                    url:    $task['url'],
+                    meta:   ['task_id' => $task['id']],
                 );
             }
         }
