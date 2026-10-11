@@ -47,13 +47,35 @@ class NotificationController extends Controller
             ->orderByDesc('created_at')
             ->limit(10)
             ->get()
-            ->map(fn($n) => [
-                'id'    => $n->id,
-                'type'  => $n->type,
-                'title' => $n->title,
-                'body'  => $n->body,
-                'url'   => $n->url,
-            ]);
+            ->map(function ($n) {
+                $taskId   = ($n->meta ?? [])['task_id'] ?? null;
+                $leadInfo = null;
+
+                if ($taskId && !str_starts_with((string) $taskId, 'card_')) {
+                    $task = Task::with([
+                        'lead:id,first_name,last_name,pipeline_id,stage_id',
+                        'lead.pipeline:id,name',
+                        'lead.stage:id,name',
+                    ])->find($taskId);
+
+                    if ($task && $task->lead) {
+                        $lead     = $task->lead;
+                        $leadInfo = [
+                            'name'     => trim($lead->first_name . ' ' . $lead->last_name),
+                            'pipeline' => $lead->pipeline?->name,
+                            'stage'    => $lead->stage?->name,
+                        ];
+                    }
+                }
+
+                return [
+                    'id'   => $n->id,
+                    'type' => $n->type,
+                    'body' => $n->body,
+                    'url'  => $n->url,
+                    'lead' => $leadInfo,
+                ];
+            });
 
         return response()->json([
             'unread'         => $unread,

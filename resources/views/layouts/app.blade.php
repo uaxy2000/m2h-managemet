@@ -571,57 +571,70 @@
         }
      }"
      @task-alert.window="alerts = [...alerts, ...($event.detail.filter(a => !alerts.find(x => x.id === a.id)))]"
-     x-show="alerts.length > 0"
-     x-cloak
-     style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);"
-     @keydown.escape.window="dismiss()">
+     @keydown.escape.window="if(alerts.length) dismiss()">
 
-    <div style="background:#fff;border-radius:14px;width:min(420px,92vw);box-shadow:0 24px 60px rgba(0,0,0,.22);overflow:hidden;">
+    <template x-if="alerts.length > 0">
+        <div style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);">
+            <div style="background:#fff;border-radius:14px;width:min(440px,92vw);box-shadow:0 24px 60px rgba(0,0,0,.25);overflow:hidden;">
 
-        {{-- Header --}}
-        <div style="padding:18px 20px 14px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:10px;">
-            <svg style="width:20px;height:20px;color:#f59e0b;flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 1 1-20 0 10 10 0 0 1 20 0z"/>
-            </svg>
-            <span style="font-size:14px;font-weight:600;color:#111827;">Task Reminder</span>
-            <button @click="dismiss()" type="button"
-                    style="margin-left:auto;padding:4px;border-radius:6px;color:#9ca3af;line-height:1;background:none;border:none;cursor:pointer;"
-                    onmouseover="this.style.color='#374151'" onmouseout="this.style.color='#9ca3af'">
-                <svg style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
-                </svg>
-            </button>
+                {{-- Header --}}
+                <div style="padding:16px 20px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:10px;">
+                    <svg style="width:18px;height:18px;color:#f59e0b;flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 1 1-20 0 10 10 0 0 1 20 0z"/>
+                    </svg>
+                    <span style="font-size:14px;font-weight:600;color:#111827;">Task Reminder</span>
+                    <button @click="dismiss()" type="button"
+                            style="margin-left:auto;padding:4px;border-radius:6px;color:#9ca3af;background:none;border:none;cursor:pointer;line-height:1;"
+                            onmouseover="this.style.color='#374151'" onmouseout="this.style.color='#9ca3af'">
+                        <svg style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- Alert list --}}
+                <ul style="max-height:320px;overflow-y:auto;">
+                    <template x-for="a in alerts" :key="a.id">
+                        <li style="padding:14px 20px;border-bottom:1px solid #f3f4f6;display:flex;align-items:flex-start;gap:10px;">
+                            <span style="flex-shrink:0;margin-top:4px;width:8px;height:8px;border-radius:50%;"
+                                  :style="a.type==='task_overdue'?'background:#ef4444;':(a.type==='task_due_5min'?'background:#f97316;':'background:#f59e0b;')"></span>
+                            <div style="flex:1;min-width:0;">
+                                <p style="font-size:13px;font-weight:600;color:#111827;line-height:1.4;margin:0 0 2px;" x-text="a.body"></p>
+                                <template x-if="a.lead">
+                                    <p style="font-size:12px;color:#6b7280;margin:0 0 2px;">
+                                        <span x-text="a.lead.name" style="font-weight:500;color:#374151;"></span>
+                                        <template x-if="a.lead.pipeline || a.lead.stage">
+                                            <span>
+                                                <span style="margin:0 4px;color:#d1d5db;">·</span>
+                                                <span x-text="[a.lead.pipeline, a.lead.stage].filter(Boolean).join(' › ')"></span>
+                                            </span>
+                                        </template>
+                                    </p>
+                                </template>
+                                <p style="font-size:11px;margin:0;"
+                                   :style="a.type==='task_overdue'?'color:#ef4444;':(a.type==='task_due_5min'?'color:#f97316;':'color:#f59e0b;')"
+                                   x-text="a.type==='task_overdue'?'Overdue':(a.type==='task_due_5min'?'Due in ~5 minutes':'Due in ~30 minutes')"></p>
+                            </div>
+                            <a x-show="a.url" :href="a.url"
+                               style="flex-shrink:0;font-size:11px;font-weight:600;color:#6366f1;text-decoration:none;white-space:nowrap;padding:4px 10px;border:1px solid #e0e7ff;border-radius:6px;background:transparent;"
+                               onmouseover="this.style.background='#eef2ff'" onmouseout="this.style.background='transparent'">
+                                View →
+                            </a>
+                        </li>
+                    </template>
+                </ul>
+
+                {{-- Footer --}}
+                <div style="padding:14px 20px;display:flex;justify-content:flex-end;">
+                    <button @click="dismiss()" type="button"
+                            style="padding:8px 22px;border-radius:8px;font-size:13px;font-weight:600;background:#f3f4f6;color:#374151;border:none;cursor:pointer;"
+                            onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+                        Dismiss
+                    </button>
+                </div>
+            </div>
         </div>
-
-        {{-- Alert list --}}
-        <ul style="max-height:280px;overflow-y:auto;">
-            <template x-for="a in alerts" :key="a.id">
-                <li style="padding:12px 20px;border-bottom:1px solid #f9fafb;display:flex;align-items:flex-start;gap:10px;">
-                    <span style="flex-shrink:0;margin-top:2px;width:8px;height:8px;border-radius:50%;"
-                          :style="a.type === 'task_overdue' ? 'background:#ef4444;' : (a.type === 'task_due_5min' ? 'background:#f97316;' : 'background:#f59e0b;')"></span>
-                    <div style="flex:1;min-width:0;">
-                        <p style="font-size:13px;font-weight:500;color:#111827;line-height:1.4;" x-text="a.body || a.title"></p>
-                        <p style="font-size:11px;color:#6b7280;margin-top:2px;"
-                           x-text="a.type === 'task_overdue' ? 'Overdue' : (a.type === 'task_due_5min' ? 'Due in ~5 minutes' : 'Due in ~30 minutes')"></p>
-                    </div>
-                    <a x-show="a.url" :href="a.url"
-                       style="flex-shrink:0;font-size:11px;font-weight:600;color:#6366f1;text-decoration:none;white-space:nowrap;padding:3px 8px;border:1px solid #e0e7ff;border-radius:6px;"
-                       onmouseover="this.style.background='#eef2ff'" onmouseout="this.style.background='transparent'">
-                        View →
-                    </a>
-                </li>
-            </template>
-        </ul>
-
-        {{-- Footer --}}
-        <div style="padding:14px 20px;display:flex;justify-content:flex-end;">
-            <button @click="dismiss()" type="button"
-                    style="padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;background:#f3f4f6;color:#374151;border:none;cursor:pointer;"
-                    onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
-                Dismiss
-            </button>
-        </div>
-    </div>
+    </template>
 </div>
 
 @stack('scripts')
