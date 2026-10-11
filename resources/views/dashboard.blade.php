@@ -411,6 +411,7 @@ $phases = [
             ['label' => 'Meeting Rooms — settings CRUD (capacity, location, color)',      'complete' => true],
             ['label' => 'Meeting conflict detection — room (blocks) + person (warns)',    'complete' => true],
             ['label' => 'Google Calendar sync — OAuth per user, event create/update/delete', 'complete' => true],
+            ['label' => 'Google Calendar sync for tasks (push task due dates to user\'s calendar)', 'complete' => false],
             ['label' => 'Profile page — personal info edit, Google Calendar connect/disconnect', 'complete' => true],
             ['label' => 'Dashboard — This Week\'s Meetings 7-day strip',                 'complete' => true],
         ],
@@ -435,8 +436,8 @@ $phases = [
     [
         'title' => 'Productivity & Reporting',
         'items' => [
-            ['label' => 'In-app notifications — bell, badge, sound, polling, mark-read',   'complete' => true],
-            ['label' => 'Automation rules — condition builder (AND/OR), actions, conflict detection, preview', 'complete' => true],
+            ['label' => 'In-app notifications — bell, badge, sound, polling, mark-read, advance modal (30 min / 5 min / overdue popup)', 'complete' => true],
+            ['label' => 'Automation rules — condition builder (AND/OR), actions, conflict detection, preview, duplicate rule, round-robin assign', 'complete' => true],
             ['label' => 'Email notifications (lead assigned, stage changed)',              'complete' => false],
             ['label' => 'Lead bulk actions (assign, tag, move stage)',                    'complete' => false],
             ['label' => 'Reporting & analytics — stage, source, assignee, monthly trend (initial)', 'complete' => true],
