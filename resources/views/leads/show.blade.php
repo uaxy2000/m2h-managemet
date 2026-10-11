@@ -1369,8 +1369,11 @@
                                     </option>
                                     @endforeach
                                 </select>
-                                <input type="datetime-local" name="due_at" required value="{{ old('due_at') }}" step="300"
-                                       class="rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                <input type="text" id="task-due-at" name="due_at" required
+                                       placeholder="Date &amp; time"
+                                       value="{{ old('due_at') }}"
+                                       autocomplete="off" readonly
+                                       class="rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white cursor-pointer">
                             </div>
                         </div>
                         <div class="mt-3">
@@ -1779,5 +1782,33 @@ function mergeModal() {
     };
 }
 @endif
+</script>
+@endpush
+
+@push('styles')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+<style>
+.flatpickr-calendar { font-size: 13px; }
+.flatpickr-time input { font-size: 13px; }
+</style>
+@endpush
+
+@push('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var el = document.getElementById('task-due-at');
+    if (!el) return;
+    flatpickr(el, {
+        enableTime: true,
+        minuteIncrement: 5,
+        dateFormat: 'Y-m-d\\TH:i',
+        altInput: true,
+        altFormat: 'd M Y, H:i',
+        time_24hr: true,
+        defaultHour: 9,
+        defaultMinute: 0,
+    });
+});
 </script>
 @endpush
