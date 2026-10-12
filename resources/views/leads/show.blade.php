@@ -59,18 +59,20 @@
 </div>
 
 {{-- Flash messages --}}
-@foreach(['success', 'note_success', 'task_success'] as $key)
+@foreach(['success', 'note_success', 'task_success', 'wa_success', 'email_success'] as $key)
 @if(session($key))
 <div class="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-2.5 text-sm mb-5">
     {{ session($key) }}
 </div>
 @endif
 @endforeach
-@if(session('note_error'))
+@foreach(['note_error', 'wa_error', 'email_error'] as $key)
+@if(session($key))
 <div class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2.5 text-sm mb-5">
-    {{ session('note_error') }}
+    {{ session($key) }}
 </div>
 @endif
+@endforeach
 @if(session('warning'))
 <div class="bg-amber-50 border border-amber-200 text-amber-700 rounded-lg px-4 py-2.5 text-sm mb-5">
     {{ session('warning') }}
