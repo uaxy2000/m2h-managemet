@@ -293,12 +293,24 @@ class ImapService
         return [
             'message_id' => $messageId,
             'subject'    => $this->decodeHeader($headers->subject ?? '(no subject)'),
-            'date'       => isset($headers->date) ? Carbon::parse($headers->date) : now(),
+            'date'       => isset($headers->date) ? $this->parseEmailDate($headers->date) : now(),
             'from'       => $this->extractAddresses($headers->from ?? []),
             'to'         => $this->extractAddresses($headers->to ?? []),
             'cc'         => $this->extractAddresses($headers->cc ?? []),
             'bcc'        => $this->extractAddresses($headers->bcc ?? []),
         ];
+    }
+
+    private function parseEmailDate(string $raw): \Carbon\Carbon
+    {
+        // RFC 2822 allows comments in parentheses, e.g. "+0300 (+03)" — strip them
+        $clean = preg_replace('/\s*\([^)]*\)/', '', $raw);
+        $clean = trim($clean);
+        try {
+            return Carbon::parse($clean);
+        } catch (\Throwable) {
+            return now();
+        }
     }
 
     private function extractAddresses(array $list): array

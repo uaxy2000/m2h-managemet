@@ -25,8 +25,8 @@ class NotificationService
                 ->whereNull('read_at')
                 ->where('created_at', '>=', now()->subHour())
                 ->when(!empty($meta), function ($q) use ($meta) {
-                    foreach ($meta as $k => $v) {
-                        $q->whereJsonContains('meta->' . $k, $v);
+                    foreach ($meta as $v) {
+                        $q->where('meta', 'LIKE', '%' . addslashes((string) $v) . '%');
                     }
                 })
                 ->exists();
