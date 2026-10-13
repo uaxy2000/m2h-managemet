@@ -116,6 +116,8 @@ Route::middleware('auth')->group(function () {
     Route::get('performance/registered-leads/{userId}', [ReportsController::class, 'registeredLeads'])->name('performance.registered-leads');
     Route::get('reports/daily', [DailyReportController::class, 'index'])->name('reports.daily');
     Route::get('reports/emails', [\App\Http\Controllers\EmailReportController::class, 'index'])->name('reports.emails');
+    Route::get('reports/meeting-imports', [\App\Http\Controllers\Reports\MeetingImportController::class, 'index'])->name('reports.meeting-imports');
+    Route::get('reports/meeting-imports/more', [\App\Http\Controllers\Reports\MeetingImportController::class, 'more'])->name('reports.meeting-imports.more');
     Route::get('reports/meta-ads', [MetaAdsController::class, 'index'])->name('reports.meta-ads');
     Route::post('reports/meta-ads/sync', [MetaAdsController::class, 'sync'])->name('reports.meta-ads.sync');
     Route::post('reports/meta-ads/sync-day', [MetaAdsController::class, 'syncDay'])->name('reports.meta-ads.sync-day');

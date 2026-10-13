@@ -11,12 +11,14 @@ class Meeting extends Model
     protected $fillable = [
         'title', 'description', 'start_at', 'end_at',
         'room_id', 'is_online', 'online_url', 'google_event_id', 'created_by',
+        'ical_uid', 'ical_sequence', 'ical_status',
     ];
 
     protected $casts = [
-        'start_at'  => 'datetime',
-        'end_at'    => 'datetime',
-        'is_online' => 'boolean',
+        'start_at'      => 'datetime',
+        'end_at'        => 'datetime',
+        'is_online'     => 'boolean',
+        'ical_sequence' => 'integer',
     ];
 
     public function room(): BelongsTo

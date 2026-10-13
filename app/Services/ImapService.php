@@ -196,6 +196,56 @@ class ImapService
     }
 
     /**
+     * Return the decoded content of the first text/calendar or .ics part in a message.
+     */
+    public function fetchIcsContent(int $uid): ?string
+    {
+        $structure = @imap_fetchstructure($this->connection, $uid, FT_UID);
+        if (!$structure) return null;
+
+        return $this->findIcsPart($uid, $structure, '');
+    }
+
+    private function findIcsPart(int $uid, object $part, string $prefix): ?string
+    {
+        if ($this->isIcsPart($part)) {
+            $num = $prefix ?: '1';
+            $raw = @imap_fetchbody($this->connection, $uid, $num, FT_UID);
+            if (!$raw) return null;
+            $decoded = $this->decodePart($raw, $part->encoding ?? ENC7BIT);
+            // Ensure valid UTF-8
+            return @iconv('UTF-8', 'UTF-8//IGNORE', $decoded) ?: $decoded;
+        }
+
+        if (($part->type ?? 0) === TYPEMULTIPART && !empty($part->parts)) {
+            foreach ($part->parts as $i => $sub) {
+                $num    = $prefix === '' ? (string)($i + 1) : $prefix . '.' . ($i + 1);
+                $result = $this->findIcsPart($uid, $sub, $num);
+                if ($result !== null) return $result;
+            }
+        }
+
+        return null;
+    }
+
+    private function isIcsPart(object $part): bool
+    {
+        $type    = $part->type ?? 0;
+        $subtype = strtolower($part->subtype ?? '');
+
+        if ($type === TYPETEXT && $subtype === 'calendar') return true;
+        if ($type === TYPEAPPLICATION && in_array($subtype, ['ics', 'calendar'])) return true;
+
+        foreach (array_merge($part->parameters ?? [], $part->dparameters ?? []) as $p) {
+            if (in_array(strtolower($p->attribute), ['name', 'filename'])) {
+                if (str_ends_with(strtolower($p->value), '.ics')) return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Fetch emails from a folder since a given date.
      * Returns array of parsed email data.
      */
@@ -223,6 +273,7 @@ class ImapService
 
             try { $parsed['body']        = $this->fetchBody($uid); }        catch (\Throwable) { $parsed['body'] = ''; }
             try { $parsed['attachments'] = $this->fetchAttachments($uid); } catch (\Throwable) { $parsed['attachments'] = []; }
+            try { $parsed['ics_content'] = $this->fetchIcsContent($uid); }  catch (\Throwable) { $parsed['ics_content'] = null; }
             $emails[] = $parsed;
         }
 

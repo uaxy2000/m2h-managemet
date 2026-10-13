@@ -6,6 +6,7 @@ use App\Models\Lead;
 use App\Models\LeadActivity;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\MeetingImportService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
@@ -114,9 +115,11 @@ class EmailSyncService
         $leads = Lead::whereIn('email', $allAddresses)->get();
         if ($leads->isEmpty()) return ['created' => 0, 'skipped' => 1];
 
-        $created = 0;
+        $created      = 0;
+        $icsProcessed = false;
+
         foreach ($leads as $lead) {
-            // Deduplicate by message_id per lead (plain column, no JSON query needed)
+            // Deduplicate by message_id per lead
             $exists = LeadActivity::where('lead_id', $lead->id)
                 ->whereIn('type', ['email_in', 'email_out'])
                 ->where('imap_message_id', $email['message_id'])
@@ -124,7 +127,7 @@ class EmailSyncService
 
             if ($exists) continue;
 
-            LeadActivity::create([
+            $activity = LeadActivity::create([
                 'lead_id'          => $lead->id,
                 'user_id'          => null,
                 'type'             => $type,
@@ -144,6 +147,20 @@ class EmailSyncService
                 ],
             ]);
             $created++;
+
+            // Process ICS once per email (first matching lead)
+            if (!$icsProcessed && !empty($email['ics_content'])) {
+                try {
+                    app(MeetingImportService::class)->processIcs(
+                        icsContent:      $email['ics_content'],
+                        leadId:          $lead->id,
+                        emailActivityId: $activity->id,
+                    );
+                } catch (\Throwable $e) {
+                    Log::warning('MeetingImport failed', ['error' => $e->getMessage()]);
+                }
+                $icsProcessed = true;
+            }
         }
 
         return ['created' => $created, 'skipped' => 0];
