@@ -87,7 +87,6 @@ class MeetingImportService
             'end_at'        => $data['end'],
             'is_online'     => true,
             'online_url'    => $data['location'],
-            'created_by'    => null,
             'ical_uid'      => $uid,
             'ical_sequence' => $sequence,
             'ical_status'   => $data['status'],

@@ -23,7 +23,7 @@ class NotificationController extends Controller
             \Illuminate\Support\Facades\Log::warning('checkTaskNotifications failed', ['error' => $e->getMessage()]);
         }
 
-        $notifications = Notification::where('user_id', $user->id)
+        try { $notifications = Notification::where('user_id', $user->id)
             ->orderByDesc('created_at')
             ->limit(20)
             ->get()
@@ -35,12 +35,15 @@ class NotificationController extends Controller
                 'url'        => $n->url,
                 'read'       => $n->read_at !== null,
                 'created_at' => $n->created_at->diffForHumans(),
-            ]);
+            ]); } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('poll notifications query failed', ['error' => $e->getMessage(), 'prev' => $e->getPrevious()?->getMessage(), 'trace' => array_slice(explode("\n", $e->getTraceAsString()), 0, 8)]);
+            $notifications = collect();
+        }
 
         $unread = $notifications->where('read', false)->count();
 
         // Advance alerts: unread time-sensitive notifications created today → triggers modal
-        $advanceAlerts = Notification::where('user_id', $user->id)
+        try { $advanceAlerts = Notification::where('user_id', $user->id)
             ->whereIn('type', ['task_due_30min', 'task_due_5min', 'task_overdue'])
             ->whereNull('read_at')
             ->whereDate('created_at', now()->toDateString())
@@ -81,7 +84,10 @@ class NotificationController extends Controller
                     'description' => $description,
                     'lead'        => $leadInfo,
                 ];
-            });
+            }); } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('poll advanceAlerts failed', ['error' => $e->getMessage(), 'prev' => $e->getPrevious()?->getMessage(), 'trace' => array_slice(explode("\n", $e->getTraceAsString()), 0, 8)]);
+            $advanceAlerts = collect();
+        }
 
         return response()->json([
             'unread'         => $unread,
