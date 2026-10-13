@@ -14,7 +14,7 @@ class MeetingImportService
      * Process an ICS string from an email and create/update/cancel a meeting.
      * Returns the action taken: imported | rescheduled | cancelled | skipped.
      */
-    public function processIcs(string $icsContent, ?string $leadId, ?int $emailActivityId): string
+    public function processIcs(string $icsContent, ?string $leadId, ?string $emailActivityId): string
     {
         $data = $this->parser->parse($icsContent);
         if (!$data) return 'skipped';
