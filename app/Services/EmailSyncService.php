@@ -158,9 +158,10 @@ class EmailSyncService
             if (!$icsProcessed && !empty($email['ics_content'])) {
                 try {
                     app(MeetingImportService::class)->processIcs(
-                        icsContent:      $email['ics_content'],
-                        leadId:          $lead->id,
-                        emailActivityId: $activity->id,
+                        icsContent:     $email['ics_content'],
+                        leadId:         $lead->id,
+                        emailActivityId:$activity->id,
+                        emailAddresses: $allAddresses,
                     );
                 } catch (\Throwable $e) {
                     $prev = $e->getPrevious();
