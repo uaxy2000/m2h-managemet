@@ -95,7 +95,13 @@ class EmailSyncService
 
             return ['status' => 'ok', 'synced' => $synced, 'skipped' => $skipped];
         } catch (\Throwable $e) {
-            Log::error("IMAP sync failed for {$label}: " . $e->getMessage());
+            $prev = $e->getPrevious();
+            Log::error("IMAP sync failed for {$label}: " . $e->getMessage(), [
+                'exception'  => get_class($e),
+                'file'       => $e->getFile() . ':' . $e->getLine(),
+                'previous'   => $prev ? get_class($prev) . ': ' . $prev->getMessage() . ' @ ' . $prev->getFile() . ':' . $prev->getLine() : null,
+                'trace'      => array_slice(explode("\n", $e->getTraceAsString()), 0, 15),
+            ]);
             $this->imap->close();
             return ['status' => 'error', 'error' => $e->getMessage()];
         }
@@ -157,7 +163,14 @@ class EmailSyncService
                         emailActivityId: $activity->id,
                     );
                 } catch (\Throwable $e) {
-                    Log::warning('MeetingImport failed', ['error' => $e->getMessage()]);
+                    $prev = $e->getPrevious();
+                    Log::warning('MeetingImport failed', [
+                        'error'    => $e->getMessage(),
+                        'class'    => get_class($e),
+                        'file'     => $e->getFile() . ':' . $e->getLine(),
+                        'previous' => $prev ? get_class($prev) . ': ' . $prev->getMessage() : null,
+                        'trace'    => array_slice(explode("\n", $e->getTraceAsString()), 0, 10),
+                    ]);
                 }
                 $icsProcessed = true;
             }
