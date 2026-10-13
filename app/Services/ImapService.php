@@ -307,7 +307,8 @@ class ImapService
         $clean = preg_replace('/\s*\([^)]*\)/', '', $raw);
         $clean = trim($clean);
         try {
-            return Carbon::parse($clean);
+            // Convert to app timezone so MySQL stores local time consistently
+            return Carbon::parse($clean)->setTimezone(config('app.timezone'));
         } catch (\Throwable) {
             return now();
         }
