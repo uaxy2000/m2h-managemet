@@ -414,6 +414,7 @@ $phases = [
             ['label' => 'Google Calendar sync for tasks (push task due dates to user\'s calendar)', 'complete' => false],
             ['label' => 'Profile page — personal info edit, Google Calendar connect/disconnect', 'complete' => true],
             ['label' => 'Dashboard — This Week\'s Meetings 7-day strip',                 'complete' => true],
+            ['label' => 'Calendar invite auto-detect — .ics emails → auto create/reschedule/cancel meetings + participant sync', 'complete' => true],
         ],
     ],
     [
@@ -445,6 +446,8 @@ $phases = [
             ['label' => 'Commission / payment tracking per registered lead',             'complete' => true],
             ['label' => 'Dashboard — today\'s tasks count & overdue indicator in Open Tasks card', 'complete' => true],
             ['label' => 'Daily Activity Report — date nav, user filter, feed by lead, stuck leads', 'complete' => true],
+            ['label' => 'SP form — Representative prefix auto-filled from lead assignee', 'complete' => true],
+            ['label' => 'Meeting Imports report — action log, 7-day infinite scroll',    'complete' => true],
             ['label' => 'Dashboard stat cards (live messages, sync status)',              'complete' => false],
         ],
     ],
