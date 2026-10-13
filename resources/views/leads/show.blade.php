@@ -1007,14 +1007,15 @@
                             </span>
                             @endif
                         @php
-                            $formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLScugMTauTcWVP6A7C5THzkVW-vhzcir8QfytkcBGO1az9XBOw/viewform'
+                            $repLine    = $lead->assignedTo ? 'Representative: ' . $lead->assignedTo->name . "\n" : '';
+                        $formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLScugMTauTcWVP6A7C5THzkVW-vhzcir8QfytkcBGO1az9XBOw/viewform'
                                 . '?usp=pp_url'
                                 . '&entry.1910425423=' . urlencode('info@m2h.ge')
                                 . '&entry.1909848528=' . urlencode($lead->first_name ?? '')
                                 . '&entry.2037197163=' . urlencode($lead->last_name ?? '')
                                 . '&entry.1332109165=' . urlencode($lead->email ?? '')
                                 . '&entry.118955804='  . urlencode($lead->phone ?? '')
-                                . '&entry.1056573155=' . urlencode($item->content);
+                                . '&entry.1056573155=' . urlencode($repLine . $item->content);
                         @endphp
                         <a href="{{ $formUrl }}" target="_blank" rel="noopener"
                            class="inline-flex items-center gap-1 text-xs text-indigo-300 hover:text-indigo-500 transition-colors">
