@@ -217,7 +217,7 @@
                                                     <svg class="w-2.5 h-2.5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
                                                 </button>
                                                 <div x-show="open" x-cloak
-                                                     class="absolute z-30 top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] max-h-52 overflow-y-auto py-1">
+                                                     class="absolute z-[200] top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] max-h-52 overflow-y-auto py-1">
                                                     <template x-for="group in stagesGrouped" :key="group.pipeline">
                                                         <div>
                                                             <div class="px-3 pt-2 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wide" x-text="group.pipeline"></div>
@@ -246,7 +246,7 @@
                                                     <svg class="w-2.5 h-2.5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
                                                 </button>
                                                 <div x-show="open" x-cloak
-                                                     class="absolute z-30 top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] max-h-52 overflow-y-auto py-1">
+                                                     class="absolute z-[200] top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] max-h-52 overflow-y-auto py-1">
                                                     <template x-for="group in tagsGrouped" :key="group.name">
                                                         <div>
                                                             <div class="px-3 pt-2 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wide" x-text="group.name"></div>
@@ -275,7 +275,7 @@
                                                     <svg class="w-2.5 h-2.5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
                                                 </button>
                                                 <div x-show="open" x-cloak
-                                                     class="absolute z-30 top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[180px] max-h-52 overflow-y-auto py-1">
+                                                     class="absolute z-[200] top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[180px] max-h-52 overflow-y-auto py-1">
                                                     <template x-for="u in users" :key="u.id">
                                                         <label class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 cursor-pointer">
                                                             <input type="checkbox" :value="u.id"
@@ -306,7 +306,7 @@
                                                         <svg class="w-2.5 h-2.5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
                                                     </button>
                                                     <div x-show="open" x-cloak
-                                                         class="absolute z-30 top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] max-h-52 overflow-y-auto py-1">
+                                                         class="absolute z-[200] top-full mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[200px] max-h-52 overflow-y-auto py-1">
                                                         <template x-for="opt in getCustomField(cond.field_key)?.options ?? []" :key="opt.value">
                                                             <label class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 cursor-pointer">
                                                                 <input type="checkbox" :value="opt.value"
