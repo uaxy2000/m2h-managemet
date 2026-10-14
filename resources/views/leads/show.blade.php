@@ -694,10 +694,10 @@
 
             @if($availablePrograms->isNotEmpty())
             <form method="POST" action="{{ route('leads.programs.store', $lead) }}"
-                  class="flex gap-2 mt-4 {{ $sortedPrograms->isNotEmpty() ? 'pt-4 border-t border-gray-100' : '' }}">
+                  class="flex gap-2 mt-4 w-full {{ $sortedPrograms->isNotEmpty() ? 'pt-4 border-t border-gray-100' : '' }}">
                 @csrf
                 <select name="program_id" required
-                        class="flex-1 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        class="flex-1 min-w-0 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                     <option value="">Add program…</option>
                     @foreach($availablePrograms->groupBy('country') as $country => $progs)
                     <optgroup label="{{ $country }}">
@@ -708,7 +708,7 @@
                     @endforeach
                 </select>
                 <button type="submit"
-                        class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg transition-colors font-medium">
+                        class="flex-shrink-0 text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg transition-colors font-medium whitespace-nowrap">
                     Add
                 </button>
             </form>
