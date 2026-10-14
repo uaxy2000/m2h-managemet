@@ -49,7 +49,7 @@ class LeadController extends Controller
                 'stages.leads' => function ($q) use ($filters, $filterableFields) {
                     $this->applyLeadBaseFilters($q, $filters, $filterableFields);
                     $this->withLeadKanbanEagers($q, $filters['sort']);
-                    $q->limit(100);
+                    $q->limit(50);
                 },
             ])->find($currentPipelineId)
             : null;
@@ -674,7 +674,7 @@ class LeadController extends Controller
 
         $filters = $this->parseFilters($request);
         $page    = max(1, (int) $request->get('page', 1));
-        $perPage = 100;
+        $perPage = 50;
 
         // Total count with filters
         $countQ = $stage->leads();
