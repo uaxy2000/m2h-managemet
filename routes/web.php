@@ -110,6 +110,9 @@ Route::middleware('auth')->group(function () {
     Route::post('todo-lists/{todoList}/items/{item}/toggle', [TodoListItemController::class, 'toggle'])->name('todo-lists.items.toggle');
     Route::delete('todo-lists/{todoList}/items/{item}', [TodoListItemController::class, 'destroy'])->name('todo-lists.items.destroy');
 
+    Route::get('cost-calculator', [\App\Http\Controllers\CostCalculatorController::class, 'index'])->name('cost-calculator.index');
+    Route::get('cost-calculator/{program}', [\App\Http\Controllers\CostCalculatorController::class, 'show'])->name('cost-calculator.show');
+
     // Reports
     Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
     Route::get('performance', [ReportsController::class, 'performance'])->name('performance.index');
