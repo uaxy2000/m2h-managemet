@@ -42,6 +42,10 @@ class AutomationService
                     continue;
                 }
 
+                if ($lead->hasInvalidPhone()) {
+                    continue;
+                }
+
                 // once-per-lead check
                 if ($rule->re_run_mode === 'once') {
                     $alreadyRan = AutomationRuleRun::where('rule_id', $rule->id)
@@ -408,7 +412,7 @@ class AutomationService
         }
 
         $leads    = Lead::with(['tags', 'customValues.field'])->get();
-        $matching = $leads->filter(fn ($lead) => static::evaluateConditions($lead, $rule));
+        $matching = $leads->filter(fn ($lead) => !$lead->hasInvalidPhone() && static::evaluateConditions($lead, $rule));
 
         if ($rule->skip_duplicates) {
             $matching = $matching->filter(fn ($lead) => !$lead->is_duplicate_flag);

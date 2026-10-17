@@ -46,6 +46,13 @@ class Lead extends Model
         return $this->belongsTo(SubStage::class, 'sub_stage_id');
     }
 
+    public function hasInvalidPhone(): bool
+    {
+        $phone = trim((string) $this->phone);
+
+        return $phone !== '' && !\App\Helpers\PhoneFormatter::format($phone)['valid'];
+    }
+
     public function assignedTo(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to');

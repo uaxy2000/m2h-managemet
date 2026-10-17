@@ -178,6 +178,9 @@ class AutomationController extends Controller
             if ($automation->skip_duplicates && $lead->is_duplicate_flag) {
                 continue;
             }
+            if ($lead->hasInvalidPhone()) {
+                continue;
+            }
             if (AutomationService::evaluateConditions($lead, $automation)) {
                 AutomationService::evaluate($lead, 'manual', auth()->id());
                 $count++;
