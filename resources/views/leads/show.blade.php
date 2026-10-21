@@ -321,13 +321,39 @@
 </div>
 
 {{-- Stage History — horizontal strip --}}
+@foreach(['history_success' => 'bg-emerald-50 border-emerald-200 text-emerald-700', 'history_warning' => 'bg-amber-50 border-amber-200 text-amber-800', 'history_error' => 'bg-red-50 border-red-200 text-red-700'] as $flashKey => $flashClass)
+    @if(session($flashKey))
+    <div class="mb-3 rounded-lg border px-4 py-2 text-sm {{ $flashClass }}">{{ session($flashKey) }}</div>
+    @endif
+@endforeach
+
 @if($lead->statusHistory->isNotEmpty())
-<div class="bg-white rounded-xl border border-gray-200 px-5 py-4 mb-5 overflow-x-auto">
+@php
+    $canEditHistory = auth()->user()->isInternalAdmin();
+    $leadHasPayment = $canEditHistory && \Illuminate\Support\Facades\DB::table('payment_leads')->where('lead_id', $lead->id)->exists();
+@endphp
+<div class="bg-white rounded-xl border border-gray-200 px-5 py-4 mb-5 overflow-x-auto"
+     x-data="{ removing: null, confirmText: '' }"
+     @keydown.escape.window="removing = null">
     <div class="flex items-start min-w-max">
         @foreach($lead->statusHistory as $entry)
         @php $isLast = $loop->last; $color = $entry->toStage?->color ?? '#6366f1'; @endphp
         <div class="flex items-start">
-            <div class="flex flex-col items-center text-center w-28">
+            <div class="group relative flex flex-col items-center text-center w-28">
+                @if($canEditHistory && !$isLast)
+                <button type="button"
+                        @click="confirmText = ''; removing = @js([
+                            'url'        => route('leads.status-history.destroy', [$lead, $entry]),
+                            'stage'      => $entry->toStage?->name ?? '—',
+                            'date'       => $entry->changed_at->format('d M Y H:i'),
+                            'by'         => $entry->changedBy?->name,
+                            'registered' => $entry->to_stage_id === \App\Http\Controllers\PaymentsController::REGISTERED_STAGE,
+                        ])"
+                        class="absolute -top-1 right-2 w-5 h-5 rounded-full bg-white border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-300 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity flex items-center justify-center"
+                        title="Remove this entry from the stage history">
+                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                </button>
+                @endif
                 <div class="w-3 h-3 rounded-full flex-shrink-0 mb-1.5 {{ $isLast ? 'ring-2 ring-offset-2' : '' }}"
                      style="background: {{ $color }}; {{ $isLast ? 'ring-color:'.$color : '' }}"></div>
                 <p class="text-xs font-medium leading-tight {{ $isLast ? 'text-gray-900' : 'text-gray-500' }}">
@@ -348,6 +374,52 @@
         </div>
         @endforeach
     </div>
+
+    @if($canEditHistory)
+    <template x-if="removing">
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/40" @click="removing = null"></div>
+            <form method="POST" :action="removing.url"
+                  class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4"
+                  x-init="$nextTick(() => $refs.confirmInput.focus())">
+                @csrf
+                @method('DELETE')
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-900">Remove stage history entry</h3>
+                    <p class="text-sm text-gray-600 mt-2">
+                        <span class="font-semibold" x-text="removing.stage"></span>
+                        <span class="text-gray-400">·</span>
+                        <span x-text="removing.date"></span>
+                        <template x-if="removing.by"><span class="text-gray-500" x-text="' · by ' + removing.by"></span></template>
+                    </p>
+                </div>
+                <p class="text-xs text-gray-500">
+                    The lead will be treated as if it never reached this stage. Payments, Performance and other reports that count stage history will no longer include it. The lead's current stage does not change. This cannot be undone.
+                </p>
+                @if($leadHasPayment)
+                <template x-if="removing.registered">
+                    <p class="text-xs rounded-lg bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2">
+                        This lead is already linked to a registration payment. After removal, review that payment on the Payments page and correct it manually.
+                    </p>
+                </template>
+                @endif
+                <div>
+                    <label class="block text-xs text-gray-600 mb-1">Type <span class="font-mono font-semibold text-red-600">{{ \App\Http\Controllers\LeadStatusHistoryController::CONFIRM_PHRASE }}</span> to confirm</label>
+                    <input type="text" name="confirm" x-model="confirmText" x-ref="confirmInput" autocomplete="off"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-red-400">
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" @click="removing = null"
+                            class="px-3 py-1.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">Cancel</button>
+                    <button type="submit" :disabled="confirmText !== @js(\App\Http\Controllers\LeadStatusHistoryController::CONFIRM_PHRASE)"
+                            class="px-3 py-1.5 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed">
+                        Remove entry
+                    </button>
+                </div>
+            </form>
+        </div>
+    </template>
+    @endif
 </div>
 @endif
 

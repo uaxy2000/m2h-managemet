@@ -212,6 +212,7 @@ Route::middleware('auth')->group(function () {
     // Programs (nested under lead)
     Route::post('leads/{lead}/clear-duplicate', [LeadController::class, 'clearDuplicateFlag'])->name('leads.clear-duplicate');
     Route::post('leads/{lead}/merge', [LeadMergeController::class, 'merge'])->name('leads.merge');
+    Route::delete('leads/{lead}/status-history/{entry}', [\App\Http\Controllers\LeadStatusHistoryController::class, 'destroy'])->name('leads.status-history.destroy');
 
     Route::post('leads/{lead}/programs', [LeadProgramController::class, 'store'])->name('leads.programs.store');
     Route::post('leads/{lead}/programs/{leadProgram}/primary', [LeadProgramController::class, 'setPrimary'])->name('leads.programs.primary');
