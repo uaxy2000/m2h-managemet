@@ -1861,7 +1861,6 @@ function mergeModal() {
 @endpush
 
 @push('styles')
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
 <style>
 .flatpickr-calendar { font-size: 13px; }
 .flatpickr-time input { font-size: 13px; }
@@ -1869,7 +1868,6 @@ function mergeModal() {
 @endpush
 
 @push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var el = document.getElementById('task-due-at');

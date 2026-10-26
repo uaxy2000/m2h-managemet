@@ -7,6 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
     <style>
         @keyframes bell-ring {
             0%,100% { transform: rotate(0deg); }
@@ -671,6 +672,7 @@
     </template>
 </div>
 
+@include('partials.date-pickers')
 @stack('scripts')
 </body>
 </html>
