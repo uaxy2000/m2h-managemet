@@ -85,7 +85,7 @@
         {{-- ───── Page 1: summary ───── --}}
         <section>
             <header class="qp-header">
-                <img src="https://m2h.ge/imgn/M2H-Logo-10.jpg" alt="M2H" class="qp-logo">
+                <img src="https://eksper.com.tr/imgn/eksper-logo.png" alt="Eksper Danışmanlık" class="qp-logo">
                 <div>
                     <div class="qp-doc-title" x-text="t.pdf.title"></div>
                     <div class="qp-doc-sub" x-text="p.name"></div>
@@ -150,7 +150,7 @@
             </table>
 
             <p class="qp-callout" x-show="p.asset_requirement" x-text="p.asset_requirement"></p>
-            <p class="qp-footer" x-text="t.pdf.footer + ' · m2h.ge'"></p>
+            <p class="qp-footer" x-text="t.pdf.footer + ' · eksper.com.tr'"></p>
         </section>
 
         {{-- ───── Comparison ───── --}}

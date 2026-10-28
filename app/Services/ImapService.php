@@ -40,36 +40,31 @@ class ImapService
         return array_map(fn ($f) => str_replace($this->mailbox, '', $f), $list);
     }
 
-    /** Detect the Sent folder — first by \Sent attribute, then by name */
+    /**
+     * Detect the Sent folder by name. PHP's imap extension does not expose the \Sent
+     * special-use flag, and Gmail localises folder names to the mailbox language
+     * (e.g. "[Gmail]/Gönderilmiş Postalar").
+     */
     public function detectSentFolder(): ?string
     {
-        // Use getmailboxes to read folder attributes (\Sent flag)
-        $boxes = @imap_getmailboxes($this->connection, $this->mailbox, '*');
-        if ($boxes) {
-            foreach ($boxes as $box) {
-                if ($box->attributes & LATT_NOINFERIORS) continue; // skip virtual
-                // IMAP \Sent attribute = 64 (0x40) but PHP doesn't expose it directly
-                // so fall back to name matching below
+        $folders = [];
+        foreach ($this->listFolders() as $raw) {
+            // Folder names are modified UTF-7; imap_utf7_decode() yields ISO-8859-1 and loses characters like "ş".
+            $folders[$raw] = trim(mb_convert_encoding($raw, 'UTF-8', 'UTF7-IMAP'), '/');
+        }
+
+        $exact = [
+            'Sent', 'Sent Items', 'Sent Messages', 'INBOX.Sent',
+            '[Gmail]/Sent Mail', '[Gmail]/Gönderilmiş Postalar', 'Gönderilen',
+        ];
+        foreach ($folders as $raw => $name) {
+            foreach ($exact as $candidate) {
+                if (mb_strtolower($name) === mb_strtolower($candidate)) return $raw;
             }
         }
 
-        // Name-based detection (raw IMAP names, including UTF-7 encoded)
-        $rawFolders = $this->listFolders();
-        $nameCandidates = [
-            'Sent', 'Sent Items', 'Sent Messages',
-            '[Gmail]/Sent Mail', 'INBOX.Sent',
-            // Decoded Turkish
-            'Gönderilen',
-        ];
-
-        foreach ($rawFolders as $raw) {
-            $decoded = @imap_utf7_decode($raw) ?: $raw;
-            foreach ($nameCandidates as $candidate) {
-                if (strcasecmp(trim($decoded, '/'), $candidate) === 0) return $raw;
-                if (strcasecmp(trim($raw, '/'), $candidate) === 0) return $raw;
-            }
-            // Generic: if folder name contains 'sent' in any language variation
-            if (stripos($decoded, 'sent') !== false || stripos($decoded, 'nderilen') !== false) {
+        foreach ($folders as $raw => $name) {
+            if (stripos($name, 'sent') !== false || stripos($name, 'nderilen') !== false || stripos($name, 'nderilmi') !== false) {
                 return $raw;
             }
         }

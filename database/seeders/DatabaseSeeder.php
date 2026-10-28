@@ -14,7 +14,7 @@ class DatabaseSeeder extends Seeder
     {
         $company = Company::create([
             'id'   => Str::uuid(),
-            'name' => 'M2H',
+            'name' => 'Eksper Danışmanlık',
             'type' => 'internal',
         ]);
 
@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
             'id'         => Str::uuid(),
             'company_id' => $company->id,
             'name'       => 'Burak',
-            'email'      => 'burak@m2h.ge',
+            'email'      => 'burak@eksper.com.tr',
             'role'       => 'super_admin',
             'password'   => Hash::make('password'),
         ]);
@@ -31,7 +31,7 @@ class DatabaseSeeder extends Seeder
             'id'         => Str::uuid(),
             'company_id' => $company->id,
             'name'       => 'Can',
-            'email'      => 'can@m2h.ge',
+            'email'      => 'can@eksper.com.tr',
             'role'       => 'admin',
             'password'   => Hash::make('password'),
         ]);
@@ -40,7 +40,7 @@ class DatabaseSeeder extends Seeder
             'id'         => Str::uuid(),
             'company_id' => $company->id,
             'name'       => 'Durul',
-            'email'      => 'durul@m2h.ge',
+            'email'      => 'durul@eksper.com.tr',
             'role'       => 'member',
             'password'   => Hash::make('password'),
         ]);

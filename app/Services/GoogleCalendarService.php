@@ -85,17 +85,28 @@ class GoogleCalendarService
         return null;
     }
 
-    public function updateForUser(User $user, Meeting $meeting, string $eventId): bool
+    /**
+     * Update the user's event, or create it when there is none or it no longer exists
+     * (e.g. the user reconnected a different Google account). Returns the event id to store.
+     */
+    public function upsertForUser(User $user, Meeting $meeting, ?string $eventId): ?string
     {
-        $token = $this->getAccessToken($user);
-        if (!$token) return false;
+        if ($eventId) {
+            $token = $this->getAccessToken($user);
+            if (!$token) return $eventId;
 
-        $calendarId = $user->google_calendar_id ?? 'primary';
-        $url = str_replace('{calendarId}', rawurlencode($calendarId), self::EVENTS_URL) . '/' . $eventId;
+            $calendarId = $user->google_calendar_id ?? 'primary';
+            $url = str_replace('{calendarId}', rawurlencode($calendarId), self::EVENTS_URL) . '/' . $eventId;
+            $response = Http::withToken($token)->put($url, $this->buildBody($meeting));
 
-        $response = Http::withToken($token)->put($url, $this->buildBody($meeting));
+            if ($response->successful()) return $eventId;
+            if (!in_array($response->status(), [404, 410], true)) {
+                Log::error('GoogleCalendar upsertForUser update failed', ['status' => $response->status(), 'body' => $response->body()]);
+                return $eventId;
+            }
+        }
 
-        return $response->successful();
+        return $this->createForUser($user, $meeting) ?? $eventId;
     }
 
     public function deleteForUser(User $user, string $eventId): bool

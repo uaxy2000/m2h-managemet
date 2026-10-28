@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MeetingParticipant;
+use App\Models\User;
 use App\Services\GoogleCalendarService;
 use Illuminate\Http\Request;
 
@@ -38,7 +40,34 @@ class GoogleCalendarController extends Controller
             $user->update(['google_email' => $payload['email'] ?? null]);
         }
 
-        return redirect()->route('profile.edit')->with('success', 'Google Calendar connected successfully.');
+        $synced = $this->syncUpcomingMeetings($user);
+
+        return redirect()->route('profile.edit')->with('success', 'Google Calendar connected successfully.'
+            . ($synced ? " {$synced} upcoming meeting(s) synced to your calendar." : ''));
+    }
+
+    // After (re)connecting — possibly to a different Google account — make sure upcoming meetings exist in this calendar.
+    private function syncUpcomingMeetings(User $user): int
+    {
+        $participants = MeetingParticipant::where('participant_type', 'internal_user')
+            ->where('participant_id', $user->id)
+            ->whereHas('meeting', fn ($q) => $q->where('end_at', '>=', now())
+                ->where(fn ($q) => $q->whereNull('ical_status')->orWhere('ical_status', '!=', 'CANCELLED')))
+            ->with('meeting')
+            ->get();
+
+        $synced = 0;
+        foreach ($participants as $participant) {
+            $eventId = $this->gcal->upsertForUser($user, $participant->meeting, $participant->google_event_id);
+            if ($eventId) {
+                $synced++;
+                if ($eventId !== $participant->google_event_id) {
+                    $participant->update(['google_event_id' => $eventId]);
+                }
+            }
+        }
+
+        return $synced;
     }
 
     public function disconnect()

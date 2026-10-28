@@ -178,7 +178,7 @@ class AutomationService
         $actionsLog  = [];
         $descLines   = [];
         $triggerUser = $triggeredByUserId ? User::find($triggeredByUserId) : null;
-        $senderLabel = $triggerUser ? ($triggerUser->name . ' via ' . $rule->name) : 'M2H System';
+        $senderLabel = $triggerUser ? ($triggerUser->name . ' via ' . $rule->name) : 'Eksper System';
 
         foreach ($rule->actions as $action) {
             $result = static::runAction($lead, $action, $rule, $senderLabel);
@@ -191,7 +191,7 @@ class AutomationService
         if ($event === 'manual' && $triggerUser) {
             $desc = '<strong>' . e($rule->name) . '</strong> triggered manually by ' . e($triggerUser->name);
         } else {
-            $desc = '<strong>' . e($rule->name) . '</strong> automation applied by M2H System';
+            $desc = '<strong>' . e($rule->name) . '</strong> automation applied by Eksper System';
         }
         if ($descLines) {
             $desc .= ':<br>' . implode('<br>', $descLines);
@@ -214,7 +214,7 @@ class AutomationService
         ]);
     }
 
-    private static function runAction(Lead $lead, AutomationAction $action, AutomationRule $rule, string $senderLabel = 'M2H System'): array
+    private static function runAction(Lead $lead, AutomationAction $action, AutomationRule $rule, string $senderLabel = 'Eksper System'): array
     {
         $params = $action->parameters ?? [];
         $log = ['type' => $action->action_type, 'ok' => false, 'note' => '', 'label' => ''];
@@ -297,7 +297,7 @@ class AutomationService
                             if ($mailer->isConfigured()) {
                                 $resolved = $template->resolve($lead);
                                 try {
-                                    $mailer->sendRaw(
+                                    $messageId = $mailer->sendRaw(
                                         $lead->email,
                                         $lead->fullName(),
                                         $resolved['subject'],
@@ -306,11 +306,12 @@ class AutomationService
                                         $template->files->all()
                                     );
                                     \App\Models\LeadActivity::create([
-                                        'lead_id'     => $lead->id,
-                                        'user_id'     => null,
-                                        'type'        => 'email_out',
-                                        'description' => $resolved['subject'],
-                                        'meta'        => [
+                                        'lead_id'         => $lead->id,
+                                        'user_id'         => null,
+                                        'type'            => 'email_out',
+                                        'description'     => $resolved['subject'],
+                                        'imap_message_id' => $messageId,
+                                        'meta'            => [
                                             'to'            => $lead->email,
                                             'subject'       => $resolved['subject'],
                                             'body'          => $resolved['body'],

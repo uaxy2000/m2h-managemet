@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Dashboard') — M2H Management</title>
+    <title>@yield('title', 'Dashboard') — Eksper Management</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css">
@@ -58,8 +58,8 @@
         {{-- Brand --}}
         <div class="h-16 flex items-center border-b border-slate-700/60 flex-shrink-0"
              :class="sidebar ? 'px-6' : 'lg:justify-center lg:px-0 px-6'">
-            <span x-show="sidebar || mobileNav" class="text-white font-bold text-lg tracking-tight whitespace-nowrap">M2H Management</span>
-            <span x-show="!sidebar && !mobileNav" class="text-white font-bold text-lg hidden lg:block">M</span>
+            <span x-show="sidebar || mobileNav" class="text-white font-bold text-lg tracking-tight whitespace-nowrap">Eksper Management</span>
+            <span x-show="!sidebar && !mobileNav" class="text-white font-bold text-lg hidden lg:block">E</span>
         </div>
 
         {{-- Navigation --}}

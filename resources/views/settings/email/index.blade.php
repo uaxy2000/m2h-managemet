@@ -47,7 +47,7 @@
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Username (email address) <span class="text-red-500">*</span></label>
                 <input type="text" name="mail_username" value="{{ old('mail_username', $settings['mail_username'] ?? '') }}"
-                       placeholder="info@m2h.ge"
+                       placeholder="burak@eksper.com.tr"
                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
                 @error('mail_username')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
             </div>
@@ -65,13 +65,13 @@
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">From Address <span class="text-red-500">*</span></label>
                     <input type="email" name="mail_from_address" value="{{ old('mail_from_address', $settings['mail_from_address'] ?? '') }}"
-                           placeholder="info@m2h.ge"
+                           placeholder="info@eksper.com.tr"
                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
                     @error('mail_from_address')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">From Name <span class="text-red-500">*</span></label>
-                    <input type="text" name="mail_from_name" value="{{ old('mail_from_name', $settings['mail_from_name'] ?? 'M2H Management') }}"
+                    <input type="text" name="mail_from_name" value="{{ old('mail_from_name', $settings['mail_from_name'] ?? 'Eksper Danışmanlık') }}"
                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
                     @error('mail_from_name')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
                 </div>

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class MailerService
 {
@@ -43,13 +44,21 @@ class MailerService
         });
     }
 
-    public function sendRaw(string $to, string $toName, string $subject, string $body, array $uploadedFiles = [], array $templateFiles = []): void
+    /**
+     * Returns the Message-ID (with angle brackets, as IMAP reports it). Gmail keeps a copy of
+     * SMTP-sent mail in Sent; storing this id lets the IMAP sync recognise and skip that copy.
+     */
+    public function sendRaw(string $to, string $toName, string $subject, string $body, array $uploadedFiles = [], array $templateFiles = []): string
     {
         $this->configure();
 
         $html = $this->wrapInTemplate(nl2br(e($body)));
 
-        Mail::html($html, function ($m) use ($to, $toName, $subject, $uploadedFiles, $templateFiles) {
+        $fromDomain = substr(strrchr((string) config('mail.from.address'), '@') ?: '@eksper.com.tr', 1);
+        $messageId  = Str::uuid() . '@' . $fromDomain;
+
+        Mail::html($html, function ($m) use ($to, $toName, $subject, $uploadedFiles, $templateFiles, $messageId) {
+            $m->getSymfonyMessage()->getHeaders()->addIdHeader('Message-ID', $messageId);
             $m->to($to, $toName)->subject($subject);
             foreach ($uploadedFiles as $file) {
                 $m->attach($file->getRealPath(), ['as' => $file->getClientOriginalName(), 'mime' => $file->getMimeType()]);
@@ -58,6 +67,8 @@ class MailerService
                 $m->attach($tplFile->absolutePath(), ['as' => $tplFile->original_name, 'mime' => $tplFile->mime_type]);
             }
         });
+
+        return '<' . $messageId . '>';
     }
 
     private function wrapInTemplate(string $bodyHtml): string
@@ -68,7 +79,7 @@ class MailerService
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>M2H</title>
+<title>Eksper Danışmanlık</title>
 </head>
 <body style="margin:0;padding:0;background:#f1f5f9;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 0;">
@@ -78,7 +89,7 @@ class MailerService
 
           <tr>
             <td align="center" style="background:#ffffff;border-radius:12px 12px 0 0;padding:28px 40px;border-bottom:1px solid #e2e8f0;">
-              <img src="https://m2h.ge/imgn/M2H-Logo-10.jpg" alt="M2H" width="120" style="display:block;border:0;max-width:120px;margin:0 auto;">
+              <img src="https://eksper.com.tr/imgn/eksper-logo.png" alt="Eksper Danışmanlık" width="180" style="display:block;border:0;max-width:180px;height:auto;margin:0 auto;">
             </td>
           </tr>
 
@@ -91,12 +102,12 @@ class MailerService
           <tr>
             <td style="background:#ffffff;border-radius:0 0 12px 12px;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
               <p style="margin:0 0 6px;font-size:12px;">
-                <a href="https://m2h.ge" style="color:#1e3a5f;text-decoration:none;font-weight:600;">m2h.ge</a>
+                <a href="https://eksper.com.tr" style="color:#1e3a5f;text-decoration:none;font-weight:600;">eksper.com.tr</a>
                 <span style="color:#94a3b8;">&nbsp;&bull;&nbsp;</span>
                 <a href="https://www.instagram.com/goldenvisaservices" style="color:#1e3a5f;text-decoration:none;font-weight:600;">@goldenvisaservices</a>
               </p>
               <p style="margin:0;color:#94a3b8;font-size:11px;">
-                &copy; M2H &mdash; Golden Visa Services
+                &copy; Eksper Danışmanlık &mdash; Golden Visa Services
               </p>
             </td>
           </tr>

@@ -51,8 +51,8 @@ class EmailSettingController extends Controller
             $mailer->sendRaw(
                 auth()->user()->email,
                 auth()->user()->name,
-                'M2H CRM — SMTP Test',
-                "This is a test email from M2H Management CRM.\n\nIf you received this, your SMTP settings are working correctly."
+                'Eksper Management — SMTP Test',
+                "This is a test email from Eksper Management.\n\nIf you received this, your SMTP settings are working correctly."
             );
             return back()->with('success', 'Test email sent to ' . auth()->user()->email);
         } catch (\Exception $e) {

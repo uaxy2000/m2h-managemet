@@ -1173,7 +1173,7 @@
                                 <path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.554 4.118 1.522 5.845L.057 23.25l5.565-1.457A11.938 11.938 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.712 9.712 0 0 1-4.95-1.354l-.355-.21-3.305.866.881-3.218-.231-.371A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
                             </svg>
                             <span class="text-xs font-medium {{ $isOutgoing ? 'text-green-700' : 'text-gray-500' }}">
-                                {{ $isOutgoing ? ((is_array($entry['messages'][0]->meta) ? ($entry['messages'][0]->meta['sender_label'] ?? null) : null) ?? $entry['messages'][0]->user?->name ?? 'M2H System') : 'WhatsApp' }}
+                                {{ $isOutgoing ? ((is_array($entry['messages'][0]->meta) ? ($entry['messages'][0]->meta['sender_label'] ?? null) : null) ?? $entry['messages'][0]->user?->name ?? 'Eksper System') : 'WhatsApp' }}
                             </span>
                         </div>
                         <div class="space-y-2">

@@ -40,7 +40,7 @@
         </div>
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Page Name</label>
-            <input type="text" name="page_name" value="{{ old('page_name') }}" required placeholder="M2H Turkey"
+            <input type="text" name="page_name" value="{{ old('page_name') }}" required placeholder="Eksper Turkey"
                    class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
         </div>
         <div class="col-span-3">

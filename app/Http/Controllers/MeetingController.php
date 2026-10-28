@@ -300,12 +300,13 @@ class MeetingController extends Controller
         $participants = $meeting->participants->where('participant_type', 'internal_user');
 
         foreach ($participants as $participant) {
-            if (!$participant->google_event_id) {
+            $user = User::find($participant->participant_id);
+            if (!$user?->google_refresh_token) {
                 continue;
             }
-            $user = User::find($participant->participant_id);
-            if ($user?->google_refresh_token) {
-                $this->gcal->updateForUser($user, $meeting, $participant->google_event_id);
+            $eventId = $this->gcal->upsertForUser($user, $meeting, $participant->google_event_id);
+            if ($eventId !== $participant->google_event_id) {
+                $participant->update(['google_event_id' => $eventId]);
             }
         }
     }

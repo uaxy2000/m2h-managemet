@@ -45,7 +45,7 @@ class LeadEmailController extends Controller
         $extraAttachments = collect($request->file('attachments', []))->filter()->values()->all();
 
         try {
-            $this->mailer->sendRaw(
+            $messageId = $this->mailer->sendRaw(
                 $lead->email,
                 $lead->fullName(),
                 $resolved['subject'],
@@ -60,9 +60,10 @@ class LeadEmailController extends Controller
         LeadActivity::create([
             'lead_id'     => $lead->id,
             'user_id'     => auth()->id(),
-            'type'        => 'email_out',
-            'description' => $resolved['subject'],
-            'meta'        => [
+            'type'            => 'email_out',
+            'description'     => $resolved['subject'],
+            'imap_message_id' => $messageId,
+            'meta'            => [
                 'to'              => $lead->email,
                 'subject'         => $resolved['subject'],
                 'body'            => $body,

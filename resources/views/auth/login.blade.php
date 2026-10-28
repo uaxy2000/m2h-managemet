@@ -7,7 +7,7 @@
 
     {{-- Brand --}}
     <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">M2H Management</h1>
+        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Eksper Management</h1>
         <p class="text-sm text-gray-500 mt-1">CRM & Operations Platform</p>
     </div>
 
