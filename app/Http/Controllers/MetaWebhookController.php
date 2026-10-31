@@ -185,7 +185,7 @@ class MetaWebhookController extends Controller
 
         // Attach tags
         if (!empty($mapping->tag_ids)) {
-            $lead->tags()->attach($mapping->tag_ids);
+            $lead->tags()->attach(\App\Models\Tag::whereIn('id', $mapping->tag_ids)->pluck('id'));
         }
 
         // Auto-populate custom fields from Meta form answers

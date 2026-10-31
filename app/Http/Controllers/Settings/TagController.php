@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Models\AutomationRule;
+use App\Models\MetaFormMapping;
 use App\Models\Tag;
 use App\Models\TagGroup;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class TagController extends Controller
@@ -58,12 +61,29 @@ class TagController extends Controller
 
     public function destroy(Tag $tag): RedirectResponse
     {
-        try {
-            $tag->delete();
-        } catch (\Throwable) {
-            return back()->with('error', 'Cannot delete — this tag is in use.');
+        // Rule conditions/actions store tag ids in JSON (no FK); a deleted tag would silently change rule behaviour.
+        // LIKE instead of JSON functions: production MariaDB lacks JSON_UNQUOTE.
+        $ruleNames = AutomationRule::where(fn ($q) => $q
+                ->whereHas('conditions', fn ($c) => $c->where('field', 'tag')->where('value', 'LIKE', '%' . $tag->id . '%'))
+                ->orWhereHas('actions', fn ($a) => $a->where('parameters', 'LIKE', '%' . $tag->id . '%')))
+            ->orderBy('name')
+            ->pluck('name');
+
+        if ($ruleNames->isNotEmpty()) {
+            return back()->with('error', "Cannot delete \"{$tag->name}\" — it is used in automation rules: "
+                . $ruleNames->implode(', ') . '. Remove it from these rules first.');
         }
 
-        return redirect()->route('settings.tags.index')->with('success', 'Tag deleted.');
+        $leadCount = DB::table('lead_tags')->where('tag_id', $tag->id)->count();
+
+        DB::transaction(function () use ($tag) {
+            MetaFormMapping::where('tag_ids', 'LIKE', '%' . $tag->id . '%')->get()
+                ->each(fn ($m) => $m->update(['tag_ids' => array_values(array_diff($m->tag_ids ?? [], [$tag->id]))]));
+
+            $tag->delete(); // lead_tags rows cascade
+        });
+
+        return redirect()->route('settings.tags.index')
+            ->with('success', "Tag \"{$tag->name}\" deleted" . ($leadCount ? " and removed from {$leadCount} lead(s)." : '.'));
     }
 }
