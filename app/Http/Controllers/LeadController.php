@@ -84,11 +84,17 @@ class LeadController extends Controller
 
         $ownOnly = $this->forceOwnLeads($authUser);
 
+        // Across all pipelines, so a handover in another pipeline is not missed
+        $pendingHandovers = Lead::handoverPendingFor($authUser->id)
+            ->with(['handoverFrom', 'stage', 'pipeline'])
+            ->orderByDesc('handover_at')
+            ->get();
+
         return view('leads.index', compact(
             'pipelines', 'currentPipeline', 'filters',
             'tagGroups', 'ungroupedTags', 'hasTags',
             'internalUsers', 'programsByCountry', 'ownOnly',
-            'filterableFields', 'stageTotals'
+            'filterableFields', 'stageTotals', 'pendingHandovers'
         ));
     }
 
@@ -252,7 +258,7 @@ class LeadController extends Controller
             && $lead->collaborators->contains('id', $user->id);
 
         $lead->load([
-            'pipeline', 'stage', 'subStage', 'assignedTo',
+            'pipeline', 'stage', 'subStage', 'assignedTo', 'handoverFrom',
             'serviceProvider', 'agent',
             'statusHistory.changedBy',
             'statusHistory.fromStage',
@@ -314,8 +320,15 @@ class LeadController extends Controller
 
         $timeline = $grouped;
 
+        // Banner stays for a week so the note is still at hand after the first visit
+        $showHandover = $lead->handover_at && $lead->handover_at->gt(now()->subDays(7));
+
         // Mark unread incoming messages as read if the assigned user is viewing
         if (auth()->id() === $lead->assigned_to) {
+            if ($lead->isHandoverPending()) {
+                Lead::whereKey($lead->id)->update(['handover_seen_at' => now()]);
+            }
+
             LeadActivity::where('lead_id', $lead->id)
                 ->where('type', 'whatsapp_incoming')
                 ->where('is_read', false)
@@ -382,7 +395,7 @@ class LeadController extends Controller
             'lead', 'internalUsers', 'serviceProviders', 'agents', 'allTags', 'availablePrograms',
             'customFields', 'customValuesByKey', 'timeline', 'waTemplates', 'pipelines',
             'canManageAssignment', 'canChangeServiceProvider', 'duplicateMatches',
-            'isCollaborator', 'collaboratorCandidates'
+            'isCollaborator', 'collaboratorCandidates', 'showHandover'
         ));
     }
 
@@ -444,6 +457,7 @@ class LeadController extends Controller
 
         $fromStageId    = $lead->stage_id;
         $fromSubStageId = $lead->sub_stage_id;
+        $fromAssignee   = $lead->assigned_to;
         $emailChanged   = ($validated['email'] ?? null) !== $lead->email;
         $phoneChanged   = ($validated['phone'] ?? null) !== $lead->phone;
 
@@ -483,6 +497,10 @@ class LeadController extends Controller
             }
         }
 
+        if (array_key_exists('assigned_to', $validated)) {
+            $this->recordAssignment($lead, $fromAssignee, $lead->assigned_to, null);
+        }
+
         AutomationService::evaluate($lead, 'lead_updated');
 
         return redirect()->route('leads.show', $lead)->with('success', 'Lead updated.');
@@ -493,7 +511,8 @@ class LeadController extends Controller
         abort_unless(auth()->user()->isInternalAdmin(), 403);
 
         $validated = $request->validate([
-            'assigned_to' => ['nullable', 'uuid', 'exists:users,id'],
+            'assigned_to'   => ['nullable', 'uuid', 'exists:users,id'],
+            'handover_note' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $oldId = $lead->assigned_to;
@@ -501,34 +520,56 @@ class LeadController extends Controller
 
         $lead->update(['assigned_to' => $newId]);
 
-        if ($oldId !== $newId) {
-            $oldName = $oldId ? User::find($oldId)?->name : null;
-            $newName = $newId ? User::find($newId)?->name : null;
-
-            LeadActivity::create([
-                'lead_id'     => $lead->id,
-                'user_id'     => auth()->id(),
-                'type'        => 'assigned',
-                'description' => $newName
-                    ? 'Assigned to ' . $newName . ($oldName ? ' (was: ' . $oldName . ')' : '')
-                    : 'Assignment removed' . ($oldName ? ' (was: ' . $oldName . ')' : ''),
-                'visible_to'  => ['internal'],
-                'created_at'  => now(),
-            ]);
-
-            if ($newId && $newId !== auth()->id()) {
-                NotificationService::send(
-                    userId: $newId,
-                    type:   'lead_assigned',
-                    title:  'Lead assigned to you',
-                    body:   $lead->first_name . ' ' . $lead->last_name,
-                    url:    route('leads.show', $lead->id),
-                    meta:   ['lead_id' => $lead->id],
-                );
-            }
-        }
+        $this->recordAssignment($lead, $oldId, $newId, $validated['handover_note'] ?? null);
 
         return back()->with('success', 'Assignment updated.');
+    }
+
+    // Manual (re)assignment: timeline entry, notification and the pending-handover marker
+    // that pins the lead on top of the new assignee's pipeline until they open it.
+    private function recordAssignment(Lead $lead, ?string $oldId, ?string $newId, ?string $note): void
+    {
+        if ($oldId === $newId) {
+            return;
+        }
+
+        $note    = trim((string) $note) ?: null;
+        $oldName = $oldId ? User::find($oldId)?->name : null;
+        $newName = $newId ? User::find($newId)?->name : null;
+
+        LeadActivity::create([
+            'lead_id'     => $lead->id,
+            'user_id'     => auth()->id(),
+            'type'        => 'assigned',
+            'description' => $newName
+                ? 'Assigned to ' . $newName . ($oldName ? ' (was: ' . $oldName . ')' : '')
+                : 'Assignment removed' . ($oldName ? ' (was: ' . $oldName . ')' : ''),
+            'meta'        => $note ? ['handover_note' => $note] : null,
+            'visible_to'  => ['internal'],
+            'created_at'  => now(),
+        ]);
+
+        $isHandover = $newId && $newId !== auth()->id();
+
+        $lead->update([
+            'handover_at'      => $isHandover ? now() : null,
+            'handover_from'    => $isHandover ? $oldId : null,
+            'handover_note'    => $isHandover ? $note : null,
+            'handover_seen_at' => null,
+        ]);
+
+        if ($isHandover) {
+            NotificationService::send(
+                userId: $newId,
+                type:   'lead_assigned',
+                title:  $oldName ? 'Lead handed over to you' : 'Lead assigned to you',
+                body:   $lead->first_name . ' ' . $lead->last_name
+                    . ($oldName ? ' (from ' . $oldName . ')' : '')
+                    . ($note ? ' — ' . \Illuminate\Support\Str::limit($note, 120) : ''),
+                url:    route('leads.show', $lead->id),
+                meta:   ['lead_id' => $lead->id],
+            );
+        }
     }
 
     public function assignCompany(Request $request, Lead $lead): RedirectResponse
@@ -726,6 +767,8 @@ class LeadController extends Controller
             'assigned_to'       => (!$forceOwn) ? $request->get('assigned_to') : null,
             'assigned_to_me'    => $assignedToMe,
             'collaborated_by_me'=> $collaboratedByMe,
+            'handed_over'       => $request->boolean('handed_over'),
+            'own_only'          => $forceOwn,
             'source'            => $request->get('source'),
             'duplicate'         => $request->boolean('duplicate'),
             'program_id'        => $request->get('program_id'),
@@ -774,6 +817,11 @@ class LeadController extends Controller
                 $uid = auth()->id();
                 $q->whereHas('collaborators', fn ($q) => $q->where('users.id', $uid));
             })
+            // Taken over from another user (kept after the lead is opened, replaced on the next reassignment)
+            ->when($filters['handed_over'] ?? false, fn ($q) => $q
+                ->whereNotNull('handover_from')
+                ->when($filters['own_only'] ?? false, fn ($q) => $q->where('assigned_to', auth()->id()))
+            )
             ->when($filters['source'] === 'meta_ad',
                 fn ($q) => $q->where('source', 'meta_ad')
             )
@@ -844,12 +892,15 @@ class LeadController extends Controller
             ])
             ->with([
                 'assignedTo',
+                'handoverFrom',
                 'collaborators',
                 'tags',
                 'subStage',
                 'programs' => fn ($q) => $q->wherePivot('is_primary', true),
             ])
-            ->orderByRaw('(exists(select 1 from `lead_activities` where `lead_activities`.`lead_id` = `leads`.`id` and `lead_activities`.`type` = \'whatsapp_incoming\' and `lead_activities`.`is_read` = 0)) DESC');
+            ->orderByRaw('(exists(select 1 from `lead_activities` where `lead_activities`.`lead_id` = `leads`.`id` and `lead_activities`.`type` = \'whatsapp_incoming\' and `lead_activities`.`is_read` = 0)) DESC')
+            // Handed over to the viewer and not opened yet: right after unread WhatsApp
+            ->orderByRaw('(leads.assigned_to = ? AND leads.handover_at IS NOT NULL AND leads.handover_seen_at IS NULL) DESC', [auth()->id()]);
 
         if ($sort === 'stage_entered_at') {
             $q->orderByRaw('(SELECT MAX(lsh.changed_at) FROM lead_status_history lsh WHERE lsh.lead_id = leads.id AND lsh.to_stage_id = leads.stage_id) DESC');

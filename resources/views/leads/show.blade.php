@@ -58,6 +58,30 @@
     </div>
 </div>
 
+{{-- Handover banner (first week after a manual reassignment) --}}
+@if($showHandover)
+@php $handoverUnseen = $lead->isHandoverPending() && auth()->id() !== $lead->assigned_to; @endphp
+<div class="bg-orange-50 border border-orange-200 rounded-lg px-4 py-3 text-sm mb-5 flex items-start gap-3">
+    <svg class="w-4 h-4 flex-shrink-0 text-orange-500 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 3M21 7.5H7.5"/>
+    </svg>
+    <div class="min-w-0 flex-1">
+        <p class="text-orange-800">
+            <span class="font-semibold">{{ $lead->handoverFrom ? 'Handed over' : 'Assigned' }}</span>
+            @if($lead->handoverFrom) from <span class="font-medium">{{ $lead->handoverFrom->name }}</span>@endif
+            to <span class="font-medium">{{ $lead->assignedTo?->name }}</span>
+            <span class="text-orange-600">· {{ $lead->handover_at->format('d.m.Y H:i') }} ({{ $lead->handover_at->diffForHumans() }})</span>
+            @if($handoverUnseen)
+            <span class="ml-1 text-xs font-medium text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded-full">Not opened by {{ $lead->assignedTo?->name }} yet</span>
+            @endif
+        </p>
+        @if($lead->handover_note)
+        <p class="mt-1.5 text-gray-700 whitespace-pre-wrap leading-relaxed">{{ $lead->handover_note }}</p>
+        @endif
+    </div>
+</div>
+@endif
+
 {{-- Flash messages --}}
 @foreach(['success', 'note_success', 'task_success', 'wa_success', 'email_success'] as $key)
 @if(session($key))
@@ -564,15 +588,22 @@
                     </div>
                     @if($canManageAssignment)
                     <div x-show="editing" x-cloak>
-                        <form method="POST" action="{{ route('leads.assign-user', $lead) }}" class="flex gap-1.5">
+                        <form method="POST" action="{{ route('leads.assign-user', $lead) }}"
+                              x-data="{ assignee: @js($lead->assigned_to ?? '') }" class="space-y-1.5">
                             @csrf @method('PATCH')
-                            <select name="assigned_to" class="flex-1 min-w-0 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                                <option value="">— None —</option>
-                                @foreach($internalUsers as $u)
-                                <option value="{{ $u->id }}" {{ $lead->assigned_to === $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
-                                @endforeach
-                            </select>
-                            <button type="submit" class="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-2.5 py-1.5 rounded-lg transition-colors font-medium">✓</button>
+                            <div class="flex gap-1.5">
+                                <select name="assigned_to" x-model="assignee" class="flex-1 min-w-0 rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="">— None —</option>
+                                    @foreach($internalUsers as $u)
+                                    <option value="{{ $u->id }}" {{ $lead->assigned_to === $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="submit" class="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-2.5 py-1.5 rounded-lg transition-colors font-medium">✓</button>
+                            </div>
+                            <textarea name="handover_note" rows="3" maxlength="2000"
+                                      x-show="assignee && assignee !== @js($lead->assigned_to ?? '')" x-cloak
+                                      placeholder="Handover note (optional) — current status, next step…"
+                                      class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500"></textarea>
                         </form>
                     </div>
                     @endif
@@ -1300,6 +1331,9 @@
                         </div>
                         @else
                         <p class="text-sm text-gray-600">{{ $item->description }}</p>
+                        @if($item->type === 'assigned' && !empty($item->meta['handover_note']))
+                        <p class="mt-1 text-sm text-gray-700 bg-orange-50 border border-orange-100 rounded-lg px-3 py-2 whitespace-pre-wrap leading-relaxed">{{ $item->meta['handover_note'] }}</p>
+                        @endif
                         @endif
                         <div class="flex items-center gap-1.5 mt-0.5">
                             @if($item->user)

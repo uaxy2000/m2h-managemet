@@ -255,19 +255,30 @@
         </div>
         @endif
 
-        {{-- Assigned / Collaborated checkboxes (non-admin only) --}}
-        @if($ownOnly)
-        <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none flex-shrink-0">
-            <input type="checkbox" name="assigned_to_me" value="1" @checked($filters['assigned_to_me'])
-                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-            Assigned to me
-        </label>
-        <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none flex-shrink-0">
-            <input type="checkbox" name="collaborated_by_me" value="1" @checked($filters['collaborated_by_me'])
-                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-            Collaborated by me
-        </label>
-        @endif
+        {{-- Second row: ownership checkboxes, then Duplicate set apart --}}
+        <div class="basis-full h-0"></div>
+        <div class="flex items-center gap-4 flex-shrink-0">
+            @if($ownOnly)
+            <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none">
+                <input type="checkbox" name="assigned_to_me" value="1" @checked($filters['assigned_to_me'])
+                       class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                Assigned to me
+            </label>
+            <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none">
+                <input type="checkbox" name="collaborated_by_me" value="1" @checked($filters['collaborated_by_me'])
+                       class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                Collaborated by me
+            </label>
+            @endif
+            <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none"
+                   title="Leads taken over from another user">
+                <input type="checkbox" name="handed_over" value="1" @checked($filters['handed_over'])
+                       class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                {{ $ownOnly ? 'Handed over to me' : 'Handed over' }}
+            </label>
+        </div>
+
+        <span class="h-5 w-px bg-gray-200 mx-2 flex-shrink-0"></span>
 
         {{-- Duplicate toggle --}}
         <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none flex-shrink-0">
@@ -306,6 +317,7 @@
             $filters['source'] ?: null,
             $filters['program_id'] ?: null,
             $filters['duplicate'] ? 1 : null,
+            $filters['handed_over'] ? 1 : null,
             count($filters['tags']) > 0 ? 1 : null,
             count($filters['cf']) > 0 ? 1 : null,
             $filters['date_from'] ?: null,
@@ -338,6 +350,36 @@
     @if(session('warning'))
     <div class="flex-shrink-0 mx-6 mt-4 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg px-4 py-2.5 text-sm">
         {{ session('warning') }}
+    </div>
+    @endif
+
+    @if($pendingHandovers->isNotEmpty())
+    <div x-data="{ open: false }" class="flex-shrink-0 mx-6 mt-4 bg-orange-50 border border-orange-200 rounded-lg text-sm">
+        <button type="button" @click="open = !open" class="w-full flex items-center gap-2 px-4 py-2.5 text-left text-orange-800">
+            <svg class="w-4 h-4 flex-shrink-0 text-orange-500" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 3M21 7.5H7.5"/>
+            </svg>
+            <span class="font-semibold">{{ $pendingHandovers->count() }} {{ Str::plural('lead', $pendingHandovers->count()) }} handed over to you</span>
+            <span class="text-orange-600">— not opened yet</span>
+            <span class="ml-auto text-xs font-medium text-orange-600" x-text="open ? 'Hide' : 'Show'"></span>
+        </button>
+        <div x-show="open" x-cloak class="border-t border-orange-200 divide-y divide-orange-100 max-h-64 overflow-y-auto">
+            @foreach($pendingHandovers as $h)
+            <a href="{{ route('leads.show', $h) }}" class="flex items-start gap-3 px-4 py-2 hover:bg-orange-100 transition-colors">
+                <div class="min-w-0 flex-1">
+                    <p class="font-medium text-gray-800 truncate">{{ $h->fullName() }}</p>
+                    <p class="text-xs text-gray-500 truncate">
+                        {{ $h->pipeline?->name }} · {{ $h->stage?->name }}
+                        @if($h->handoverFrom) · from {{ $h->handoverFrom->name }} @endif
+                    </p>
+                    @if($h->handover_note)
+                    <p class="text-xs text-orange-700 mt-0.5 truncate">“{{ $h->handover_note }}”</p>
+                    @endif
+                </div>
+                <span class="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">{{ $h->handover_at->diffForHumans() }}</span>
+            </a>
+            @endforeach
+        </div>
     </div>
     @endif
 

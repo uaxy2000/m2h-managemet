@@ -21,6 +21,7 @@ class Lead extends Model
         'service_provider_id', 'agent_id', 'is_duplicate_flag',
         'source', 'meta_lead_id', 'meta_ad_id', 'meta_adset_id', 'meta_campaign_id', 'meta_form_id', 'meta_ad_name', 'meta_campaign_name', 'meta_platform',
         'meta_form_data',
+        'handover_at', 'handover_from', 'handover_note', 'handover_seen_at',
     ];
 
     protected $casts = [
@@ -29,6 +30,8 @@ class Lead extends Model
         'expected_close_date' => 'date',
         'is_duplicate_flag'   => 'boolean',
         'meta_form_data'      => 'array',
+        'handover_at'         => 'datetime',
+        'handover_seen_at'    => 'datetime',
     ];
 
     public function pipeline(): BelongsTo
@@ -56,6 +59,24 @@ class Lead extends Model
     public function assignedTo(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    public function handoverFrom(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'handover_from');
+    }
+
+    // Reassigned to the current owner, who has not opened the lead since
+    public function isHandoverPending(): bool
+    {
+        return $this->handover_at !== null && $this->handover_seen_at === null;
+    }
+
+    public function scopeHandoverPendingFor($q, string $userId)
+    {
+        return $q->where('assigned_to', $userId)
+            ->whereNotNull('handover_at')
+            ->whereNull('handover_seen_at');
     }
 
     public function company(): BelongsTo
