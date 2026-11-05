@@ -22,7 +22,8 @@ class ImapService
         };
 
         $this->mailbox  = '{' . $host . ':' . $port . $flags . '}';
-        $this->connection = @imap_open($this->mailbox . 'INBOX', $username, $password, 0, 1);
+        // Read-only: syncing must never change flags (e.g. mark messages as read) in the user's mailbox
+        $this->connection = @imap_open($this->mailbox . 'INBOX', $username, $password, OP_READONLY, 1);
 
         return $this->connection !== false;
     }
@@ -169,7 +170,7 @@ class ImapService
         $pick  = $plain[0] ?? $html[0] ?? null;
         if (!$pick) return '';
 
-        $raw  = @imap_fetchbody($this->connection, $uid, $pick['num'], FT_UID);
+        $raw  = @imap_fetchbody($this->connection, $uid, $pick['num'], FT_UID | FT_PEEK);
         $text = $this->decodePart($raw ?: '', $pick['encoding']);
 
         // Convert to UTF-8 if needed
@@ -205,7 +206,7 @@ class ImapService
     {
         if ($this->isIcsPart($part)) {
             $num = $prefix ?: '1';
-            $raw = @imap_fetchbody($this->connection, $uid, $num, FT_UID);
+            $raw = @imap_fetchbody($this->connection, $uid, $num, FT_UID | FT_PEEK);
             if (!$raw) return null;
             $decoded = $this->decodePart($raw, $part->encoding ?? ENC7BIT);
             // Ensure valid UTF-8
@@ -240,39 +241,43 @@ class ImapService
         return false;
     }
 
-    /**
-     * Fetch emails from a folder since a given date.
-     * Returns array of parsed email data.
-     */
-    public function fetchEmails(string $folderRaw, ?Carbon $since = null): array
+    /** Open a folder read-only. Returns its UIDVALIDITY, or null if the folder cannot be opened. */
+    public function openFolder(string $folderRaw): ?int
     {
         $fullFolder = $this->mailbox . $folderRaw;
-        if (!@imap_reopen($this->connection, $fullFolder)) {
-            return [];
+        if (!@imap_reopen($this->connection, $fullFolder, OP_READONLY)) {
+            return null;
         }
 
-        // Use a date 1 day earlier to avoid timezone boundary issues
-        $searchSince = ($since ?? now()->subDays(7))->subDay();
-        $criteria    = 'SINCE "' . $searchSince->format('d-M-Y') . '"';
+        $status = @imap_status($this->connection, $fullFolder, SA_UIDVALIDITY);
+        return $status ? (int) $status->uidvalidity : 0;
+    }
 
-        $uids = @imap_search($this->connection, $criteria, SE_UID);
-        if (!$uids) return [];
+    /** UIDs (ascending) in the open folder since a date, one day earlier to avoid timezone boundary issues. */
+    public function searchSince(Carbon $since): array
+    {
+        $criteria = 'SINCE "' . $since->copy()->subDay()->format('d-M-Y') . '"';
 
-        $emails = [];
-        foreach ($uids as $uid) {
-            $header = @imap_fetchheader($this->connection, $uid, FT_UID);
-            if (!$header) continue;
+        $uids = @imap_search($this->connection, $criteria, SE_UID) ?: [];
+        sort($uids, SORT_NUMERIC);
+        return $uids;
+    }
 
-            $parsed = $this->parseHeader($header, $uid);
-            if (!$parsed) continue;
+    /** Parsed headers only (one round trip) — enough to decide whether the message concerns a lead. */
+    public function fetchHeader(int $uid): ?array
+    {
+        $header = @imap_fetchheader($this->connection, $uid, FT_UID);
+        return $header ? $this->parseHeader($header, $uid) : null;
+    }
 
-            try { $parsed['body']        = $this->fetchBody($uid); }        catch (\Throwable) { $parsed['body'] = ''; }
-            try { $parsed['attachments'] = $this->fetchAttachments($uid); } catch (\Throwable) { $parsed['attachments'] = []; }
-            try { $parsed['ics_content'] = $this->fetchIcsContent($uid); }  catch (\Throwable) { $parsed['ics_content'] = null; }
-            $emails[] = $parsed;
-        }
+    /** Body, attachment list and calendar invite — fetched only for messages that match a lead. */
+    public function fetchContent(int $uid): array
+    {
+        try { $body = $this->fetchBody($uid); }               catch (\Throwable) { $body = ''; }
+        try { $attachments = $this->fetchAttachments($uid); } catch (\Throwable) { $attachments = []; }
+        try { $ics = $this->fetchIcsContent($uid); }          catch (\Throwable) { $ics = null; }
 
-        return $emails;
+        return ['body' => $body, 'attachments' => $attachments, 'ics_content' => $ics];
     }
 
     private function parseHeader(string $raw, int $uid): ?array
@@ -330,5 +335,8 @@ class ImapService
             @imap_close($this->connection);
             $this->connection = null;
         }
+        // c-client queues errors and dumps them as notices at shutdown otherwise
+        imap_errors();
+        imap_alerts();
     }
 }

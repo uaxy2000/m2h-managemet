@@ -12,43 +12,72 @@ use Illuminate\Support\Facades\Log;
 
 class EmailSyncService
 {
+    // Plesk/IIS ends a request well before PHP's own limit; stop early and continue on the next run
+    private const TIME_BUDGET_SECONDS = 40;
+
+    private float $deadline = 0;
+
+    /** Lowercased lead email => true, so messages can be skipped from their headers alone */
+    private array $leadEmails = [];
+
     public function __construct(private ImapService $imap) {}
 
     /** Sync all configured accounts. Returns summary array. */
     public function syncAll(): array
     {
-        $results = [];
+        @set_time_limit(120);
+        $this->deadline   = microtime(true) + self::TIME_BUDGET_SECONDS;
+        $this->leadEmails = Lead::whereNotNull('email')->pluck('email')
+            ->mapWithKeys(fn ($e) => [strtolower(trim($e)) => true])
+            ->all();
+
+        $accounts = [];
 
         // 1. Shared info@ account
         if (Setting::get('imap_enabled') === '1') {
-            $results['shared'] = $this->syncAccount(
-                label:      Setting::get('imap_username', ''),
-                host:       Setting::get('imap_host', ''),
-                port:       (int) Setting::get('imap_port', '993'),
-                encryption: Setting::get('imap_encryption', 'ssl'),
-                username:   Setting::get('imap_username', ''),
-                password:   $this->decryptPassword(Setting::get('imap_password')),
-                since:      Setting::get('imap_last_sync_at') ? Carbon::parse(Setting::get('imap_last_sync_at')) : now()->subDays(7),
-                onSuccess:  fn () => Setting::set('imap_last_sync_at', now()->toISOString()),
-            );
+            $accounts['shared'] = [
+                'label'      => Setting::get('imap_username', ''),
+                'host'       => Setting::get('imap_host', ''),
+                'port'       => (int) Setting::get('imap_port', '993'),
+                'encryption' => Setting::get('imap_encryption', 'ssl'),
+                'username'   => Setting::get('imap_username', ''),
+                'password'   => $this->decryptPassword(Setting::get('imap_password')),
+                'since'      => Setting::get('imap_last_sync_at') ? Carbon::parse(Setting::get('imap_last_sync_at')) : now()->subDays(7),
+                'onSuccess'  => fn () => Setting::set('imap_last_sync_at', now()->toISOString()),
+            ];
         }
 
         // 2. Per-user accounts
         $users = User::where('imap_enabled', true)->whereNotNull('imap_host')->get();
         foreach ($users as $user) {
-            $results['user_' . $user->id] = $this->syncAccount(
-                label:      $user->email,
-                host:       $user->imap_host,
-                port:       $user->imap_port ?? 993,
-                encryption: $user->imap_encryption ?? 'ssl',
-                username:   $user->imap_user,
-                password:   $this->decryptPassword($user->imap_pass_enc),
-                since:      $user->imap_last_sync_at ? Carbon::parse($user->imap_last_sync_at) : now()->subDays(7),
-                onSuccess:  fn () => $user->update(['imap_last_sync_at' => now()]),
-            );
+            $accounts['user_' . $user->id] = [
+                'label'      => $user->email,
+                'host'       => $user->imap_host,
+                'port'       => $user->imap_port ?? 993,
+                'encryption' => $user->imap_encryption ?? 'ssl',
+                'username'   => $user->imap_user,
+                'password'   => $this->decryptPassword($user->imap_pass_enc),
+                'since'      => $user->imap_last_sync_at ? Carbon::parse($user->imap_last_sync_at) : now()->subDays(7),
+                'onSuccess'  => fn () => $user->update(['imap_last_sync_at' => now()]),
+            ];
+        }
+
+        // Least recently synced first, so one slow mailbox cannot starve the others
+        uasort($accounts, fn ($a, $b) => $a['since'] <=> $b['since']);
+
+        $results = [];
+        foreach ($accounts as $key => $account) {
+            $results[$key] = $this->outOfTime()
+                ? ['status' => 'deferred', 'reason' => 'time budget reached, continues on next run']
+                : $this->syncAccount(...$account);
         }
 
         return $results;
+    }
+
+    private function outOfTime(): bool
+    {
+        return microtime(true) >= $this->deadline;
     }
 
     private function syncAccount(
@@ -73,27 +102,19 @@ class EmailSyncService
             $synced  = 0;
             $skipped = 0;
 
-            // INBOX → email_in
-            $inbox = $this->imap->fetchEmails('INBOX', $since);
-            foreach ($inbox as $email) {
-                ['created' => $c, 'skipped' => $s] = $this->processEmail($email, 'email_in', $username);
-                $synced += $c; $skipped += $s;
-            }
-
-            // Sent folder → email_out
-            $sentFolder = $this->imap->detectSentFolder();
+            // INBOX → email_in, Sent folder → email_out
+            $finished   = $this->syncFolder('INBOX', 'email_in', $host, $username, $since, $synced, $skipped);
+            $sentFolder = $finished ? $this->imap->detectSentFolder() : null;
             if ($sentFolder) {
-                $sent = $this->imap->fetchEmails($sentFolder, $since);
-                foreach ($sent as $email) {
-                    ['created' => $c, 'skipped' => $s] = $this->processEmail($email, 'email_out', $username);
-                    $synced += $c; $skipped += $s;
-                }
+                $finished = $this->syncFolder($sentFolder, 'email_out', $host, $username, $since, $synced, $skipped);
             }
 
             $this->imap->close();
-            $onSuccess();
+            if ($finished) {
+                $onSuccess();
+            }
 
-            return ['status' => 'ok', 'synced' => $synced, 'skipped' => $skipped];
+            return ['status' => $finished ? 'ok' : 'partial', 'synced' => $synced, 'skipped' => $skipped];
         } catch (\Throwable $e) {
             $prev = $e->getPrevious();
             Log::error("IMAP sync failed for {$label}: " . $e->getMessage(), [
@@ -107,7 +128,43 @@ class EmailSyncService
         }
     }
 
-    private function processEmail(array $email, string $type, string $accountEmail): array
+    /**
+     * Process new messages of one folder. The last processed UID is remembered per mailbox/folder,
+     * so each run only looks at mail that arrived since the previous one, even if that run was cut short.
+     * Returns false when the time budget ran out before the folder was finished.
+     */
+    private function syncFolder(string $folder, string $type, string $host, string $username, Carbon $since, int &$synced, int &$skipped): bool
+    {
+        $uidValidity = $this->imap->openFolder($folder);
+        if ($uidValidity === null) {
+            return true;
+        }
+
+        $key = 'imap_uid:' . md5(strtolower($username) . '|' . $host . '|' . $folder);
+        [$savedValidity, $lastUid] = array_map('intval', explode(':', Setting::get($key, '0:0')) + [0, 0]);
+        if ($savedValidity !== $uidValidity) {
+            $lastUid = 0; // folder was recreated on the server, old UIDs are meaningless
+        }
+
+        $finished = true;
+        foreach ($this->imap->searchSince($since) as $uid) {
+            if ($uid <= $lastUid) continue;
+            if ($this->outOfTime()) { $finished = false; break; }
+
+            $email = $this->imap->fetchHeader($uid);
+            if ($email) {
+                ['created' => $c, 'skipped' => $s] = $this->processEmail($uid, $email, $type, $username);
+                $synced += $c; $skipped += $s;
+            }
+            $lastUid = $uid;
+        }
+
+        Setting::set($key, $uidValidity . ':' . $lastUid);
+
+        return $finished;
+    }
+
+    private function processEmail(int $uid, array $email, string $type, string $accountEmail): array
     {
         // Collect all addresses involved
         $allAddresses = array_values(array_unique(array_merge(
@@ -117,22 +174,25 @@ class EmailSyncService
             $email['bcc'],
         )));
 
-        // Find matching leads
-        $leads = Lead::whereIn('email', $allAddresses)->get();
-        if ($leads->isEmpty()) return ['created' => 0, 'skipped' => 1];
+        $leadAddresses = array_values(array_filter($allAddresses, fn ($a) => isset($this->leadEmails[$a])));
+        if (!$leadAddresses) return ['created' => 0, 'skipped' => 1];
+
+        // Deduplicate by message_id per lead before downloading the body
+        $leads = Lead::whereIn('email', $leadAddresses)->get();
+        $alreadyLinked = LeadActivity::whereIn('lead_id', $leads->pluck('id'))
+            ->whereIn('type', ['email_in', 'email_out'])
+            ->where('imap_message_id', $email['message_id'])
+            ->pluck('lead_id')
+            ->all();
+        $leads = $leads->reject(fn ($lead) => in_array($lead->id, $alreadyLinked, true));
+        if ($leads->isEmpty()) return ['created' => 0, 'skipped' => 0];
+
+        $email += $this->imap->fetchContent($uid);
 
         $created      = 0;
         $icsProcessed = false;
 
         foreach ($leads as $lead) {
-            // Deduplicate by message_id per lead
-            $exists = LeadActivity::where('lead_id', $lead->id)
-                ->whereIn('type', ['email_in', 'email_out'])
-                ->where('imap_message_id', $email['message_id'])
-                ->exists();
-
-            if ($exists) continue;
-
             $activity = LeadActivity::create([
                 'lead_id'          => $lead->id,
                 'user_id'          => null,

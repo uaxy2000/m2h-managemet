@@ -94,14 +94,21 @@ class ImapSettingController extends Controller
 
     public function syncNow(EmailSyncService $sync)
     {
-        $results = $sync->syncAll();
-        $total   = collect($results)->sum('synced');
-        return back()->with('success', "Sync complete — {$total} new email(s) added to timelines.");
+        $results = collect($sync->syncAll());
+        $total   = $results->sum('synced');
+        $pending = $results->whereIn('status', ['partial', 'deferred'])->count();
+        $failed  = $results->where('status', 'error')->count();
+
+        return back()->with('success', "Sync complete — {$total} new email(s) added to timelines."
+            . ($pending ? " {$pending} mailbox(es) not finished yet; the next run continues where this one stopped." : '')
+            . ($failed ? " {$failed} mailbox(es) could not connect — check the IMAP settings." : ''));
     }
 
     public function resetSyncDate()
     {
         Setting::set('imap_last_sync_at', null);
+        // Forget processed message positions too, otherwise the re-scan would skip them
+        Setting::where('key', 'like', 'imap_uid:%')->delete();
         return back()->with('success', 'Sync date reset — next sync will scan the last 7 days.');
     }
 }
