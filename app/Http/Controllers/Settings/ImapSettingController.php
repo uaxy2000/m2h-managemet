@@ -96,12 +96,14 @@ class ImapSettingController extends Controller
     {
         $results = collect($sync->syncAll());
         $total   = $results->sum('synced');
-        $pending = $results->whereIn('status', ['partial', 'deferred'])->count();
-        $failed  = $results->where('status', 'error')->count();
+        $pending = $results->whereIn('status', ['partial', 'deferred'])->pluck('mailbox');
+        $failed  = $results->where('status', 'error');
 
         return back()->with('success', "Sync complete — {$total} new email(s) added to timelines."
-            . ($pending ? " {$pending} mailbox(es) not finished yet; the next run continues where this one stopped." : '')
-            . ($failed ? " {$failed} mailbox(es) could not connect — check the IMAP settings." : ''));
+            . ($pending->isNotEmpty() ? ' Not finished yet: ' . $pending->implode(', ')
+                . '. The scheduled sync (every 15 min) continues where this one stopped, or press Sync Now again.' : '')
+            . ($failed->isNotEmpty() ? ' Could not connect: ' . $failed->map(fn ($r) => $r['mailbox'] . ' (' . $r['error'] . ')')->implode(', ')
+                . ' — check the IMAP settings.' : ''));
     }
 
     public function resetSyncDate()

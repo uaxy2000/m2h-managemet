@@ -67,9 +67,9 @@ class EmailSyncService
 
         $results = [];
         foreach ($accounts as $key => $account) {
-            $results[$key] = $this->outOfTime()
+            $results[$key] = ['mailbox' => $account['label']] + ($this->outOfTime()
                 ? ['status' => 'deferred', 'reason' => 'time budget reached, continues on next run']
-                : $this->syncAccount(...$account);
+                : $this->syncAccount(...$account));
         }
 
         return $results;
